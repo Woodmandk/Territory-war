@@ -1,7 +1,7 @@
 {
   "name": "Territory War",
   "short_name": "Territory War",
-  "description": "Erobr kortet i realtid. Angrib over grænsen og bliv den sidste nation tilbage.",
+  "description": "Fire hære på ét kort. Hyr tropper, styr dem selv og mal landet i din farve.",
   "start_url": "./",
   "scope": "./",
   "display": "fullscreen",

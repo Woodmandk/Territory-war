@@ -4,15 +4,15 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no">
 <title>Territory War</title>
-<meta name="description" content="Erobr kortet i realtid. Udvid dit land, angrib over grænsen, byg byer, forter og havne, sejl over havet og bliv den sidste nation tilbage. Gratis i browseren, lavet til mobil.">
+<meta name="description" content="Fire hære på ét kort. Hyr tropper én ad gangen, styr dem selv, mal landet i din farve og ødelæg de andres hovedkvarterer. Gratis i browseren, lavet til mobil.">
 <meta name="theme-color" content="#0c2229">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="Territory War">
 <meta property="og:type" content="website">
-<meta property="og:title" content="Territory War: erobr kortet">
-<meta property="og:description" content="Realtids-erobring på mobilen. Angrib over grænsen, byg, sejl, alliér dig og bliv den sidste nation tilbage.">
+<meta property="og:title" content="Territory War: fire hære, ét kort">
+<meta property="og:description" content="Hyr tropper, styr dem selv og mal landet i din farve. Realtidskrig for 4 på mobilen.">
 <meta property="og:url" content="https://woodmandk.github.io/Territory-war/">
 <meta property="og:image" content="https://woodmandk.github.io/Territory-war/og.png">
 <meta name="twitter:card" content="summary_large_image">
@@ -141,6 +141,21 @@ details ul{padding-left:18px;margin:8px 0 0}
 #spawnBar .in{pointer-events:auto;max-width:460px;margin:0 auto;background:var(--panel);border-radius:20px;padding:14px;text-align:center;backdrop-filter:blur(6px)}
 #spawnBar p{margin:0 0 10px;font-size:15px}
 #spawnBar p b{color:var(--accent)}
+
+/* Units game: hire row and NATO-style unit glyphs */
+#stats{align-items:center}
+#gold{font-family:var(--display);font-weight:400;font-size:24px}
+#army{font-size:15px;font-weight:800;font-variant-numeric:tabular-nums}
+#army small{color:var(--muted);font-weight:600}
+#hire{display:flex;gap:6px;margin-top:8px}
+#hire button{flex:1;padding:7px 2px 6px;border-radius:12px;background:rgba(255,255,255,.1);color:#fffaf0;display:flex;flex-direction:column;align-items:center;gap:2px;font-size:13px;font-weight:800;line-height:1.1;position:relative}
+#hire button small{font-size:12px;font-weight:700;color:var(--gold)}
+#hire button.cant{opacity:.4}
+#hire button svg{width:30px;height:20px}
+#hire button i{position:absolute;top:4px;right:6px;font-style:normal;font-size:11px;background:var(--accent);color:var(--ink);border-radius:8px;padding:0 5px}
+#btnAll{flex:.8 !important;background:rgba(233,185,73,.18) !important}
+#btnAll.on{background:var(--accent) !important;color:var(--ink) !important}
+#hint{margin-top:6px}
 </style>
 </head>
 <body>
@@ -157,78 +172,39 @@ details ul{padding-left:18px;margin:8px 0 0}
 <div id="bottom" class="hidden">
   <div id="hud">
     <div id="stats">
-      <div id="troops">0 <small>/ 0</small></div>
-      <div id="inc">+0/s</div>
       <div id="gold">0</div>
-      <div id="land"><b>0%</b></div>
+      <div id="inc">+0/s</div>
+      <div id="army">0 <small>/ 6 tropper</small></div>
+      <div id="land"><b>0%</b> land</div>
     </div>
-    <div id="capbar"><div></div></div>
-    <div id="ratioRow">
-      <label for="ratio">Send</label>
-      <input id="ratio" type="range" min="10" max="100" step="10" value="70">
-      <span id="ratioVal">70%</span>
-      <button id="btnBuild">Byg</button>
+    <div id="hire">
+      <button data-t="inf"><svg viewBox="0 0 30 20"><rect x="1.5" y="1.5" width="27" height="17" rx="2" fill="none" stroke="currentColor" stroke-width="2"/><path d="M2 2L28 18M28 2L2 18" stroke="currentColor" stroke-width="2"/></svg>Soldat<small>40</small><i class="hidden"></i></button>
+      <button data-t="tank"><svg viewBox="0 0 30 20"><rect x="1.5" y="1.5" width="27" height="17" rx="2" fill="none" stroke="currentColor" stroke-width="2"/><ellipse cx="15" cy="10" rx="9" ry="4.5" fill="none" stroke="currentColor" stroke-width="2"/></svg>Kampvogn<small>120</small><i class="hidden"></i></button>
+      <button data-t="plane"><svg viewBox="0 0 30 20"><rect x="1.5" y="1.5" width="27" height="17" rx="2" fill="none" stroke="currentColor" stroke-width="2"/><path d="M15 10C12 4 6 4 6 10S12 16 15 10C18 4 24 4 24 10S18 16 15 10Z" fill="none" stroke="currentColor" stroke-width="2"/></svg>Fly<small>160</small><i class="hidden"></i></button>
+      <button id="btnAll">Vælg<br>alle</button>
     </div>
-    <div id="provActs" class="hidden"></div>
     <div id="hint"></div>
   </div>
 </div>
-
-<div class="sheet hidden" id="buildSheet"><div class="in">
-  <h3>Byg <button class="x" id="buildClose" aria-label="Luk">✕</button></h3>
-  <div class="grid" id="buildGrid"></div>
-</div></div>
-
-
-<div class="sheet hidden" id="nationSheet"><div class="in">
-  <h3><i id="nsColor"></i><span id="nsName"></span><button class="x" id="nsClose" aria-label="Luk">✕</button></h3>
-  <div class="info">
-    <div><b id="nsTroops">0</b><span>Tropper</span></div>
-    <div><b id="nsLand">0%</b><span>Land</span></div>
-    <div><b id="nsRel">Neutral</b><span>Forhold</span></div>
-  </div>
-  <div class="acts" id="nsActs"></div>
-</div></div>
-
-<div class="sheet hidden" id="placeBar"><div class="in">
-  <p id="placeText">Tryk på dit land for at bygge</p>
-  <button class="act" id="placeCancel">Annullér</button>
-</div></div>
-
-<div id="spawnBar" class="hidden"><div class="in">
-  <p id="spawnText">Tryk på kortet for at vælge, hvor dit land starter</p>
-  <button class="big" id="btnStart">Start (<span id="spawnCount">15</span>)</button>
-</div></div>
 
 <div id="toast"></div>
 
 <div class="ov" id="menu">
   <div class="card">
     <h1>TERRITORY<br><span>WAR</span></h1>
-    <p class="sub">Udvid dit land, byg en hær og send den over grænsen. Bliv den sidste nation tilbage.</p>
-    <div class="field"><label for="name">Dit navn</label><input type="text" id="name" maxlength="14" placeholder="Dit land" autocomplete="off"></div>
-    <div class="field"><label>Modstandere</label>
-      <div class="rowr"><input type="range" id="bots" min="3" max="30" value="12"><output id="botsVal">12</output></div></div>
+    <p class="sub">Fire hære på ét kort. Hyr dine tropper én ad gangen, styr dem selv, og mal landet i din farve.</p>
+    <div class="field"><label for="name">Dit navn</label><input type="text" id="name" maxlength="14" placeholder="Dig" autocomplete="off"></div>
     <div class="field"><label>Sværhedsgrad</label>
       <div class="seg" id="diff"><button data-v="0">Let</button><button data-v="1" class="on">Normal</button><button data-v="2">Svær</button></div></div>
-    <div class="field"><label>Kort</label>
-      <div class="seg" id="mapType"><button data-v="0" class="on">Kontinent</button><button data-v="1">Øhav</button></div></div>
-    <div class="field"><label>Kortstørrelse</label>
-      <div class="seg" id="size"><button data-v="0">Lille</button><button data-v="1" class="on">Mellem</button><button data-v="2">Stor</button></div></div>
-    <div class="field"><label>Fog of war</label>
-      <div class="seg" id="fog"><button data-v="1" class="on">Til</button><button data-v="0">Fra</button></div></div>
     <button class="big" id="btnPlay">SPIL</button>
     <details><summary>Sådan spiller du</summary><ul>
-      <li>Kortet er delt i <b>provinser</b>. Hver provins har en by med et antal tropper, som vokser hele tiden. Byer (♜) og din hovedstad (★) vokser hurtigere.</li>
-      <li><b>Træk</b> fra en af dine provinser til en anden provins for at sende tropper (eller tryk på din provins og så på målet). Skyderen <b>Send</b> bestemmer hvor stor en del der går med.</li>
-      <li>Når hæren når en provins der ikke er din, starter en <b>kamp</b> i realtid. Begge sider mister folk, til den ene er væk. Bjerge, skov, byer og <b>forter</b> hjælper forsvareren. Du kan sende flere tropper ind i en kamp, der er i gang.</li>
-      <li>De første 60 sekunder er der <b>fredstid</b>: alle kan kun tage fri provinser.</li>
-      <li><b>Tryk på din provins</b> for at få knapper: køb <b>kampvogne</b> (tæller som 8 soldater i angreb, går hurtigere og følger med når du sender tropper), køb <b>fly</b>, eller tryk <b>Bomb</b> og så på et mål inden for ringen.</li>
-      <li><b>Styr dine hære</b>: tryk på en hær der er på vej (eller træk i den) og vælg et nyt mål. Tryk på provinsen bag den for at kalde den tilbage.</li>
-      <li>Stiplede <b>søveje</b> forbinder øer og kyster. Hære sejler over dem.</li>
-      <li><b>Omringning</b>: skærer du en del af et land af, så overgiver den sig, og du får fangerne. <b>Fog of war</b>: du ser kun tæt på dine egne grænser og hære.</li>
-      <li>Hold fingeren på dit land for at bygge <b>byer</b>, <b>forter</b> og <b>raketsiloer</b> med atombomber. Hold på et andet land for at foreslå alliance.</li>
-      <li>Første nation med 70% af landet vinder.</li>
+      <li>Du og 3 computere starter med et <b>hovedkvarter (HQ)</b> i hvert sit hjørne og 100 guld. Ingen tropper.</li>
+      <li><b>Hyr</b> soldater, kampvogne og fly med knapperne forneden. De bliver bygget i dit HQ, eller i en by du ejer, hvis du har trykket på den. Højst 6 tropper ad gangen.</li>
+      <li><b>Tryk på en trop</b> for at vælge den, og tryk på kortet for at sende den dertil. Eller <b>træk en rute</b> med fingeren, startende fra tropen.</li>
+      <li>Jorden dine tropper går på, bliver din. Går en trop ud og <b>tilbage til dit land</b> i en løkke, bliver alt indeni dit. Fly maler ikke.</li>
+      <li><b>Byer</b> giver guld og kan bygge tropper. Stil en soldat eller kampvogn i en by for at erobre den.</li>
+      <li>Tropper skyder selv. <b>Kampvogne</b> slår soldater, <b>fly</b> slår kampvogne, og <b>soldater</b> kan skyde fly ned. Skov giver dækning. Floder krydses ved broerne.</li>
+      <li>Dit land heler dine tropper. Ødelæg de andres <b>HQ</b>, eller ej 70 % af landet, for at vinde.</li>
     </ul></details>
   </div>
 </div>
@@ -237,7 +213,7 @@ details ul{padding-left:18px;margin:8px 0 0}
   <div class="card">
     <h2>Pause</h2>
     <button class="big" id="btnResume">Fortsæt</button>
-    <button class="sec" id="btnRestart">Nyt spil, samme indstillinger</button>
+    <button class="sec" id="btnRestart">Nyt spil</button>
     <button class="sec" id="btnQuit">Til menuen</button>
   </div>
 </div>
@@ -250,7 +226,7 @@ details ul{padding-left:18px;margin:8px 0 0}
       <div><b id="stPlace">1.</b><span>Placering</span></div>
       <div><b id="stTime">0:00</b><span>Tid</span></div>
       <div><b id="stPeak">0%</b><span>Største land</span></div>
-      <div><b id="stKills">0</b><span>Lande udslettet</span></div>
+      <div><b id="stKills">0</b><span>Fjender skudt ned</span></div>
     </div>
     <button class="big" id="btnAgain">Spil igen</button>
     <button class="sec" id="btnWatch">Se resten af spillet</button>
@@ -261,50 +237,37 @@ details ul{padding-left:18px;margin:8px 0 0}
 <script>
 'use strict';
 const $ = id => document.getElementById(id);
-const cv = $('c'), ctx = cv.getContext('2d');
+const cv = $('c'), ctx = cv.getContext('2d'), glc = $('gl');
+let DPR = 1, GDPR = 1, CW = 0, CH = 0;
+const cam = { x: 0, y: 0, s: 8 };
 
-// ---------- Settings ----------
-const settings = { name: '', bots: 12, diff: 1, size: 1, mapType: 0, fog: 1 };
-try { Object.assign(settings, JSON.parse(localStorage.getItem('tw.settings') || '{}')); } catch (e) {}
-function saveSettings() { try { localStorage.setItem('tw.settings', JSON.stringify(settings)); } catch (e) {} }
+const settings = Object.assign({ name: '', diff: 1 }, (() => { try { return JSON.parse(localStorage.getItem('tw.s4') || '{}'); } catch (e) { return {}; } })());
+function saveSettings() { try { localStorage.setItem('tw.s4', JSON.stringify(settings)); } catch (e) {} }
 
-// ---------- Tuning ----------
+// ---------- Rules ----------
 const TICK_MS = 100, DT = TICK_MS / 1000;
-const START_TROOPS = 800, SPAWN_R = 3;
-const CAP_PER_CELL = 8, CAP_BASE = 300;   // max troops = count * CAP_PER_CELL + CAP_BASE + cities * CITY_CAP
-const INC_PER_CELL = 0.1;                 // troops per cell per second
-const INTEREST = 0.04;                    // growth per second on balance, fades towards the cap
-const NEUTRAL_COST = 1.5;                 // troops per free cell
-const ENEMY_BASE = 3, ENEMY_MULT = 1.5;   // cost per enemy cell = ENEMY_BASE + density * ENEMY_MULT
-const MOUNTAIN = 2, FOREST = 1.4;         // cost multipliers on mountains and forests
-const WIN_SHARE = 0.7;
-const PEACE_TICKS = 600;                  // no attacks on countries for the first 60 s
-const GOLD_BASE = 2, GOLD_PER_CELL = 0.002;
-const CITY_CAP = 1500, CITY_GROW = 0.06, CITY_GOLD = 2, PORT_GOLD = 4;
-const FORT_R = 9, FORT_MULT = 2.5;        // attacking land inside a fort's ring costs this much more
-const BOAT_SPEED = 2.5;                   // cells per tick
-const NUKE_R = 10, NUKE_TICKS = 40;
-const ALLY_TICKS = 1800;                  // alliances last 3 minutes
-const DIFFS = [
-  { think: [14, 30], ratio: [0.2, 0.4], ready: 0.6, humanBias: 0.6, inc: 0.9, build: 0.5, nuke: false },
-  { think: [8, 18], ratio: [0.3, 0.6], ready: 0.45, humanBias: 0, inc: 1, build: 0.8, nuke: true },
-  { think: [4, 10], ratio: [0.45, 0.8], ready: 0.3, humanBias: -0.25, inc: 1.12, build: 1, nuke: true },
-];
-const SIZES = [36000, 60000, 95000];
-
-const BUILDS = {
-  city: { name: 'By', ic: '🏙️', desc: 'Provinsen får flere tropper og vokser hurtigere', base: 300, grow: 1.5 },
-  fort: { name: 'Fort', ic: '🏰', desc: 'Forsvarerne i provinsen tæller 1,6× mere', base: 250, grow: 1.3 },
-  silo: { name: 'Raketsilo', ic: '🚀', desc: 'Gør det muligt at affyre atombomber', base: 4000, grow: 2 },
-  nuke: { name: 'Atombombe', ic: '☢️', desc: 'Udsletter alt i et stort område', base: 2500, grow: 1.35, needs: 'silo' },
+const W = 80, H = 80, NC = W * H, HALF = 40;
+// speed and ranges are in cells (per second); build is seconds in the factory
+const UNITS = {
+  inf:   { name: 'Soldat',   cost: 40,  hp: 100, dps: 12, range: 2.4, speed: 1.5, paint: 1.4, build: 3, sight: 7 },
+  tank:  { name: 'Kampvogn', cost: 120, hp: 340, dps: 26, range: 3.0, speed: 1.1, paint: 1.9, build: 6, sight: 7 },
+  plane: { name: 'Fly',      cost: 160, hp: 90,  dps: 22, range: 3.4, speed: 3.2, paint: 0,   build: 6, sight: 10, air: true },
 };
-const BUILD_KEYS = ['city', 'fort', 'silo', 'nuke'];
+const UKEYS = ['inf', 'tank', 'plane'];
+// damage multiplier, attacker -> target: tanks beat soldiers, planes beat tanks, soldiers shoot planes down
+const VS = { inf: { inf: 1, tank: 0.5, plane: 0.7 }, tank: { inf: 1.6, tank: 1, plane: 0 }, plane: { inf: 0.8, tank: 1.8, plane: 1 } };
+const VS_BASE = { inf: 1, tank: 1.5, plane: 1.2 };
+const MAX_UNITS = 6, QUEUE = 3;
+const BASE_HP = 1200, BASE_DPS = 16, BASE_RANGE = 4.5, BASE_REGEN = 4, START_R = 6, CORE_R = 3.5;
+const TOWN_R = 1.6, TOWN_DPS = 6, TOWN_RANGE = 3.2, TOWN_PAINT = 3, CAP_NEUTRAL = 30, CAP_ENEMY = 60;
+const START_GOLD = 100, INC_BASE = 1.8, INC_TOWN = 1.2, INC_CELL = 0.003;
+const HEAL = 3, HEAL_SITE = 12, FOREST_COVER = 0.7, WIN_SHARE = 0.7;
+const DIFFS = [{ inc: 0.75, think: 16, atk: 1800 }, { inc: 1, think: 10, atk: 1300 }, { inc: 1.3, think: 6, atk: 900 }];
+const COLORS = [null, [52, 124, 200], [206, 68, 56], [214, 160, 30], [140, 92, 200]];
+const BOT_NAMES = ['Nordmark', 'Ravnsborg', 'Sydhavn', 'Jernriget', 'Ulvedal', 'Vestria', 'Isfjord', 'Bjergland', 'Askeland'];
+// corners: you start bottom left
+const CORNERS = [null, [9, 70], [70, 9], [9, 9], [70, 70]];
 
-const BOT_NAMES = ['Nordmark','Østland','Vestria','Sydhavn','Jernriget','Ravnsborg','Ulvedal','Bjergland','Solkysten','Isfjord',
-  'Kronborg','Stormvig','Eghavn','Guldbjerg','Skovheim','Rødklint','Blåvand','Ørneland','Havørn','Sølvdal','Frostmark','Lynborg',
-  'Tordenland','Mørkeskov','Sandvig','Klippeby','Højmark','Saltholm','Kragenæs','Bølgeland','Granitia','Dragør','Vindeby','Askeland'];
-
-// ---------- RNG / noise ----------
 let seed = 1;
 function rng() { seed |= 0; seed = seed + 0x6D2B79F5 | 0; let t = Math.imul(seed ^ seed >>> 15, 1 | seed); t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t; return ((t ^ t >>> 14) >>> 0) / 4294967296; }
 const rr = (a, b) => a + rng() * (b - a);
@@ -317,1002 +280,656 @@ function vnoise(x, y, s) {
 function fbm(x, y, s, oct) { let t = 0, amp = 1, f = 1, n = 0; for (let o = 0; o < oct; o++) { t += vnoise(x * f, y * f, s + o * 101) * amp; n += amp; amp *= 0.5; f *= 2; } return t / n; }
 
 // ---------- World ----------
-let W = 0, H = 0, NC = 0;
-let terr, own, shade, flash, coast, island, fortCover, landCells = 0;
-let players = [], attacks = [], buildings = [], boats = [], nukes = [], booms = [], P = 0, S = 1;
-let adj, atkIdx, sumX, sumY, bestD, bestI, allyUntil;
-let T = 0, state = 'menu', speed = 1, human = null, spawnTimer = 0, watching = false, fortsDirty = true;
-let off, offCtx, img;
-let vis = null, visD = null, visQ = null;   // fog of war: what the player can see right now
-const VIS_LAND = 7, VIS_UNIT = 10, VIS_AIR = 14;
-let prov = null, provs = [], provDirty = true;   // provinces: cell → province, and the province list
-const PROV_CELLS = 300, TOWN_GOLD = 1.5;
-// Troops live in provinces and grow there (per second); cities and capitals grow faster and hold more.
-const GROW = 0.3, GROW_CITY = 0.9, GROW_CAP = 1.5, GROW_BUILT = 1, HOLD = 50, HOLD_CITY = 150, HOLD_CAP = 250, HOLD_BUILT = 150;
-const START_GARRISON = 60, MARCH_SPEED = 0.132, BATTLE_RATE = 0.0088, PACE = 1.1, SEA_LINK = 14;
+// terrain: 0 water, 1 grass, 2 rock, 3 forest, 4 bridge you cross east-west, 5 bridge you cross north-south
+const terr = new Uint8Array(NC), own = new Int8Array(NC), prot = new Int8Array(NC), townCell = new Int16Array(NC);
+const shade = new Float32Array(NC), flash = new Uint8Array(NC);
+let state = 'demo', T = 0, players = [], units = [], sites = [], towns = [], shots = [], booms = [], human = null, nOwnable = 1;
+let selected = new Set(), spawnSite = null, watching = false, speed = 1, dirty = true, uid = 1;
+const gpass = i => { const t = terr[i]; return t === 1 || t === 3 || t === 4 || t === 5; };
+const cellOf = (x, y) => { const cx = Math.floor(x), cy = Math.floor(y); return cx < 0 || cy < 0 || cx >= W || cy >= H ? -1 : cy * W + cx; };
 
+// The map is one quadrant mirrored four ways, so every corner is the same fight.
 function genMap() {
-  const ar = innerHeight / innerWidth, isles = state !== 'demo' && settings.mapType === 1;
-  const total = SIZES[state === 'demo' ? 1 : settings.size];
-  // Shape the map to the screen so it fills a phone in either orientation.
-  const a = Math.min(2.2, Math.max(1 / 2.2, ar));
-  W = Math.round(Math.sqrt(total / a)); H = Math.round(W * a); NC = W * H;
-  terr = new Uint8Array(NC); own = new Int16Array(NC); shade = new Float32Array(NC); flash = new Uint8Array(NC);
-  coast = new Uint8Array(NC); island = new Int32Array(NC); fortCover = new Int16Array(NC);
-  const s = (rng() * 1e6) | 0, sc = Math.sqrt(NC) / (isles ? 11 : 7);
-  const h = new Float32Array(NC);
-  for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) {
-    const i = y * W + x;
-    let v = fbm(x / sc, y / sc, s, 5);
-    const e = Math.min(x, y, W - 1 - x, H - 1 - y) / (Math.min(W, H) * 0.16);
-    v -= (1 - Math.min(1, e)) * 0.3;
-    h[i] = v;
-  }
-  const sorted = Float32Array.from(h).sort();
-  const thr = sorted[Math.floor(NC * (isles ? 0.6 : 0.36))];
-  for (let i = 0; i < NC; i++) terr[i] = h[i] > thr ? 1 : 0;
-  for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) {
-    const i = y * W + x;
-    if (terr[i] && h[i] > thr + 0.05 && fbm(x / (sc * 0.55), y / (sc * 0.55), s + 7, 4) > 0.64) terr[i] = 2;
-    else if (terr[i] && fbm(x / (sc * 0.45), y / (sc * 0.45), s + 13, 4) > 0.6) terr[i] = 3;   // forest
-  }
-  // Label landmasses. A continent keeps only the biggest one; an archipelago keeps every island worth living on.
-  const comp = island.fill(-1), stack = new Int32Array(NC), sizes = [];
-  let best = -1, bestSize = 0, id = 0;
-  for (let i = 0; i < NC; i++) {
-    if (!terr[i] || comp[i] >= 0) continue;
-    let sp = 0, size = 0; stack[sp++] = i; comp[i] = id;
-    while (sp) {
-      const c = stack[--sp]; size++;
-      const x = c % W, y = (c / W) | 0;
-      if (x > 0 && terr[c - 1] && comp[c - 1] < 0) { comp[c - 1] = id; stack[sp++] = c - 1; }
-      if (x < W - 1 && terr[c + 1] && comp[c + 1] < 0) { comp[c + 1] = id; stack[sp++] = c + 1; }
-      if (y > 0 && terr[c - W] && comp[c - W] < 0) { comp[c - W] = id; stack[sp++] = c - W; }
-      if (y < H - 1 && terr[c + W] && comp[c + W] < 0) { comp[c + W] = id; stack[sp++] = c + W; }
-    }
-    sizes.push(size);
-    if (size > bestSize) { bestSize = size; best = id; }
-    id++;
-  }
-  landCells = 0;
-  for (let i = 0; i < NC; i++) {
-    if (terr[i] && (isles ? sizes[comp[i]] < 60 : comp[i] !== best)) terr[i] = 0;
-    if (!terr[i]) comp[i] = -1;
-    own[i] = terr[i] ? 0 : -1;
-    if (terr[i]) landCells++;
-    shade[i] = terr[i] ? Math.min(1, Math.max(0, (h[i] - thr) / 0.3)) : Math.min(1, Math.max(0, (h[i] - thr + 0.22) / 0.22));
-  }
-  islandSize = sizes;
-  for (let i = 0; i < NC; i++) if (terr[i]) {
-    const x = i % W, y = (i / W) | 0;
-    coast[i] = (x > 0 && !terr[i - 1]) || (x < W - 1 && !terr[i + 1]) || (y > 0 && !terr[i - W]) || (y < H - 1 && !terr[i + W]) ? 1 : 0;
-  }
-  genProvinces();
-  off = document.createElement('canvas'); off.width = W; off.height = H;
-  offCtx = off.getContext('2d'); img = offCtx.createImageData(W, H);
-}
-let islandSize = [];
-
-// ---------- Provinces ----------
-// The land is cut into provinces, each with a town, like in Supremacy. You take a province by marching an army
-// into it and holding it until the town gives up.
-function genProvinces() {
-  prov = new Int32Array(NC).fill(-1); provs = []; provDirty = true;
-  const step = Math.sqrt(PROV_CELLS), seedX = [], seedY = [], buckets = [];
-  const push = (v, k) => { const b = Math.floor(k * 2); (buckets[b] || (buckets[b] = [])).push(v); };
-  for (let gy = 0; gy * step < H; gy++) for (let gx = 0; gx * step < W; gx++) {
-    const x = Math.round((gx + 0.5 + (rng() - 0.5) * 0.7) * step), y = Math.round((gy + 0.5 + (rng() - 0.5) * 0.7) * step);
-    if (x < 0 || y < 0 || x >= W || y >= H || !terr[y * W + x] || seedX.length >= 1000) continue;
-    push((y * W + x) * 1024 + seedX.length, 0); seedX.push(x); seedY.push(y);
-  }
-  // Grow every province at once, nearest seed first, with a little noise so borders wander. They hug coasts and never jump water.
-  for (let b = 0; b < buckets.length; b++) {
-    const L = buckets[b]; if (!L) continue;
-    for (let n = 0; n < L.length; n++) {
-      const v = L[n], c = Math.floor(v / 1024), pi = v % 1024;
-      if (prov[c] >= 0) continue;
-      prov[c] = pi;
-      const x = c % W, y = (c / W) | 0;
-      for (let d = 0; d < 4; d++) {
-        const X = x + (d === 0 ? -1 : d === 1 ? 1 : 0), Y = y + (d === 2 ? -1 : d === 3 ? 1 : 0);
-        if (X < 0 || Y < 0 || X >= W || Y >= H) continue;
-        const j = Y * W + X;
-        if (!terr[j] || prov[j] >= 0) continue;
-        push(j * 1024 + pi, Math.max(b / 2, Math.hypot(X - seedX[pi], Y - seedY[pi]) + fbm(X / 9, Y / 9, 77, 3) * 7));
+  for (let tries = 0; tries < 30; tries++) {
+    const s = (rng() * 1e6) | 0, q = new Uint8Array(HALF * HALF);
+    for (let y = 0; y < HALF; y++) for (let x = 0; x < HALF; x++) {
+      const cx = HALF - 0.5 - x, cy = HALF - 0.5 - y;
+      // rivers run along both middle lines and meet in a lake, so each corner is its own country
+      const rv = 1.1 + 1.2 * fbm(y * 0.13, 3.7, s + 1, 2), rh = 1.1 + 1.2 * fbm(x * 0.13, 7.1, s + 2, 2);
+      const lake = Math.hypot(cx, cy) < 5 + 3 * fbm(x * 0.2, y * 0.2, s + 3, 2);
+      let t = 1;
+      if (cx < rv || cy < rh || lake) t = 0;
+      else {
+        const m = fbm(x * 0.12, y * 0.12, s + 4, 3), f = fbm(x * 0.09 + 50, y * 0.09, s + 5, 3);
+        if (m > 0.64 && Math.hypot(x - 9, y - 9) > 9) t = 2; else if (f > 0.56) t = 3;
       }
+      q[y * HALF + x] = t;
     }
-  }
-  let count = seedX.length;
-  // Islands no seed reached become provinces of their own.
-  const q = new Int32Array(NC);
-  for (let i = 0; i < NC; i++) {
-    if (!terr[i] || prov[i] >= 0) continue;
-    let qh = 0, qt = 0; q[qt++] = i; prov[i] = count;
-    while (qh < qt) {
-      const c = q[qh++], x = c % W, y = (c / W) | 0;
-      for (const j of [x > 0 ? c - 1 : -1, x < W - 1 ? c + 1 : -1, y > 0 ? c - W : -1, y < H - 1 ? c + W : -1])
-        if (j >= 0 && terr[j] && prov[j] < 0) { prov[j] = count; q[qt++] = j; }
+    const clear = (x0, y0, r, force) => {
+      for (let y = Math.max(0, Math.floor(y0 - r)); y < Math.min(HALF, y0 + r + 1); y++) for (let x = Math.max(0, Math.floor(x0 - r)); x < Math.min(HALF, x0 + r + 1); x++)
+        if (Math.hypot(x - x0, y - y0) <= r && (force || q[y * HALF + x] !== 0)) q[y * HALF + x] = q[y * HALF + x] === 3 && !force ? 3 : 1;
+    };
+    clear(9, 9, 6.5, true);
+    const tq = [[22 + ((rng() * 4) | 0), 7 + ((rng() * 4) | 0)], [7 + ((rng() * 4) | 0), 22 + ((rng() * 4) | 0)], [24 + ((rng() * 3) | 0), 24 + ((rng() * 3) | 0)]];
+    for (const [x, y] of tq) clear(x, y, 2.2, true);
+    // two bridges on each river arm per quadrant
+    for (const b of [10 + ((rng() * 5) | 0), 25 + ((rng() * 4) | 0)]) for (let k = HALF - 6; k < HALF; k++) for (const o of [0, 1]) {
+      if (q[(b + o) * HALF + k] === 0) q[(b + o) * HALF + k] = 4;
+      if (q[k * HALF + b + o] === 0) q[k * HALF + b + o] = 5;
     }
-    count++;
-  }
-  // Fold slivers into the neighbour they share most border with.
-  const size = new Int32Array(count);
-  for (let i = 0; i < NC; i++) if (prov[i] >= 0) size[prov[i]]++;
-  for (let pass = 0; pass < 2; pass++) for (let pi = 0; pi < count; pi++) {
-    if (!size[pi] || size[pi] >= PROV_CELLS * 0.3) continue;
-    const share = new Map();
-    for (let i = 0; i < NC; i++) {
-      if (prov[i] !== pi) continue;
-      const x = i % W, y = (i / W) | 0;
-      for (const j of [x > 0 ? i - 1 : -1, x < W - 1 ? i + 1 : -1, y > 0 ? i - W : -1, y < H - 1 ? i + W : -1])
-        if (j >= 0 && prov[j] >= 0 && prov[j] !== pi) share.set(prov[j], (share.get(prov[j]) || 0) + 1);
+    for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) {
+      const i = y * W + x, qx = x < HALF ? x : W - 1 - x, qy = y < HALF ? y : H - 1 - y;
+      terr[i] = q[qy * HALF + qx];
+      shade[i] = fbm(x * 0.21, y * 0.21, s + 9, 2);
     }
-    let to = -1, bs = 0;
-    for (const [k, v] of share) if (v > bs) { bs = v; to = k; }
-    if (to < 0) continue;
-    for (let i = 0; i < NC; i++) if (prov[i] === pi) prov[i] = to;
-    size[to] += size[pi]; size[pi] = 0;
+    towns = [];
+    for (const [x, y] of tq) for (const [fx, fy] of [[0, 0], [1, 0], [0, 1], [1, 1]])
+      towns.push({ x: (fx ? W - 1 - x : x) + 0.5, y: (fy ? H - 1 - y : y) + 0.5, owner: 0, cap: 0, capBy: 0, q: [], prog: 0, town: true });
+    // every corner must reach every town and every other corner on foot
+    const reach = flood(CORNERS[1][1] * W + CORNERS[1][0]);
+    if (towns.every(t => reach[cellOf(t.x, t.y)]) && [2, 3, 4].every(k => reach[CORNERS[k][1] * W + CORNERS[k][0]])) return;
   }
-  // Number them 0..n-1 and work out towns and neighbours.
-  const remap = new Int32Array(count).fill(-1);
-  for (let pi = 0; pi < count; pi++) if (size[pi]) { remap[pi] = provs.length; provs.push({ id: provs.length, size: size[pi], cells: [], owner: 0, city: false, capOf: 0, occ: 0, occBy: 0, occT: -99, nb: new Set(), mt: 0, fo: 0, town: -1, x: 0, y: 0, troops: 0, tanks: 0, planes: 0, sieges: [], sea: [], built: 0, fort: 0, fight: -99 }); }
-  for (let i = 0; i < NC; i++) if (prov[i] >= 0) { const Pv = provs[prov[i] = remap[prov[i]]]; Pv.cells.push(i); Pv.x += i % W; Pv.y += (i / W) | 0; if (terr[i] === 2) Pv.mt++; if (terr[i] === 3) Pv.fo++; }
-  for (let i = 0; i < NC; i++) {
-    const a = prov[i]; if (a < 0) continue;
-    const x = i % W;
-    if (x < W - 1 && prov[i + 1] >= 0 && prov[i + 1] !== a) { provs[a].nb.add(prov[i + 1]); provs[prov[i + 1]].nb.add(a); }
-    if (i + W < NC && prov[i + W] >= 0 && prov[i + W] !== a) { provs[a].nb.add(prov[i + W]); provs[prov[i + W]].nb.add(a); }
-  }
-  for (const Pv of provs) {
-    Pv.x /= Pv.size; Pv.y /= Pv.size; Pv.mt /= Pv.size; Pv.fo /= Pv.size; Pv.nb = [...Pv.nb]; Pv.cells = Int32Array.from(Pv.cells);
-    let bd = 1e9;
-    for (const i of Pv.cells) { const d = (i % W - Pv.x) ** 2 + (((i / W) | 0) - Pv.y) ** 2 + (terr[i] === 2 ? 30 : 0); if (d < bd) { bd = d; Pv.town = i; } }
-  }
-  // About one in four towns is a city, never two side by side.
-  for (const Pv of provs.slice().sort(() => rng() - 0.5)) if (rng() < 0.35 && !Pv.nb.some(n => provs[n].city)) Pv.city = true;
-  for (const Pv of provs) Pv.troops = Math.round(5 + Pv.size * 0.02 + (Pv.city ? 14 : 0) + Pv.mt * 10);   // locals who defend free land
-  seaLinks();
 }
-// Sea lanes join coastal provinces on different shores, like the dotted lines on a Risk board.
-function seaLinks() {
-  const T8 = 8, tw = Math.ceil(W / T8), th = Math.ceil(H / T8), tiles = Array.from({ length: tw * th }, () => []);
-  for (let i = 0; i < NC; i++) if (coast[i] && prov[i] >= 0) tiles[(((i / W) | 0) / T8 | 0) * tw + ((i % W) / T8 | 0)].push(i);
-  const best = new Map(), R = SEA_LINK * 2.2, r = Math.ceil(R / T8);
-  for (const tile of tiles) for (const i of tile) {
-    const x = i % W, y = (i / W) | 0, tx = (x / T8) | 0, ty = (y / T8) | 0;
-    for (let yy = Math.max(0, ty - r); yy <= Math.min(th - 1, ty + r); yy++) for (let xx = Math.max(0, tx - r); xx <= Math.min(tw - 1, tx + r); xx++)
-      for (const j of tiles[yy * tw + xx]) {
-        if (j <= i || island[j] === island[i]) continue;
-        const d = Math.hypot(j % W - x, ((j / W) | 0) - y);
-        if (d > R) continue;
-        const a = prov[i], b = prov[j], key = Math.min(a, b) * 4096 + Math.max(a, b), isl = Math.min(island[i], island[j]) * 65536 + Math.max(island[i], island[j]);
-        const cur = best.get(key);
-        if (!cur || d < cur.d) best.set(key, { a, b, d, isl });
-      }
-  }
-  // Short hops always count; each pair of nearby islands also gets its single shortest lane.
-  const isl = new Map();
-  for (const L of best.values()) { const c = isl.get(L.isl); if (!c || L.d < c.d) isl.set(L.isl, L); }
-  for (const L of best.values()) if (L.d <= SEA_LINK || isl.get(L.isl) === L) { provs[L.a].sea.push(L.b); provs[L.b].sea.push(L.a); }
-}
-const links = Pv => Pv.sea.length ? Pv.nb.concat(Pv.sea) : Pv.nb;
-function setProv(pi, a) {
-  const Pv = provs[pi];
-  for (const i of Pv.cells) if (own[i] !== a) capture(i, a);
-  Pv.owner = a;
-}
-const isTown = Pv => Pv.city || Pv.capOf > 0;
-function hsl(h, s, l) {
-  s /= 100; l /= 100; const k = n => (n + h / 30) % 12, a = s * Math.min(l, 1 - l);
-  const f = n => l - a * Math.max(-1, Math.min(k(n) - 3, Math.min(9 - k(n), 1)));
-  return [Math.round(f(0) * 255), Math.round(f(8) * 255), Math.round(f(4) * 255)];
+function flood(start) {
+  const seen = new Uint8Array(NC), qq = [start]; seen[start] = 1;
+  while (qq.length) { const i = qq.pop(), x = i % W, y = (i / W) | 0; for (const j of [x > 0 ? i - 1 : -1, x < W - 1 ? i + 1 : -1, y > 0 ? i - W : -1, y < H - 1 ? i + W : -1]) if (j >= 0 && !seen[j] && gpass(j)) { seen[j] = 1; qq.push(j); } }
+  return seen;
 }
 
-function makePlayers() {
-  const n = (state === 'demo' ? 12 : settings.bots) + 1;
-  players = [null]; P = n; S = P + 1;
+function hsl(h, s, l) { return `hsl(${h},${s}%,${l}%)`; }
+const rgb = (c, a = 1) => `rgba(${c[0]},${c[1]},${c[2]},${a})`;
+function makePlayers(demo) {
   const names = BOT_NAMES.slice().sort(() => rng() - 0.5);
-  const hue0 = rng() * 360;
-  for (let k = 1; k <= n; k++) {
-    const isHuman = k === 1;
-    let hue = isHuman ? 205 : (hue0 + (k - 1) * 137.508) % 360;
-    if (!isHuman && Math.abs(hue - 205) < 28) hue = (hue + 56) % 360; // keep blue for the player
-    const sat = isHuman ? 90 : 62 + ((k * 7) % 3) * 12, lig = isHuman ? 55 : 50 + ((k * 5) % 3) * 6;
-    const col = hsl(hue, sat, lig), dark = col.map(v => Math.round(v * 0.55));
-    players.push({
-      id: k, name: isHuman ? (settings.name.trim() || 'Dig') : names[(k - 2) % names.length],
-      col, dark, css: `rgb(${col})`, troops: START_TROOPS, count: 0, alive: false, isHuman,
-      next: 0, lx: 0, ly: 0, peak: 0, kills: 0, deadAt: 0, spawn: -1,
-      gold: 0, nb: { city: 0, fort: 0, port: 0, silo: 0 }, bought: { city: 0, fort: 0, port: 0, silo: 0, nuke: 0 }, hitBy: new Int32Array(n + 2),
-    });
+  players = [null];
+  for (let k = 1; k <= 4; k++) {
+    const [cx, cy] = CORNERS[k];
+    const base = { x: cx + 0.5, y: cy + 0.5, owner: k, hp: BASE_HP, q: [], prog: 0, base: true };
+    players.push({ id: k, name: k === 1 && !demo ? (settings.name.trim() || 'Dig') : names[k], col: COLORS[k], human: k === 1 && !demo, alive: true,
+      gold: START_GOLD, count: 0, peak: 0, kills: 0, painted: false, base, think: k * 3, mode: 0, place: 0 });
   }
-  human = players[1];
-  adj = new Uint8Array(S * S); atkIdx = new Int32Array(S * S); allyUntil = new Int32Array(S * S);
-  sumX = new Float64Array(S); sumY = new Float64Array(S); bestD = new Float64Array(S); bestI = new Int32Array(S);
+  human = demo ? null : players[1];
 }
 
-function placeSpawn(p, ci) {
-  const pi = prov[ci], Pv = provs[pi];
-  setProv(pi, p.id); Pv.capOf = p.id; Pv.troops = START_GARRISON; Pv.tanks = 0;
-  const [cx, cy] = xy(Pv.town);
-  p.spawn = Pv.town; p.alive = p.count > 0; p.lx = cx; p.ly = cy;
+function setOwn(i, p) {
+  const o = own[i];
+  if (o === p || o < 0) return;
+  if (o > 0) players[o].count--;
+  own[i] = p;
+  if (p > 0) { players[p].count++; players[p].painted = true; }
+  flash[i] = 220; dirty = true;
 }
-function clearSpawn(p) {
-  for (const Pv of provs) if (Pv.owner === p.id) { setProv(Pv.id, 0); Pv.capOf = 0; Pv.troops = Math.round(5 + Pv.size * 0.02 + (Pv.city ? 14 : 0)); }
-  p.count = 0; p.alive = false; p.spawn = -1;
+function canPaint(i, p) {
+  const o = own[i];
+  if (o < 0 || o === p) return false;
+  if (prot[i] && prot[i] !== p) return false;
+  const tc = townCell[i];
+  return !(tc >= 0 && towns[tc].owner > 0 && towns[tc].owner !== p);
 }
-function spawnOk(ci, minD) {
-  if (own[ci] !== 0 || prov[ci] < 0 || provs[prov[ci]].owner !== 0 || islandSize[island[ci]] < 250) return false;
-  const x = ci % W, y = (ci / W) | 0;
-  for (let k = 1; k <= P; k++) {
-    const q = players[k]; if (q.spawn < 0) continue;
-    const dx = q.spawn % W - x, dy = ((q.spawn / W) | 0) - y;
-    if (dx * dx + dy * dy < minD * minD) return false;
+function paintDisc(x, y, r, p) {
+  for (let cy = Math.max(0, Math.floor(y - r)); cy <= Math.min(H - 1, Math.floor(y + r)); cy++)
+    for (let cx = Math.max(0, Math.floor(x - r)); cx <= Math.min(W - 1, Math.floor(x + r)); cx++) {
+      const i = cy * W + cx;
+      if ((cx + 0.5 - x) ** 2 + (cy + 0.5 - y) ** 2 <= r * r && canPaint(i, p)) setOwn(i, p);
+    }
+}
+// paper.io style: whatever your land walls off from the map edge becomes yours
+const fillMark = new Uint8Array(NC), fillQ = new Int32Array(NC);
+function fill(p) {
+  fillMark.fill(0); let h = 0, t = 0;
+  const push = i => { if (!fillMark[i] && own[i] !== p) { fillMark[i] = 1; fillQ[t++] = i; } };
+  for (let x = 0; x < W; x++) { push(x); push((H - 1) * W + x); }
+  for (let y = 0; y < H; y++) { push(y * W); push(y * W + W - 1); }
+  while (h < t) {
+    const i = fillQ[h++], x = i % W;
+    if (x > 0) push(i - 1); if (x < W - 1) push(i + 1); if (i >= W) push(i - W); if (i < NC - W) push(i + W);
   }
-  return true;
+  let got = 0;
+  for (let i = 0; i < NC; i++) if (!fillMark[i] && canPaint(i, p)) { setOwn(i, p); got++; }
+  return got;
 }
-function randomSpawn(p) {
-  let minD = Math.sqrt(landCells / P) * 0.75;
-  for (let tries = 0; tries < 4000; tries++) {
-    const ci = (rng() * NC) | 0;
-    if (spawnOk(ci, minD)) { placeSpawn(p, ci); return; }
-    if (tries % 400 === 399) minD *= 0.8;
+
+function newWorld(demo) {
+  genMap();
+  own.fill(0); prot.fill(0); townCell.fill(-1); flash.fill(0);
+  nOwnable = 0;
+  for (let i = 0; i < NC; i++) { if (terr[i] === 0 || terr[i] === 2) own[i] = -1; else nOwnable++; }
+  towns.forEach((t, k) => {
+    for (let y = Math.floor(t.y - 2); y <= t.y + 2; y++) for (let x = Math.floor(t.x - 2); x <= t.x + 2; x++) {
+      const i = cellOf(x, y); if (i >= 0 && Math.hypot(x + 0.5 - t.x, y + 0.5 - t.y) <= TOWN_R + 0.3) townCell[i] = k;
+    }
+  });
+  makePlayers(demo);
+  for (let k = 1; k <= 4; k++) {
+    const b = players[k].base;
+    for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) if (Math.hypot(x + 0.5 - b.x, y + 0.5 - b.y) <= CORE_R) prot[y * W + x] = k;
+    paintDisc(b.x, b.y, START_R, k);
   }
+  sites = [...players.slice(1).map(p => p.base), ...towns];
+  units = []; shots = []; booms = []; selected.clear(); spawnSite = human ? human.base : null;
+  T = 0; uid = 1; dirty = true;
 }
 
-// ---------- Rules ----------
-const maxTroops = p => p.count * CAP_PER_CELL + CAP_BASE + p.nb.city * CITY_CAP + (p.towns || 0) * TOWN_CAP;
-function density(p) { return p.count ? p.troops / p.count : 0; }
-const allied = (a, b) => a > 0 && b > 0 && allyUntil[a * S + b] > T;
-const peace = () => T < PEACE_TICKS;
-function cellCost(t, i) {
-  let m = terr[i] === 2 ? MOUNTAIN : terr[i] === 3 ? FOREST : 1;
-  if (t > 0 && fortCover[i] === t) m *= FORT_MULT;
-  if (t > 0 && guard && guard[i] === t) m *= GUARD_MULT;
-  return t === 0 ? NEUTRAL_COST * m : (ENEMY_BASE + density(players[t]) * ENEMY_MULT) * m;
-}
-const xy = i => [i % W, (i / W) | 0];
-
-function canAttack(a, t) { return t === 0 || (t > 0 && t !== a && !allied(a, t) && !peace()); }
-
-function costOf(p, key) { const b = BUILDS[key]; return Math.round(b.base * Math.pow(b.grow, p.bought[key])); }
-function buildSpot(p, key, i) {
-  // Snap to a nearby cell of your own that fits (ports need a coast).
-  const [cx, cy] = xy(i);
+// ---------- Paths ----------
+const par = new Int32Array(NC), pseen = new Uint32Array(NC), pq = new Int32Array(NC);
+let pstamp = 0;
+function nearestPass(i) {
+  if (i < 0) return -1;
+  if (gpass(i)) return i;
+  const x0 = i % W, y0 = (i / W) | 0;
   let best = -1, bd = 1e9;
-  for (let y = cy - 7; y <= cy + 7; y++) for (let x = cx - 7; x <= cx + 7; x++) {
-    if (x < 0 || y < 0 || x >= W || y >= H) continue;
-    const j = y * W + x;
-    if (own[j] !== p.id || (BUILDS[key].coast && !coast[j])) continue;
-    const d = (x - cx) ** 2 + (y - cy) ** 2;
-    if (d >= bd) continue;
-    if (buildings.some(b => { const [bx, by] = xy(b.i); return Math.abs(bx - x) < 5 && Math.abs(by - y) < 5; })) continue;
-    best = j; bd = d;
+  for (let dy = -8; dy <= 8; dy++) for (let dx = -8; dx <= 8; dx++) {
+    const x = x0 + dx, y = y0 + dy, d = dx * dx + dy * dy;
+    if (x >= 0 && y >= 0 && x < W && y < H && d < bd && gpass(y * W + x)) { bd = d; best = y * W + x; }
   }
   return best;
 }
-function build(p, key, i) {
-  const cost = costOf(p, key);
-  if (p.gold < cost) return 'Ikke nok guld';
-  if (key === 'nuke') {
-    const silo = buildings.find(b => b.type === 'silo' && b.owner === p.id);
-    if (!silo) return 'Du skal have en raketsilo';
-    if (own[i] < 0) return 'Vælg et mål på land';
-    if (own[i] === p.id) return 'Det er dit eget land';
-    if (own[i] > 0 && allied(p.id, own[i])) return 'I er allierede';
-    p.gold -= cost; p.bought.nuke++;
-    nukes.push({ a: p.id, from: silo.i, to: i, t: 0 });
-    if (own[i] > 0) players[own[i]].hitBy[p.id] = T;
-    return '';
-  }
-  const j = buildSpot(p, key, i);
-  if (j < 0) return 'Ingen plads her';
-  if ((key === 'city' || key === 'fort') && buildings.some(b => b.type === key && prov[b.i] === prov[j])) return 'Provinsen har allerede ' + (key === 'city' ? 'en by' : 'et fort');
-  p.gold -= cost; p.bought[key]++;
-  buildings.push({ type: key, i: j, owner: p.id });
-  fortsDirty = true; flash[j] = 255;
-  return '';
+function los(x0, y0, x1, y1) {
+  const n = Math.ceil(Math.hypot(x1 - x0, y1 - y0) / 0.25);
+  for (let k = 0; k <= n; k++) { const i = cellOf(x0 + (x1 - x0) * k / n, y0 + (y1 - y0) * k / n); if (i < 0 || !gpass(i)) return false; }
+  return true;
 }
-function refreshBuildings() {
-  for (let k = 1; k <= P; k++) { const n = players[k].nb; n.city = n.fort = n.port = n.silo = 0; players[k].towns = 0; }
-  for (const Pv of provs) { Pv.built = Pv.fort = 0; if (Pv.owner > 0 && isTown(Pv)) players[Pv.owner].towns++; }
-  for (const b of buildings) { const Pv = provs[prov[b.i]]; if (Pv && b.type === 'city') Pv.built = 1; if (Pv && b.type === 'fort') Pv.fort = 1; }
-  for (let k = buildings.length - 1; k >= 0; k--) {
-    const b = buildings[k], o = own[b.i];
-    if (o <= 0) { buildings.splice(k, 1); fortsDirty = true; continue; }
-    if (o !== b.owner) { b.owner = o; fortsDirty = true; }   // captured buildings change hands
-    players[o].nb[b.type]++;
-  }
-  if (!fortsDirty) return;
-  fortsDirty = false; fortCover.fill(0);
-  for (const b of buildings) {
-    if (b.type !== 'fort') continue;
-    const [cx, cy] = xy(b.i);
-    for (let y = cy - FORT_R; y <= cy + FORT_R; y++) for (let x = cx - FORT_R; x <= cx + FORT_R; x++) {
-      if (x < 0 || y < 0 || x >= W || y >= H || (x - cx) ** 2 + (y - cy) ** 2 > FORT_R * FORT_R) continue;
-      fortCover[y * W + x] = b.owner;
-    }
-  }
-}
-function explode(N) {
-  const [cx, cy] = xy(N.to), hit = new Set(), R2 = NUKE_R * NUKE_R;
-  // Every province whose town is in the blast falls empty, and armies in it are wiped out.
-  for (const Pv of provs) {
-    const [x, y] = xy(Pv.town);
-    if ((x - cx) ** 2 + (y - cy) ** 2 > R2 || Pv.owner <= 0) continue;
-    const V = players[Pv.owner]; hit.add(V);
-    setProv(Pv.id, 0); Pv.troops = 0; Pv.tanks = 0; Pv.planes = 0; Pv.sieges = [];
-    for (const i of Pv.cells) flash[i] = 255;
-  }
-  for (const m of marches) { const [x, y] = marchPos(m); if ((x - cx) ** 2 + (y - cy) ** 2 <= R2 * 1.3) { m.n *= 0.15; m.k *= 0.15; } }
-  for (let k = buildings.length - 1; k >= 0; k--) { const [bx, by] = xy(buildings[k].i); if ((bx - cx) ** 2 + (by - cy) ** 2 <= R2) buildings.splice(k, 1); }
-  for (const V of hit) V.troops *= 0.75; // the blast also breaks morale everywhere in the country
-  fortsDirty = true;
-  booms.push({ x: cx, y: cy, t: 0 });
-  if (state === 'play') { buzz([40, 30, 80]); toast(players[N.a].name + ' affyrede en atombombe!'); }
-}
-
-// ---------- Armies ----------
-// Troops live in provinces, like on a Risk board, and grow there. You send them from province to province;
-// a march walks town to town, and when it reaches a province that is not yours a battle starts and runs in
-// real time until one side is gone. Tanks hit hard in attack; planes fly out and bomb a province from afar.
-const TANK_ATK = 8, TANK_DEF = 4, TANK_GOLD = 60, PLANE_GOLD = 150, PLANE_RANGE = 70, PLANE_SPEED = 0.7, BOMB_TICKS = 60, BOMB_HIT = 0.05;
-let marches = [], flights = [], selProv = -1, selMarch = null, uidSeq = 0;
-
-function provAt(i) { return i >= 0 && prov ? prov[i] : -1; }
-function defMult(Pv) {
-  // Hills, forest, towns and forts all help whoever holds the province.
-  let m = (1 + Pv.mt * 0.6 + Pv.fo * 0.3) * (Pv.city ? 1.2 : 1) * (Pv.capOf ? 1.3 : 1);
-  if (Pv.fort && Pv.owner > 0) m *= 1.6;
-  return Pv.owner === 0 ? m * 0.8 : m;
-}
-const holdOf = Pv => HOLD + (Pv.city ? HOLD_CITY : 0) + (Pv.capOf ? HOLD_CAP : 0) + (Pv.built ? HOLD_BUILT : 0);
-const growOf = Pv => GROW + (Pv.city ? GROW_CITY : 0) + (Pv.capOf ? GROW_CAP : 0) + (Pv.built ? GROW_BUILT : 0);
-const powerOf = (n, k, atk) => n + k * (atk ? TANK_ATK : TANK_DEF);
-const hostile = (a, o) => o !== a && !(o > 0 && allied(a, o));
-
-// Shortest route over the province map: through your own (or allied) provinces, ending anywhere.
-function route(a, from, to) {
-  if (from === to) return null;
-  const prev = new Int32Array(provs.length).fill(-1), q = [from];
-  prev[from] = from;
-  for (let h = 0; h < q.length; h++) {
-    const c = q[h];
-    if (c === to) break;
-    if (c !== from && hostile(a, provs[c].owner)) continue;   // can't walk on through land you don't hold
-    for (const n of links(provs[c])) if (prev[n] < 0) { prev[n] = c; q.push(n); }
-  }
-  if (prev[to] < 0) return null;
-  const path = [to];
-  for (let c = to; c !== from; c = prev[c]) path.push(prev[c]);
-  return path.reverse();
-}
-function canHit(a, Pv) {
-  const o = Pv.owner;
-  if (o === a) return '';
-  if (o > 0 && allied(a, o)) return 'I er allierede';
-  if (o > 0 && peace()) return 'Fredstid. Du kan angribe om ' + Math.ceil((PEACE_TICKS - T) * DT) + ' s';
-  return '';
-}
-// Send a share of a province's troops (and the same share of its tanks) to another province.
-function sendTroops(a, from, to, share) {
-  const A = provs[from], B = provs[to];
-  if (A.owner !== a) return 'Det er ikke din provins';
-  const err = canHit(a, B); if (err) return err;
-  const n = Math.floor(A.troops * share), k = Math.round(A.tanks * share);
-  if (n < 1 && k < 1) return 'Der er ingen tropper i provinsen';
-  const path = route(a, from, to);
-  if (!path) return 'Der er ingen vej derhen';
-  A.troops -= n; A.tanks -= k;
-  marches.push({ id: ++uidSeq, a, n, k, path, seg: 0, t: 0, pt: 0 });
-  if (B.owner > 0 && B.owner !== a) players[B.owner].hitBy[a] = T;
-  return '';
-}
-function townXY(pi) { return xy(provs[pi].town); }
-function hopLen(m) { const [x0, y0] = townXY(m.path[m.seg]), [x1, y1] = townXY(m.path[m.seg + 1]); return Math.max(1, Math.hypot(x1 - x0, y1 - y0)); }
-const marchSpeed = m => m.k * TANK_ATK > m.n ? MARCH_SPEED * 1.5 : MARCH_SPEED;   // tank columns are faster
-// Give a marching army new orders. It finishes the hop it is on (or turns straight back), then follows the new road.
-function redirect(m, to) {
-  const err = canHit(m.a, provs[to]); if (err) return err;
-  const prev = m.path[m.seg], next = m.path[m.seg + 1];
-  if (to === prev) { m.path = [next, prev]; m.seg = 0; m.t = m.pt = Math.max(0, hopLen({ path: [next, prev], seg: 0 }) - m.t); return ''; }
-  if (to === next) { m.path = m.path.slice(0, m.seg + 2); return ''; }
-  const r = route(m.a, next, to);
-  if (!r) return 'Der er ingen vej derhen';
-  m.path = m.path.slice(0, m.seg + 1).concat(r);
-  return '';
-}
-function marchPos(m, extra = 0) {
-  const [x0, y0] = townXY(m.path[m.seg]), [x1, y1] = townXY(m.path[Math.min(m.path.length - 1, m.seg + 1)]);
-  const f = Math.min(1, (m.t + extra) / hopLen(m));
-  return [x0 + (x1 - x0) * f, y0 + (y1 - y0) * f];
-}
-const isSea = (a, b) => provs[a].sea.includes(b);
-function joinBattle(Pv, a, n, k) {
-  const s = Pv.sieges.find(x => x.a === a);
-  if (s) { s.n += n; s.k += k; } else Pv.sieges.push({ a, n, k });
-}
-function stepMarches() {
-  for (let i = marches.length - 1; i >= 0; i--) {
-    const m = marches[i];
-    if (!players[m.a].alive) { marches.splice(i, 1); continue; }
-    m.pt = m.t;
-    m.t += marchSpeed(m);
-    if (m.t < hopLen(m)) continue;
-    m.seg++; m.t = 0; m.pt = 0;
-    const pi = m.path[m.seg], Pv = provs[pi], last = m.seg >= m.path.length - 1;
-    if (!hostile(m.a, Pv.owner) && !last) continue;      // still on friendly ground: march on
-    marches.splice(i, 1);
-    if (Pv.owner === m.a) { Pv.troops += m.n; Pv.tanks += m.k; continue; }
-    if (!hostile(m.a, Pv.owner) || canHit(m.a, Pv)) {
-      // Can't fight here (ally or truce): fall back to where they came from if it is still ours.
-      const back = provs[m.path[m.seg - 1]];
-      if (back.owner === m.a) { back.troops += m.n; back.tanks += m.k; }
-      continue;
-    }
-    joinBattle(Pv, m.a, m.n, m.k);
-  }
-}
-// Battles: every tick both sides lose men. The defender's terrain, town and fort make each of his men count for more.
-function stepBattles() {
-  for (const Pv of provs) {
-    if (!Pv.sieges.length) continue;
-    for (let j = Pv.sieges.length - 1; j >= 0; j--) {
-      const s = Pv.sieges[j];
-      if (s.a === Pv.owner) { Pv.troops += s.n; Pv.tanks += s.k; Pv.sieges.splice(j, 1); }
-      else if (!hostile(s.a, Pv.owner) || !players[s.a].alive) Pv.sieges.splice(j, 1);
-    }
-    if (!Pv.sieges.length) continue;
-    const m = Math.sqrt(defMult(Pv)), dp = powerOf(Pv.troops, Pv.tanks, false);
-    let ap = 0; for (const s of Pv.sieges) ap += powerOf(s.n, s.k, true);
-    const toDef = Math.max(0.25, ap * BATTLE_RATE / m), toAtk = Math.max(0.25, dp * BATTLE_RATE * m);
-    if (dp > 0) { const f = Math.max(0, 1 - toDef / dp); Pv.troops *= f; Pv.tanks *= f; }
-    for (const s of Pv.sieges) { const sp = powerOf(s.n, s.k, true), f = Math.max(0, 1 - toAtk * sp / ap / sp); s.n *= f; s.k *= f; }
-    if (Pv.owner > 0) for (const s of Pv.sieges) players[Pv.owner].hitBy[s.a] = T;
-    Pv.sieges = Pv.sieges.filter(s => powerOf(s.n, s.k, true) >= 0.5);
-    Pv.fight = T;
-    if (powerOf(Pv.troops, Pv.tanks, false) >= 0.5 || !Pv.sieges.length) continue;
-    // The defenders are gone: the strongest attacker takes the province.
-    let w = Pv.sieges[0]; for (const s of Pv.sieges) if (powerOf(s.n, s.k, true) > powerOf(w.n, w.k, true)) w = s;
-    const o = Pv.owner, A = players[w.a];
-    Pv.sieges.splice(Pv.sieges.indexOf(w), 1);
-    setProv(Pv.id, w.a); Pv.troops = w.n; Pv.tanks = w.k; Pv.planes = 0;
-    for (const i of Pv.cells) flash[i] = 255;
-    if (o > 0 && isTown(Pv)) A.gold += 60;
-    if (state === 'play' && w.a === 1 && o > 0 && isTown(Pv)) toast((Pv.capOf ? '⭐ Du indtog hovedstaden i ' : '🏙️ Du indtog en by fra ') + players[o].name);
-    if (state === 'play' && o === 1 && isTown(Pv)) toast('⚠ ' + A.name + ' har taget ' + (Pv.capOf === 1 ? 'din hovedstad!' : 'en af dine byer'));
-  }
-}
-// Planes take off from a province, fly to a target in range, bomb it for a while and fly home.
-function airStrike(a, from, to) {
-  const A = provs[from], B = provs[to];
-  if (A.owner !== a) return 'Det er ikke din provins';
-  if (A.planes < 1) return 'Der er ingen fly i provinsen';
-  const err = canHit(a, B); if (err) return err;
-  if (B.owner === a) return 'Det er din egen provins';
-  const [x0, y0] = townXY(from), [x1, y1] = townXY(to);
-  if (Math.hypot(x1 - x0, y1 - y0) > PLANE_RANGE) return 'For langt væk for flyene';
-  flights.push({ id: ++uidSeq, a, n: A.planes, from, to, x: x0, y: y0, px: x0, py: y0, mode: 'out', t: 0 });
-  A.planes = 0;
-  if (B.owner > 0) players[B.owner].hitBy[a] = T;
-  return '';
-}
-function stepFlights() {
-  for (let i = flights.length - 1; i >= 0; i--) {
-    const f = flights[i];
-    f.px = f.x; f.py = f.y;
-    const home = provs[f.from];
-    if (f.mode === 'bomb') {
-      const B = provs[f.to];
-      f.x = B.town % W + Math.cos(T * 0.2 + f.id) * 2; f.y = ((B.town / W) | 0) + Math.sin(T * 0.2 + f.id) * 2;
-      if (hostile(f.a, B.owner) && !canHit(f.a, B)) {
-        const hit = f.n * BOMB_HIT;
-        B.troops = Math.max(0, B.troops - hit * 1.5); B.tanks = Math.max(0, B.tanks - hit * 0.08);
-        for (const s of B.sieges) if (hostile(f.a, s.a)) { s.n = Math.max(0, s.n - hit); }
-      }
-      if (++f.t > BOMB_TICKS) f.mode = 'home';
-      continue;
-    }
-    const [tx, ty] = f.mode === 'out' ? townXY(f.to) : townXY(f.from), dx = tx - f.x, dy = ty - f.y, d = Math.hypot(dx, dy);
-    if (d > PLANE_SPEED) { f.x += dx / d * PLANE_SPEED; f.y += dy / d * PLANE_SPEED; continue; }
-    if (f.mode === 'out') { f.mode = 'bomb'; f.t = 0; continue; }
-    flights.splice(i, 1);
-    if (home.owner === f.a) home.planes += f.n;     // if home fell, the planes are lost
-  }
-}
-function buyUnit(p, pi, type) {
-  const Pv = provs[pi];
-  if (!Pv || Pv.owner !== p.id) return 'Vælg en af dine provinser først';
-  const g = type === 'tank' ? TANK_GOLD : PLANE_GOLD;
-  if (p.gold < g) return 'Ikke nok guld';
-  p.gold -= g;
-  if (type === 'tank') Pv.tanks++; else Pv.planes++;
-  return '';
-}
-function growProvinces() {
-  for (const Pv of provs) {
-    const o = Pv.owner;
-    if (o <= 0) continue;
-    const p = players[o], hold = holdOf(Pv);
-    if (Pv.troops < hold) Pv.troops = Math.min(hold, Pv.troops + growOf(Pv) * PACE * (p.isHuman ? 1 : DIFFS[settings.diff].inc) * DT);
-    else Pv.troops -= (Pv.troops - hold) * 0.002;
-  }
-}
-function tallyTroops() {
-  for (let k = 1; k <= P; k++) { const p = players[k]; p.troops = 0; p.hold = 0; p.grow = 0; p.tanks = 0; p.planes = 0; }
-  for (const Pv of provs) {
-    if (Pv.owner <= 0) continue;
-    const p = players[Pv.owner];
-    p.troops += Pv.troops; p.hold += holdOf(Pv); p.grow += Pv.troops < holdOf(Pv) ? growOf(Pv) * PACE : 0; p.tanks += Pv.tanks; p.planes += Pv.planes;
-  }
-  for (const m of marches) { players[m.a].troops += m.n; players[m.a].tanks += m.k; }
-  for (const f of flights) players[f.a].planes += f.n;
-}
-
-// ---------- Bot generals ----------
-function botArmy(p, D) {
-  const mine = provs.filter(Pv => Pv.owner === p.id);
-  if (!mine.length) return;
-  const front = new Set(), dist = new Map(), q = [];
-  for (const Pv of mine) if (links(Pv).some(n => hostile(p.id, provs[n].owner))) { front.add(Pv.id); dist.set(Pv.id, 0); q.push(Pv.id); }
-  for (let h = 0; h < q.length; h++) for (const n of links(provs[q[h]])) if (provs[n].owner === p.id && !dist.has(n)) { dist.set(n, dist.get(q[h]) + 1); q.push(n); }
-  // Interior provinces feed the front.
-  for (const Pv of mine) {
-    if (front.has(Pv.id) || Pv.troops < 10 || Pv.sieges.length) continue;
-    const d = dist.get(Pv.id);
-    const next = links(Pv).find(n => provs[n].owner === p.id && dist.get(n) < d);
-    if (next !== undefined) sendTroops(p.id, Pv.id, next, 0.9);
-  }
-  // Front provinces attack the weakest neighbour they can beat.
-  const ag = [0.7, 1, 1.25][settings.diff] || 1;
-  for (const id of front) {
-    const F = provs[id];
-    if (F.sieges.length) continue;
-    const fp = powerOf(F.troops, F.tanks, true);
-    let best = -1, bs = 0;
-    for (const n of links(F)) {
-      const B = provs[n];
-      if (!hostile(p.id, B.owner) || canHit(p.id, B)) continue;
-      const def = powerOf(B.troops, B.tanks, false) * defMult(B) + 4;
-      const ratio = fp * 0.85 / def;
-      if (ratio < 1.35 / ag) continue;
-      const score = ratio + (B.owner === 0 ? 0.6 : 0) + (B.owner === 1 ? D.humanBias : 0) + (isTown(B) ? 0.4 : 0) + rng() * 0.5;
-      if (score > bs) { bs = score; best = n; }
-    }
-    if (best >= 0 && rng() < 0.7) sendTroops(p.id, id, best, 0.85);
-    // Planes go after the biggest enemy garrison in reach.
-    if (F.planes >= 1 && !peace()) {
-      let tgt = -1, tt = 30;
-      const [fx, fy] = townXY(id);
-      for (const B of provs) {
-        if (B.owner <= 0 || !hostile(p.id, B.owner)) continue;
-        const [bx, by] = townXY(B.id);
-        if (Math.hypot(bx - fx, by - fy) <= PLANE_RANGE && B.troops > tt) { tt = B.troops; tgt = B.id; }
-      }
-      if (tgt >= 0) airStrike(p.id, id, tgt);
-    }
-  }
-}
-
-// ---------- Simulation ----------
-const NB = [0, 0, 0, 0], NBC = [0, 0, 0, 0];
-function scan() {
-  adj.fill(0); atkIdx.fill(-1);
-  for (let k = 0; k < attacks.length; k++) { const A = attacks[k]; A.cand.length = 0; atkIdx[A.a * S + A.t] = k; }
-  sumX.fill(0); sumY.fill(0); bestD.fill(1e18); bestI.fill(-1);
-  for (let y = 0; y < H; y++) {
-    const row = y * W;
-    for (let x = 0; x < W; x++) {
-      const i = row + x, o = own[i];
-      if (o < 0) continue;
-      if (o > 0) {
-        sumX[o] += x; sumY[o] += y;
-        const p = players[o], dx = x - p.lx, dy = y - p.ly, d = dx * dx + dy * dy;
-        if (d < bestD[o]) { bestD[o] = d; bestI[o] = i; }
-      }
-      let n = 0;
-      for (let dir = 0; dir < 4; dir++) {
-        let j;
-        if (dir === 0) { if (x === 0) continue; j = i - 1; }
-        else if (dir === 1) { if (x === W - 1) continue; j = i + 1; }
-        else if (dir === 2) { if (y === 0) continue; j = i - W; }
-        else { if (y === H - 1) continue; j = i + W; }
-        const q = own[j];
-        if (q <= 0 || q === o) continue;
-        let m = 0; while (m < n && NB[m] !== q) m++;
-        if (m === n) { NB[n] = q; NBC[n] = 1; n++; } else NBC[m]++;
-      }
-      for (let m = 0; m < n; m++) {
-        const q = NB[m];
-        adj[q * S + o] = 1;
-        const k = atkIdx[q * S + o];
-        if (k >= 0) attacks[k].cand.push(i * 8 + NBC[m]);
-      }
-    }
-  }
-}
-
-// ---------- Fog of war ----------
-// You see a band around your own (and allied) land and a circle around each of your units. The rest is mist.
-const friend = k => k === 1 || (k > 0 && allied(1, k));
-const seen = i => !vis || i < 0 || i >= NC || vis[i] === 1;
-const seenXY = (x, y) => seen(Math.round(y) * W + Math.round(x));
-function computeVision() {
-  if (!settings.fog || state !== 'play' || !human || !human.alive || watching) { vis = null; return; }
-  if (!vis || vis.length !== NC) { vis = new Uint8Array(NC); visD = new Uint8Array(NC); visQ = new Int32Array(NC); }
-  visD.fill(255);
-  let qh = 0, qt = 0;
-  for (let i = 0; i < NC; i++) if (own[i] > 0 && friend(own[i])) { visD[i] = 0; visQ[qt++] = i; }
-  while (qh < qt) {
-    const c = visQ[qh++], d = visD[c] + 1;
-    if (d > VIS_LAND) continue;
-    const x = c % W, y = (c / W) | 0;
+// Breadth-first search on the grid, then string-pulled into straight legs.
+function findPath(sx, sy, tx, ty) {
+  const s = nearestPass(cellOf(sx, sy)), tc = cellOf(tx, ty), t = nearestPass(tc);
+  if (s < 0 || t < 0) return null;
+  if (t !== tc) { tx = t % W + 0.5; ty = ((t / W) | 0) + 0.5; }
+  if (los(sx, sy, tx, ty)) return [[tx, ty]];
+  pstamp++; let h = 0, e = 0; pq[e++] = s; pseen[s] = pstamp; par[s] = -1;
+  let found = false;
+  while (h < e) {
+    const i = pq[h++];
+    if (i === t) { found = true; break; }
+    const x = i % W, y = (i / W) | 0;
     for (let dy = -1; dy <= 1; dy++) for (let dx = -1; dx <= 1; dx++) {
+      if (!dx && !dy) continue;
       const X = x + dx, Y = y + dy;
       if (X < 0 || Y < 0 || X >= W || Y >= H) continue;
       const j = Y * W + X;
-      if (visD[j] > d) { visD[j] = d; visQ[qt++] = j; }
+      if (pseen[j] === pstamp || !gpass(j)) continue;
+      if (dx && dy && (!gpass(y * W + X) || !gpass(Y * W + x))) continue;
+      pseen[j] = pstamp; par[j] = i; pq[e++] = j;
     }
   }
-  for (let i = 0; i < NC; i++) vis[i] = visD[i] <= VIS_LAND ? 1 : 0;
-  const disc = (cx, cy, R) => {
-    cx = Math.round(cx); cy = Math.round(cy);
-    for (let y = Math.max(0, cy - R); y <= Math.min(H - 1, cy + R); y++) for (let x = Math.max(0, cx - R); x <= Math.min(W - 1, cx + R); x++)
-      if ((x - cx) ** 2 + (y - cy) ** 2 <= R * R) vis[y * W + x] = 1;
-  };
-  for (const m of marches) if (friend(m.a)) { const [x, y] = marchPos(m); disc(x, y, VIS_UNIT); }
-  for (const f of flights) if (friend(f.a)) disc(f.x, f.y, VIS_AIR);
-  dirty = true;
+  if (!found) return null;
+  const cells = [];
+  for (let i = t; i >= 0; i = par[i]) cells.push(i);
+  cells.reverse();
+  const pts = cells.map(i => [i % W + 0.5, ((i / W) | 0) + 0.5]);
+  pts[pts.length - 1] = [tx, ty];
+  const out = [];
+  let ax = sx, ay = sy, k = 0;
+  while (k < pts.length) {
+    let j = k;
+    while (j + 1 < pts.length && los(ax, ay, pts[j + 1][0], pts[j + 1][1])) j++;
+    out.push(pts[j]); ax = pts[j][0]; ay = pts[j][1]; k = j + 1;
+  }
+  return out;
+}
+// Orders: a list of waypoints. Ground troops walk around water and rock between them; planes fly straight.
+function orderPoints(u, pts) {
+  const path = [];
+  let cx = u.x, cy = u.y;
+  for (const [tx0, ty0] of pts) {
+    const tx = Math.max(0.3, Math.min(W - 0.3, tx0)), ty = Math.max(0.3, Math.min(H - 0.3, ty0));
+    let seg;
+    if (u.k.air) seg = [[tx, ty]];
+    else { const i = cellOf(tx, ty); seg = i >= 0 && gpass(i) && los(cx, cy, tx, ty) ? [[tx, ty]] : findPath(cx, cy, tx, ty); }
+    if (!seg) continue;
+    for (const p of seg) path.push(p);
+    cx = path[path.length - 1][0]; cy = path[path.length - 1][1];
+  }
+  u.path = path.length ? path : null; u.pi = 0;
+  return !!u.path;
 }
 
-// Encirclement: free land that only one country touches becomes theirs, and a cut-off pocket of a
-// country that is surrounded by a single enemy surrenders to it.
-let compId = null, compQ = null, mainComp = new Int32Array(0);
-function enclose() {
-  if (!compId || compId.length !== NC) { compId = new Int32Array(NC); compQ = new Int32Array(NC); }
-  compId.fill(-1);
-  const comps = [], biggest = new Int32Array(S);
-  if (mainComp.length !== S) mainComp = new Int32Array(S);
-  mainComp.fill(-1);
-  for (let i = 0; i < NC; i++) {
-    const o = own[i];
-    if (o < 0 || compId[i] >= 0) continue;
-    const id = comps.length; let qh = 0, qt = 0, nb = -1, many = false;
-    compQ[qt++] = i; compId[i] = id;
-    while (qh < qt) {
-      const c = compQ[qh++], x = c % W, y = (c / W) | 0;
-      for (let d = 0; d < 4; d++) {
-        if ((d === 0 && x === 0) || (d === 1 && x === W - 1) || (d === 2 && y === 0) || (d === 3 && y === H - 1)) continue;
-        const j = d === 0 ? c - 1 : d === 1 ? c + 1 : d === 2 ? c - W : c + W, q = own[j];
-        if (q < 0) continue;
-        if (q === o) { if (compId[j] < 0) { compId[j] = id; compQ[qt++] = j; } continue; }
-        if (q === 0) { many = true; continue; }         // touching free land: not sealed
-        if (nb < 0) nb = q; else if (nb !== q) many = true;
+// ---------- Units ----------
+function unitCount(p) { let n = 0; for (const u of units) if (u.p === p.id) n++; for (const s of sites) if (s.owner === p.id) n += s.q.length; return n; }
+function hire(p, type, site) {
+  const k = UNITS[type];
+  if (!p.alive || !site || site.owner !== p.id || (site.base && site.hp <= 0)) return 'site';
+  if (p.gold < k.cost) return 'gold';
+  if (unitCount(p) >= MAX_UNITS) return 'full';
+  if (site.q.length >= QUEUE) return 'queue';
+  p.gold -= k.cost; site.q.push(type);
+  return 'ok';
+}
+function spawnUnit(p, type, site) {
+  const k = UNITS[type];
+  let x = site.x, y = site.y;
+  for (let n = 0; n < 20; n++) {
+    const a = rng() * Math.PI * 2, r = 1.2 + rng() * 1.2, X = site.x + Math.cos(a) * r, Y = site.y + Math.sin(a) * r, i = cellOf(X, Y);
+    if (i >= 0 && (k.air || gpass(i))) { x = X; y = Y; break; }
+  }
+  const u = { id: uid++, p: p.id, type, k, x, y, hp: k.hp, path: null, pi: 0, cool: (rng() * 5) | 0, ax: x, ay: y, dir: -Math.PI / 2, hit: 0, job: null, tgt: null };
+  units.push(u);
+  return u;
+}
+function enemyNear(u, r) {
+  let best = null, bd = r * r;
+  for (const v of units) {
+    if (v.p === u.p || !VS[u.type][v.type]) continue;
+    const d = (v.x - u.x) ** 2 + (v.y - u.y) ** 2;
+    if (d < bd) { bd = d; best = v; }
+  }
+  return best;
+}
+function moveUnit(u) {
+  let sp = u.k.speed * DT;
+  const ci = cellOf(u.x, u.y);
+  if (!u.k.air && ci >= 0 && terr[ci] === 3) sp *= u.type === 'tank' ? 0.55 : 0.7;
+  if (u.path) {
+    const pt = u.path[u.pi], dx = pt[0] - u.x, dy = pt[1] - u.y, d = Math.hypot(dx, dy);
+    if (d > 1e-6) u.dir = Math.atan2(dy, dx);
+    if (d <= sp) { u.x = pt[0]; u.y = pt[1]; if (++u.pi >= u.path.length) { u.path = null; u.ax = u.x; u.ay = u.y; } }
+    else { u.x += dx / d * sp; u.y += dy / d * sp; }
+    return;
+  }
+  // idle: close in on an enemy that wanders near, but never stray far from where you left it
+  const e = enemyNear(u, u.k.range + 3);
+  if (e && Math.hypot(e.x - u.x, e.y - u.y) > u.k.range * 0.85) {
+    const dx = e.x - u.x, dy = e.y - u.y, d = Math.hypot(dx, dy), X = u.x + dx / d * sp, Y = u.y + dy / d * sp, i = cellOf(X, Y);
+    if (i >= 0 && (u.k.air || gpass(i)) && Math.hypot(X - u.ax, Y - u.ay) < 5) { u.x = X; u.y = Y; u.dir = Math.atan2(dy, dx); }
+  } else if (!e && Math.hypot(u.x - u.ax, u.y - u.ay) > 0.5) {
+    const dx = u.ax - u.x, dy = u.ay - u.y, d = Math.hypot(dx, dy), X = u.x + dx / d * sp, Y = u.y + dy / d * sp, i = cellOf(X, Y);
+    if (i >= 0 && (u.k.air || gpass(i))) { u.x = X; u.y = Y; }
+  }
+}
+function separate() {
+  for (let a = 0; a < units.length; a++) for (let b = a + 1; b < units.length; b++) {
+    const A = units[a], B = units[b];
+    if (!!A.k.air !== !!B.k.air) continue;
+    const dx = B.x - A.x, dy = B.y - A.y, d = Math.hypot(dx, dy);
+    if (d >= 0.75 || d < 1e-4) continue;
+    const f = (0.75 - d) * 0.25, nx = dx / d * f, ny = dy / d * f;
+    const ia = cellOf(A.x - nx, A.y - ny), ib = cellOf(B.x + nx, B.y + ny);
+    if (ia >= 0 && (A.k.air || gpass(ia))) { A.x -= nx; A.y -= ny; }
+    if (ib >= 0 && (B.k.air || gpass(ib))) { B.x += nx; B.y += ny; }
+  }
+}
+function damage(v, dmg, by) {
+  const ci = cellOf(v.x, v.y);
+  if (!v.k.air && ci >= 0 && terr[ci] === 3) dmg *= FOREST_COVER;
+  v.hp -= dmg; v.hit = 4;
+  if (v.hp <= 0 && !v.dead) {
+    v.dead = true; booms.push({ x: v.x, y: v.y, t: 0, big: v.type === 'tank' });
+    if (by > 0) players[by].kills++;
+  }
+}
+function shot(x0, y0, x1, y1, p, heavy) { shots.push({ x0, y0, x1, y1, p, heavy, t: 0 }); }
+function combat() {
+  for (const u of units) {
+    const e = enemyNear(u, u.k.range);
+    u.tgt = e;
+    if (e) {
+      damage(e, u.k.dps * VS[u.type][e.type] * DT, u.p);
+      if (u.cool-- <= 0) { u.cool = u.type === 'tank' ? 8 : 4; shot(u.x, u.y, e.x, e.y, u.p, u.type === 'tank'); }
+      continue;
+    }
+    for (let k = 1; k <= 4; k++) {
+      const b = players[k].base;
+      if (k === u.p || b.hp <= 0 || Math.hypot(b.x - u.x, b.y - u.y) > u.k.range + 1.2) continue;
+      b.hp -= u.k.dps * VS_BASE[u.type] * DT; b.hit = 4; b.lastHit = T; u.tgt = b;
+      if (u.cool-- <= 0) { u.cool = u.type === 'tank' ? 8 : 4; shot(u.x, u.y, b.x, b.y, u.p, u.type === 'tank'); }
+      if (b.hp <= 0) eliminate(players[k], u.p);
+      break;
+    }
+  }
+  // HQs and towns shoot back
+  for (const s of sites) {
+    if (!s.owner || (s.base && s.hp <= 0)) continue;
+    const r = s.base ? BASE_RANGE : TOWN_RANGE;
+    let best = null, bd = r * r;
+    for (const v of units) { if (v.p === s.owner) continue; const d = (v.x - s.x) ** 2 + (v.y - s.y) ** 2; if (d < bd) { bd = d; best = v; } }
+    if (!best) continue;
+    damage(best, (s.base ? BASE_DPS : TOWN_DPS) * DT, s.owner);
+    s.cool = (s.cool || 0) - 1;
+    if (s.cool <= 0) { s.cool = 6; shot(s.x, s.y, best.x, best.y, s.owner, s.base); }
+  }
+  for (const u of units) if (u.dead) selected.delete(u);
+  units = units.filter(u => !u.dead);
+}
+function eliminate(p, by) {
+  if (!p.alive) return;
+  p.alive = false; p.base.hp = 0; p.place = players.filter(q => q && q.alive).length + 1;
+  booms.push({ x: p.base.x, y: p.base.y, t: 0, big: true, huge: true });
+  units = units.filter(u => u.p !== p.id);
+  for (const u of [...selected]) if (u.p === p.id) selected.delete(u);
+  for (let i = 0; i < NC; i++) { if (own[i] === p.id) setOwn(i, 0); if (prot[i] === p.id) prot[i] = 0; }
+  for (const t of towns) if (t.owner === p.id) { t.owner = 0; t.q = []; t.prog = 0; }
+  p.base.q = []; p.count = 0;
+  if (state === 'play' && by === 1 && p !== human) toast(p.name + ' er slået ud!');
+}
+function stepTowns() {
+  for (const t of towns) {
+    let who = 0, mixed = false, def = false;
+    for (const u of units) {
+      if (u.k.air || Math.hypot(u.x - t.x, u.y - t.y) > TOWN_R + 0.4) continue;
+      if (u.p === t.owner) def = true;
+      else if (!who) who = u.p; else if (who !== u.p) mixed = true;
+    }
+    if (who && !mixed && !def) {
+      if (t.capBy !== who) { t.capBy = who; t.cap = 0; }
+      if (++t.cap >= (t.owner ? CAP_ENEMY : CAP_NEUTRAL)) {
+        const old = t.owner;
+        if (old) { for (const q of t.q) players[old].gold += UNITS[q].cost; if (spawnSite === t && old === 1) spawnSite = human.base; }
+        t.owner = who; t.cap = 0; t.capBy = 0; t.q = []; t.prog = 0;
+        paintDisc(t.x, t.y, TOWN_PAINT, who);
+        if (state === 'play') { if (who === 1) toast('Du erobrede en by!'); else if (old === 1) toast(players[who].name + ' tog din by'); }
       }
-    }
-    comps.push({ o, size: qt, nb: many ? -1 : nb, start: i });
-    if (o > 0 && qt > biggest[o]) { biggest[o] = qt; mainComp[o] = id; }
+    } else if (t.cap > 0) t.cap = Math.max(0, t.cap - 2);
   }
-  for (let id = 0; id < comps.length; id++) {
-    const c = comps[id];
-    if (c.nb <= 0 || (c.o > 0 && allied(c.o, c.nb))) continue;
-    if (c.o === 0 ? c.size > PROV_CELLS * 2 : c.size >= biggest[c.o] || peace()) continue;
-    const a = c.nb, A = players[a];
-    // Encirclement: the pocket surrenders, its garrisons go over to you and you loot its gold.
-    let men = 0;
-    for (const Pv of provs) {
-      if (compId[Pv.town] !== id) continue;
-      if (c.o > 0) { Pv.troops *= 0.6; Pv.tanks *= 0.6; men += Pv.troops; } else Pv.troops = Math.min(Pv.troops, 5);
-      Pv.sieges = []; setProv(Pv.id, a);
-      for (const i of Pv.cells) flash[i] = 255;
-    }
-    if (c.o > 0) players[c.o].hitBy[a] = T;
-    const gold = Math.round(c.size * (c.o > 0 ? 0.6 : 0.1));
-    A.gold += gold;
-    if (state === 'play' && a === 1 && c.o > 0) {
-      toast('🎯 Omringning! ' + players[c.o].name + ' overgav sig · +' + fmt(gold) + ' guld, +' + fmt(men) + ' fanger');
-      buzz([20, 30, 20]);
-    } else if (state === 'play' && c.o === 1) toast('⚠ En omringet lomme af dit land har overgivet sig til ' + A.name);
-  }
-  for (const Pv of provs) Pv.owner = own[Pv.town];
 }
-function capture(i, a) {
-  const o = own[i];
-  if (o > 0) players[o].count--;
-  own[i] = a; if (a > 0) players[a].count++; flash[i] = 255;
+function stepSites() {
+  for (const s of sites) {
+    if (!s.owner || !s.q.length || (s.base && s.hp <= 0)) continue;
+    s.prog += DT;
+    if (s.prog >= UNITS[s.q[0]].build) {
+      const u = spawnUnit(players[s.owner], s.q.shift(), s); s.prog = 0;
+      if (s.owner === 1 && state === 'play' && !selected.size) selected.add(u);
+    }
+  }
 }
 
+// ---------- Tick ----------
 function step() {
   T++;
-  scan();
-  for (let k = nukes.length - 1; k >= 0; k--) { const N = nukes[k]; if (++N.t >= NUKE_TICKS) { nukes.splice(k, 1); explode(N); } }
-  for (let k = booms.length - 1; k >= 0; k--) if (++booms[k].t > 25) booms.splice(k, 1);
-  stepMarches(); stepBattles(); stepFlights(); growProvinces();
-  if (T % 10 === 0) enclose();
-  if (T % 3 === 0) computeVision();
-  refreshBuildings();
-
-  // Economy, deaths, labels.
-  tallyTroops();
-  let alive = 0;
-  for (let k = 1; k <= P; k++) {
+  for (const u of units) moveUnit(u);
+  separate();
+  for (const u of units) if (u.k.paint) paintDisc(u.x, u.y, u.k.paint, u.p);
+  combat();
+  stepTowns();
+  stepSites();
+  for (let k = 1; k <= 4; k++) {
     const p = players[k];
     if (!p.alive) continue;
-    if (p.count <= 0) { kill(p); continue; }
-    alive++;
-    p.gold += goldRate(p) * DT;
-    p.peak = Math.max(p.peak, p.count / landCells);
-    const cx = sumX[k] / p.count, cy = sumY[k] / p.count, ci = Math.round(cy) * W + Math.round(cx);
-    if (own[ci] === k) { p.lx = cx; p.ly = cy; }
-    else if (bestI[k] >= 0) { p.lx += ((bestI[k] % W) - p.lx) * 0.5; p.ly += (((bestI[k] / W) | 0) - p.ly) * 0.5; }
-    if (!p.isHuman && T >= p.next) botThink(p);
+    if (T % 5 === k % 5 && p.painted) { p.painted = false; fill(p.id); }
+    if (T % 10 === 0) {
+      const nt = towns.reduce((n, t) => n + (t.owner === k), 0);
+      p.gold += (INC_BASE + nt * INC_TOWN + p.count * INC_CELL) * (p.human ? 1 : DIFFS[settings.diff].inc);
+      const b = p.base;
+      if (T - (b.lastHit || -99) > 50) b.hp = Math.min(BASE_HP, b.hp + BASE_REGEN);
+    }
+    p.peak = Math.max(p.peak, p.count / nOwnable);
+    if (!p.human && --p.think <= 0) { p.think = DIFFS[settings.diff].think; botThink(p); }
   }
-  checkEnd(alive);
-  dirty = true;
-}
-const goldRate = p => (GOLD_BASE + p.count * GOLD_PER_CELL + (p.towns || 0) * TOWN_GOLD + p.nb.city * CITY_GOLD) * (p.isHuman ? 1 : DIFFS[settings.diff].inc);
-
-function kill(p) {
-  p.alive = false; p.deadAt = T; p.troops = 0;
-  marches = marches.filter(m => m.a !== p.id); flights = flights.filter(f => f.a !== p.id);
-  // Whoever hit them last gets the credit.
-  let killer = 0, last = -1;
-  for (let k = 1; k <= P; k++) if (k !== p.id && p.hitBy[k] > last && players[k].alive) { last = p.hitBy[k]; killer = k; }
-  if (killer) players[killer].kills++;
-  if (state !== 'play') return;
-  if (p.isHuman) toast('Dit land er faldet');
-  else if (human.alive) toast(p.name + ' er udslettet');
+  for (const u of units) {
+    const ci = cellOf(u.x, u.y);
+    let h = ci >= 0 && own[ci] === u.p ? HEAL : 0;
+    for (const s of sites) if (s.owner === u.p && (s.x - u.x) ** 2 + (s.y - u.y) ** 2 < 6.25) h = HEAL_SITE;
+    if (h && !u.tgt) u.hp = Math.min(u.k.hp, u.hp + h * DT);
+    if (u.hit) u.hit--;
+  }
+  for (const s of shots) s.t += DT;
+  shots = shots.filter(s => s.t < 0.18);
+  for (const b of booms) b.t += DT;
+  booms = booms.filter(b => b.t < (b.huge ? 1.6 : 0.7));
+  if (state === 'play') checkEnd();
 }
 
 // ---------- Bots ----------
-// No enemy to reach over land: only the sea is left.
-function landLocked(p) { for (let k = 1; k <= P; k++) if (k !== p.id && players[k].alive && !allied(p.id, k) && adj[p.id * S + k]) return false; return true; }
 function botThink(p) {
-  const D = DIFFS[settings.diff];
-  p.next = T + Math.round(rr(D.think[0], D.think[1]));
-  botSpend(p, D);
-  botArmy(p, D);
-}
-
-function countOwned() { let n = 0; for (let k = 1; k <= P; k++) n += players[k].count; return n; }
-function botSpend(p, D) {
-  if (rng() > D.build) return;
-  const mine = provs.filter(Pv => Pv.owner === p.id);
-  const front = mine.filter(Pv => links(Pv).some(n => provs[n].owner > 0 && hostile(p.id, provs[n].owner)));
-  const pick = list => list[(rng() * list.length) | 0];
-  // Under attack: a fort where it hurts.
-  const hit = mine.find(Pv => Pv.sieges.length && !Pv.fort);
-  if (hit && p.gold >= costOf(p, 'fort') && rng() < 0.5) { build(p, 'fort', hit.town); return; }
-  if (D.nuke && p.nb.silo && p.gold >= costOf(p, 'nuke') && rng() < 0.25) {
-    let tgt = null;
-    for (const B of provs) if (B.owner > 0 && hostile(p.id, B.owner) && (!tgt || B.troops > tgt.troops)) tgt = B;
-    if (tgt && tgt.troops > 120) build(p, 'nuke', tgt.town);
-    return;
+  const mine = units.filter(u => u.p === p.id);
+  const mySites = sites.filter(s => s.owner === p.id && (!s.base || s.hp > 0));
+  if (unitCount(p) < MAX_UNITS) {
+    const planes = mine.filter(u => u.type === 'plane').length, r = rng();
+    let type = 'inf';
+    if (p.gold >= 160 && planes < 1 && r < 0.25) type = 'plane';
+    else if (p.gold >= 120 && r < 0.6) type = 'tank';
+    if (p.gold >= UNITS[type].cost) {
+      const site = mySites.find(s => !s.q.length) || mySites[0];
+      if (site) hire(p, type, site);
+    }
   }
-  if (D.nuke && !p.nb.silo && p.count > landCells * 0.12 && p.gold >= costOf(p, 'silo') && rng() < 0.25) { build(p, 'silo', pick(mine).town); return; }
-  if (front.length && !peace() && rng() < 0.5) { buyUnit(p, pick(front).id, rng() < 0.3 && p.gold >= PLANE_GOLD + 50 ? 'plane' : 'tank'); return; }
-  if (p.gold >= costOf(p, 'city') && rng() < 0.5) { const c = mine.filter(Pv => !Pv.built); if (c.length) build(p, 'city', pick(c).town); }
-}
-// Bots answer alliance offers from the player.
-function proposeAlliance(a, b) {
-  const A = players[a], B = players[b];
-  if (T - A.hitBy[b] < 200 || T - B.hitBy[a] < 200) return false;     // fresh wounds
-  let bigger = 0; for (let k = 1; k <= P; k++) if (players[k].alive && players[k].count > A.count) bigger++;
-  const ok = A.count < landCells * 0.4 && rng() < (A.count > B.count ? 0.8 : 0.55) - (bigger === 0 ? 0.3 : 0);
-  if (ok) {
-    allyUntil[a * S + b] = allyUntil[b * S + a] = T + ALLY_TICKS;
+  // anyone who comes close to our HQ or towns gets met
+  let threat = null;
+  for (const v of units) if (v.p !== p.id) for (const s of mySites) if ((v.x - s.x) ** 2 + (v.y - s.y) ** 2 < 80) { threat = v; break; }
+  const enemies = players.filter(q => q && q.alive && q !== p);
+  if (T > DIFFS[settings.diff].atk && mine.length >= 4 && p.mode === 0 && rng() < 0.3) { p.mode = 1; p.target = enemies.sort((a, b) => a.base.hp / BASE_HP + a.count / 900 - b.base.hp / BASE_HP - b.count / 900)[0]; }
+  if (p.mode === 1 && (mine.length < 2 || !p.target || !p.target.alive)) p.mode = 0;
+  for (const u of mine) {
+    if (u.tgt) continue;
+    if (threat && u.job !== 'def' && Math.hypot(threat.x - u.x, threat.y - u.y) < 30) { orderPoints(u, [[threat.x, threat.y]]); u.job = 'def'; continue; }
+    if (u.path) continue;
+    u.job = null;
+    if (p.mode === 1 && p.target) {
+      const b = p.target.base;
+      orderPoints(u, [[b.x + rr(-1.5, 1.5), b.y + rr(-1.5, 1.5)]]); u.job = 'atk'; continue;
+    }
+    if (u.k.air) {
+      const e = units.filter(v => v.p !== p.id && v.type !== 'inf').sort((a, b) => Math.hypot(a.x - u.x, a.y - u.y) - Math.hypot(b.x - u.x, b.y - u.y))[0];
+      if (e && Math.hypot(e.x - u.x, e.y - u.y) < 28) orderPoints(u, [[e.x, e.y]]);
+      else orderPoints(u, [[p.base.x + rr(-6, 6), p.base.y + rr(-6, 6)]]);
+      continue;
+    }
+    const goal = towns.filter(t => t.owner !== p.id && !units.some(v => v !== u && v.p === p.id && v.job === t))
+      .map(t => ({ t, d: Math.hypot(t.x - u.x, t.y - u.y) + (t.owner ? 12 : 0) })).sort((a, b) => a.d - b.d)[0];
+    if (goal && goal.d < 34 && rng() < 0.55) { orderPoints(u, [[goal.t.x, goal.t.y]]); u.job = goal.t; continue; }
+    loopOrder(u, p);
   }
-  return ok;
 }
-function breakAlliance(a, b) { allyUntil[a * S + b] = allyUntil[b * S + a] = 0; players[b].hitBy[a] = T; }
+// Walk out of your land, swing sideways and come home: the loop fills in behind you.
+function loopOrder(u, p) {
+  const b = p.base, a0 = Math.atan2(HALF - b.y, HALF - b.x) + rr(-1.3, 1.3);
+  let r0 = 3;
+  while (r0 < 45) { const i = cellOf(b.x + Math.cos(a0) * r0, b.y + Math.sin(a0) * r0); if (i < 0 || (own[i] !== p.id && own[i] >= 0)) break; r0++; }
+  const out = r0 + rr(3, 7), turn = rr(0.35, 0.7) * (rng() < 0.5 ? -1 : 1), back = Math.max(3, r0 - 2);
+  const pt = (a, r) => [b.x + Math.cos(a) * r, b.y + Math.sin(a) * r];
+  orderPoints(u, [pt(a0, out), pt(a0 + turn, out), pt(a0 + turn, back)]);
+}
 
 // ---------- Game flow ----------
 function newGame() {
-  state = 'new';
-  seed = (Date.now() ^ (Math.random() * 1e9)) | 0;
-  genMap(); makePlayers();
-  attacks = []; buildings = []; boats = []; nukes = []; booms = []; marches = []; flights = []; selProv = -1; selMarch = null; T = 0; speed = 1; watching = false; fortsDirty = true; vis = null;
-  for (let k = 2; k <= P; k++) randomSpawn(players[k]);
-  state = 'spawn'; spawnTimer = 15;
-  fitCamera(); closeSheets();
-  show('menu', false); show('over', false); show('pause', false);
-  show('spawnBar', true); show('top', false); show('bottom', false);
-  $('spawnText').innerHTML = 'Tryk på kortet for at vælge, hvor dit land starter';
-  dirty = true;
+  seed = (Date.now() & 0xffffff) | 1;
+  state = 'play'; watching = false; paused = false;
+  newWorld(false);
+  show('menu', false); show('over', false); show('pause', false); show('top', true); show('bottom', true);
+  cam.s = Math.max(Math.min(CW, CH) / 30, 10);
+  cam.x = CW / 2 - (human.base.x + 6) * cam.s; cam.y = CH * 0.42 - (human.base.y - 6) * cam.s; clampCam();
+  $('speed').textContent = speed + '×';
+  toast('Hyr din første trop forneden');
 }
-function startPlay() {
-  if (state !== 'spawn') return;
-  if (!human.alive) randomSpawn(human);
-  state = 'play';
-  selProv = -1;
-  show('spawnBar', false); show('top', true); show('bottom', true);
-  $('speed').textContent = '1×';
-  computeVision();
-  toast('Træk fra din hovedstad til en provins ved siden af for at erobre den');
+function checkEnd() {
+  const alive = players.filter(p => p && p.alive);
+  const lead = alive.reduce((a, b) => (b.count > a.count ? b : a), alive[0]);
+  if (!human.alive) { if (!watching && !$('over').dataset.shown) endScreen(false, alive.length === 1 ? alive[0] : lead); }
+  else if (alive.length === 1) endScreen(true);
+  else if (human.count / nOwnable >= WIN_SHARE) endScreen(true);
+  else if (lead !== human && lead.count / nOwnable >= WIN_SHARE) { human.place = 2; endScreen(false, lead); }
 }
-function checkEnd(alive) {
-  if (state !== 'play') return;
-  let leader = null;
-  for (let k = 1; k <= P; k++) { const p = players[k]; if (p.alive && (!leader || p.count > leader.count)) leader = p; }
-  const won = leader && (alive === 1 || leader.count >= landCells * WIN_SHARE);
-  if (!human.alive && !watching && !$('over').classList.contains('on')) endScreen(false, leader);
-  if (won) { state = 'over'; endScreen(leader === human, leader); }
-}
-function placement() {
-  // Living players rank by size, the fallen by how long they lasted.
-  const list = players.slice(1).sort((a, b) => (b.alive - a.alive) || (b.alive ? b.count - a.count : b.deadAt - a.deadAt));
-  return list.indexOf(human) + 1;
-}
-function endScreen(win, leader) {
-  closeSheets();
-  $('over').classList.add('on');
-  const done = state === 'over';
-  $('overTitle').textContent = win ? 'Sejr!' : (human.alive ? 'Spillet er slut' : 'Besejret');
-  $('overSub').textContent = win ? 'Du har erobret kortet.' : (done ? leader.name + ' vandt kortet.' : 'Dit land blev erobret.');
-  $('stPlace').textContent = placement() + '.';
+function endScreen(win, winner) {
+  if (state !== 'play' || $('over').dataset.shown) return;
+  $('over').dataset.shown = '1';
+  if (win) { human.place = 1; state = 'over'; }
+  $('overTitle').textContent = win ? 'Sejr!' : 'Nederlag';
+  $('overSub').textContent = win ? 'Kortet er dit.' : winner && winner !== human ? (human.alive ? winner.name + ' ejer nu det meste af kortet.' : 'Dit HQ faldt. ' + winner.name + ' fører.') : 'Dit HQ faldt.';
+  $('stPlace').textContent = (human.place || 1) + '.';
   $('stTime').textContent = fmtTime(T);
   $('stPeak').textContent = Math.round(human.peak * 100) + '%';
   $('stKills').textContent = human.kills;
-  $('btnWatch').classList.toggle('hidden', done);
+  show('btnWatch', !win);
   show('over', true);
-  buzz(win ? [30, 60, 30] : 80);
+  if (win) state = 'over';
 }
 
-// ---------- Rendering ----------
-let dirty = true;
-const cam = { s: 1, x: 0, y: 0 };
-const WATER_DEEP = [16, 58, 104], WATER_SHALLOW = [46, 120, 176], GRASS_LO = [196, 214, 158], GRASS_HI = [160, 186, 128], MOUNT = [150, 140, 128];
-function buildImage() {
-  const d = img.data;
-  for (let i = 0, p = 0; i < NC; i++, p += 4) {
-    const o = own[i], sh = shade[i];
-    let r, g, b;
-    if (o < 0) {
-      r = WATER_DEEP[0] + (WATER_SHALLOW[0] - WATER_DEEP[0]) * sh; g = WATER_DEEP[1] + (WATER_SHALLOW[1] - WATER_DEEP[1]) * sh; b = WATER_DEEP[2] + (WATER_SHALLOW[2] - WATER_DEEP[2]) * sh;
-    } else {
-      const x = i % W, y = (i / W) | 0;
-      const edge = (x > 0 && own[i - 1] !== o) || (x < W - 1 && own[i + 1] !== o) || (y > 0 && own[i - W] !== o) || (y < H - 1 && own[i + W] !== o);
-      if (o === 0) {
-        if (terr[i] === 2) { r = MOUNT[0]; g = MOUNT[1]; b = MOUNT[2]; }
-        else if (terr[i] === 3) { r = 120; g = 150; b = 96; }
-        else { r = GRASS_LO[0] + (GRASS_HI[0] - GRASS_LO[0]) * sh; g = GRASS_LO[1] + (GRASS_HI[1] - GRASS_LO[1]) * sh; b = GRASS_LO[2] + (GRASS_HI[2] - GRASS_LO[2]) * sh; }
-        const tex = 0.96 + 0.04 * hash(x, y, 3); r *= tex; g *= tex; b *= tex;
-      } else {
-        const p2 = players[o], c = edge ? p2.dark : p2.col;
-        let m = terr[i] === 2 ? 0.78 : terr[i] === 3 ? 0.85 : 1 - sh * 0.08;
-        if (!edge && fortCover[i] === o && ((x + y) & 3) === 0) m *= 0.86; // hatching inside fort rings
-        r = c[0] * m; g = c[1] * m; b = c[2] * m;
-      }
-      if (vis && !vis[i]) { const gr = (r + g + b) / 3; r = gr * 0.45 + r * 0.2 + 40; g = gr * 0.45 + g * 0.2 + 44; b = gr * 0.45 + b * 0.2 + 50; }
-      const f = flash[i];
-      if (f) { const k = f / 255 * 0.55; r += (255 - r) * k; g += (255 - g) * k; b += (255 - b) * k; flash[i] = f > 45 ? f - 45 : 0; }
-    }
-    d[p] = r; d[p + 1] = g; d[p + 2] = b; d[p + 3] = 255;
-  }
-  offCtx.putImageData(img, 0, 0);
-}
-
-let CW = 0, CH = 0, DPR = 1;
+// ---------- Screen ----------
 function resize() {
   DPR = Math.min(2, devicePixelRatio || 1);
   CW = innerWidth; CH = innerHeight;
   cv.width = Math.round(CW * DPR); cv.height = Math.round(CH * DPR);
-  // Phones draw the map shader at 1× so heavy GPUs never stall; the overlay stays sharp.
   GDPR = matchMedia('(pointer: coarse)').matches ? 1 : Math.min(DPR, 1.5);
   glc.width = Math.round(CW * GDPR); glc.height = Math.round(CH * GDPR);
-  if (W) clampCam();
+  clampCam();
 }
 function fitCamera() {
-  cam.s = Math.min(CW / W, CH / H);
+  cam.s = Math.max(CW / W, CH / H) * 1.02;
   cam.x = (CW - W * cam.s) / 2; cam.y = (CH - H * cam.s) / 2;
 }
 function clampCam() {
-  const minS = Math.min(CW / W, CH / H) * 0.9, maxS = Math.max(CW, CH) / 18;
+  const minS = Math.min(CW / W, CH / H) * 0.95, maxS = 44;
   cam.s = Math.max(minS, Math.min(maxS, cam.s));
   const mw = W * cam.s, mh = H * cam.s;
-  cam.x = mw < CW ? (CW - mw) / 2 : Math.min(CW * 0.3, Math.max(CW * 0.7 - mw, cam.x));
-  cam.y = mh < CH ? (CH - mh) / 2 : Math.min(CH * 0.3, Math.max(CH * 0.7 - mh, cam.y));
+  cam.x = mw < CW ? (CW - mw) / 2 : Math.min(CW * 0.25, Math.max(CW * 0.75 - mw, cam.x));
+  cam.y = mh < CH ? (CH - mh) / 2 : Math.min(CH * 0.25, Math.max(CH * 0.75 - mh, cam.y));
 }
-function fmt(n) {
-  n = Math.max(0, n);
-  if (n < 1000) return String(Math.floor(n));
-  if (n < 1e6) return (n / 1000).toFixed(n < 1e4 ? 1 : 0).replace('.', ',') + 'k';
-  return (n / 1e6).toFixed(1).replace('.', ',') + 'M';
-}
+function fmt(n) { n = Math.max(0, n); return n < 1000 ? String(Math.floor(n)) : (n / 1000).toFixed(1).replace('.', ',') + 'k'; }
 function fmtTime(t) { const s = Math.floor(t * DT); return Math.floor(s / 60) + ':' + String(s % 60).padStart(2, '0'); }
-const sx = x => cam.x + (x + 0.5) * cam.s, sy = y => cam.y + (y + 0.5) * cam.s;
-
+const sx = x => cam.x + x * cam.s, sy = y => cam.y + y * cam.s;
 if (!CanvasRenderingContext2D.prototype.roundRect) CanvasRenderingContext2D.prototype.roundRect = function (x, y, w, h) { this.rect(x, y, w, h); };
-const UI_FONT = '"Barlow Condensed","Arial Narrow",system-ui,sans-serif', DISPLAY_FONT = '"Black Ops One",Impact,system-ui,sans-serif';
-function pill(text, x, y, bg, size) {
-  ctx.font = `700 ${size}px ${UI_FONT}`;
-  const w = ctx.measureText(text).width + size * 0.9, h = size * 1.5;
-  ctx.fillStyle = bg; ctx.beginPath(); ctx.roundRect(x - w / 2, y - h / 2, w, h, h / 2); ctx.fill();
-  ctx.lineWidth = 1.5; ctx.strokeStyle = 'rgba(255,255,255,.85)'; ctx.stroke();
-  ctx.fillStyle = '#fff'; ctx.fillText(text, x, y + 1);
+const UI_FONT = '"Barlow Condensed","Arial Narrow",system-ui,sans-serif';
+
+// what you can see: near your troops, HQ, towns and on your own land
+function seen(x, y) {
+  if (!human || !human.alive || state !== 'play') return true;
+  const ci = cellOf(x, y);
+  if (ci >= 0 && own[ci] === 1) return true;
+  for (const u of units) if (u.p === 1 && (u.x - x) ** 2 + (u.y - y) ** 2 < u.k.sight * u.k.sight) return true;
+  for (const s of sites) if (s.owner === 1 && (s.x - x) ** 2 + (s.y - y) ** 2 < 64) return true;
+  return false;
+}
+
+// Fallback map when WebGL is missing: one pixel per cell, scaled up smoothly.
+const fbCanvas = document.createElement('canvas'); fbCanvas.width = W; fbCanvas.height = H;
+const fbCtx = fbCanvas.getContext('2d'), fbImg = fbCtx.createImageData(W, H);
+const TCOL = [[38, 104, 140], [134, 166, 92], [140, 134, 124], [76, 116, 64], [150, 112, 70], [150, 112, 70]];
+function buildImage() {
+  const d = fbImg.data;
+  for (let i = 0, q = 0; i < NC; i++, q += 4) {
+    let c = TCOL[terr[i]].slice();
+    if (terr[i] === 1) { const s = 0.92 + shade[i] * 0.16; c = c.map(v => v * s); }
+    const o = own[i];
+    if (o > 0) { const pc = players[o].col; c = c.map((v, k) => v * 0.55 + pc[k] * 0.45); }
+    d[q] = c[0]; d[q + 1] = c[1]; d[q + 2] = c[2]; d[q + 3] = 255;
+  }
+  fbCtx.putImageData(fbImg, 0, 0);
 }
 
 function render(now) {
-  if (dirty && W) { if (gl) uploadMap(); else buildImage(); dirty = false; }
+  if (dirty) { if (gl) uploadMap(); else buildImage(); dirty = false; }
   ctx.setTransform(DPR, 0, 0, DPR, 0, 0);
-  if (gl) { ctx.clearRect(0, 0, CW, CH); if (W) renderGL(now); }
-  else { ctx.fillStyle = '#0c2229'; ctx.fillRect(0, 0, CW, CH); }
-  if (!W) return;
-  if (!gl) { ctx.imageSmoothingEnabled = false; ctx.drawImage(off, cam.x, cam.y, W * cam.s, H * cam.s); }
-  ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.lineJoin = 'round';
-  const frac = state === 'play' || state === 'over' || state === 'demo' ? Math.min(1, acc / TICK_MS) : 0;
-
-  // Buildings.
-  const bs = Math.max(11, Math.min(28, cam.s * 3.2));
-  ctx.font = `${bs}px system-ui,sans-serif`;
-  for (const b of buildings) {
-    const [x, y] = xy(b.i), X = sx(x), Y = sy(y);
-    if (X < -30 || Y < -30 || X > CW + 30 || Y > CH + 30 || (!friend(b.owner) && !seen(b.i))) continue;
-    ctx.fillStyle = players[b.owner].css; ctx.beginPath(); ctx.arc(X, Y, bs * 0.72, 0, 7); ctx.fill();
-    ctx.lineWidth = 2; ctx.strokeStyle = '#fff'; ctx.stroke();
-    ctx.fillText(BUILDS[b.type].ic, X, Y + 1);
+  if (gl) { ctx.clearRect(0, 0, CW, CH); renderGL(now); }
+  else {
+    ctx.fillStyle = '#0c2229'; ctx.fillRect(0, 0, CW, CH);
+    ctx.imageSmoothingEnabled = true; ctx.drawImage(fbCanvas, cam.x, cam.y, W * cam.s, H * cam.s);
   }
-
-  drawLanes();
-  drawTowns(now);
-  drawMarches(frac, now);
-
-  // Names and troop counts.
-  for (let k = 1; k <= P; k++) {
-    const p = players[k];
-    if (!p.alive) continue;
-    const size = Math.min(26, Math.sqrt(p.count) * cam.s * 0.16);
-    if (size < 7) continue;
-    const X = sx(p.lx), Y = sy(p.ly);
-    if (X < -100 || Y < -50 || X > CW + 100 || Y > CH + 50) continue;
-    // Country names sit faintly on the map, under the province counters.
-    ctx.globalAlpha = 0.55;
-    ctx.font = `800 ${size}px ${UI_FONT}`;
-    ctx.lineWidth = Math.max(2, size / 4.5); ctx.strokeStyle = 'rgba(20,16,8,.6)';
-    const label = (allied(1, k) && state !== 'demo' ? '🤝 ' : '') + p.name.toUpperCase();
-    ctx.strokeText(label, X, Y + size * 0.9); ctx.fillStyle = p.isHuman && state !== 'demo' ? '#f2cf63' : '#fffaf0'; ctx.fillText(label, X, Y + size * 0.9);
-    ctx.globalAlpha = 1;
+  const t = now / 1000;
+  drawPaths();
+  drawSites(t);
+  drawUnits(t);
+  for (const s of shots) {
+    if (!seen(s.x0, s.y0) && !seen(s.x1, s.y1)) continue;
+    ctx.strokeStyle = s.heavy ? 'rgba(255,214,120,.95)' : 'rgba(255,245,200,.85)'; ctx.lineWidth = s.heavy ? 2.5 : 1.4;
+    ctx.beginPath(); ctx.moveTo(sx(s.x0), sy(s.y0)); ctx.lineTo(sx(s.x1), sy(s.y1)); ctx.stroke();
   }
-
-  // Missiles.
-  for (const N of nukes) {
-    const [x0, y0] = xy(N.from), [x1, y1] = xy(N.to), f = Math.min(1, (N.t + frac) / NUKE_TICKS);
-    const X = sx(x0 + (x1 - x0) * f), Y = sy(y0 + (y1 - y0) * f) - Math.sin(f * Math.PI) * 120;
-    const TX = sx(x1), TY = sy(y1), r = NUKE_R * cam.s, pulse = 0.5 + 0.5 * Math.sin(now / 90);
-    ctx.strokeStyle = `rgba(255,60,60,${0.5 + pulse * 0.5})`; ctx.lineWidth = 2; ctx.setLineDash([6, 5]);
-    ctx.beginPath(); ctx.arc(TX, TY, r, 0, 7); ctx.stroke(); ctx.setLineDash([]);
-    ctx.fillStyle = '#fff'; ctx.beginPath(); ctx.arc(X, Y, 4, 0, 7); ctx.fill();
-    ctx.fillStyle = 'rgba(255,170,60,.7)'; ctx.beginPath(); ctx.arc(X, Y, 7 + pulse * 3, 0, 7); ctx.fill();
+  for (const b of booms) {
+    if (!seen(b.x, b.y)) continue;
+    const f = b.t / (b.huge ? 1.6 : 0.7), r = (b.huge ? 5 : b.big ? 1.6 : 1.1) * cam.s * (0.3 + f);
+    ctx.fillStyle = `rgba(255,${150 + 80 * (1 - f) | 0},60,${0.75 * (1 - f)})`;
+    ctx.beginPath(); ctx.arc(sx(b.x), sy(b.y), r, 0, 7); ctx.fill();
   }
-  for (const B of booms) {
-    const f = (B.t + frac) / 25, r = NUKE_R * cam.s * (0.4 + f * 1.2) * (B.small ? 0.3 : 1);
-    const g = ctx.createRadialGradient(sx(B.x), sy(B.y), 0, sx(B.x), sy(B.y), r);
-    g.addColorStop(0, `rgba(255,255,220,${1 - f})`); g.addColorStop(0.5, `rgba(255,140,40,${0.8 * (1 - f)})`); g.addColorStop(1, 'rgba(255,60,0,0)');
-    ctx.fillStyle = g; ctx.beginPath(); ctx.arc(sx(B.x), sy(B.y), r, 0, 7); ctx.fill();
+  if (route && route.length > 1) {
+    ctx.strokeStyle = 'rgba(255,255,255,.9)'; ctx.lineWidth = 3; ctx.setLineDash([8, 6]); ctx.lineCap = 'round';
+    ctx.beginPath(); route.forEach(([x, y], k) => k ? ctx.lineTo(sx(x), sy(y)) : ctx.moveTo(sx(x), sy(y))); ctx.stroke(); ctx.setLineDash([]);
   }
-
-  if (state === 'spawn') {
-    const pulse = 0.5 + 0.5 * Math.sin(now / 250);
-    for (let k = 1; k <= P; k++) {
-      const p = players[k]; if (p.spawn < 0) continue;
-      const [x, y] = xy(p.spawn);
-      ctx.beginPath(); ctx.arc(sx(x), sy(y), (SPAWN_R + 2 + pulse * 2) * cam.s, 0, 7);
-      ctx.strokeStyle = p.isHuman ? '#ffe066' : 'rgba(255,255,255,.5)'; ctx.lineWidth = p.isHuman ? 3 : 1.5; ctx.stroke();
+}
+function tokenR() { return Math.max(7, Math.min(15, cam.s * 0.55)); }
+function drawPaths() {
+  ctx.lineCap = 'round'; ctx.lineJoin = 'round';
+  for (const u of units) {
+    if (!u.path || (u.p !== 1 && !(human === null || !human.alive)) ) continue;
+    const mine = u.p === 1 && human;
+    ctx.strokeStyle = mine ? (selected.has(u) ? 'rgba(255,236,170,.9)' : 'rgba(255,255,255,.55)') : rgb(players[u.p].col, 0.35);
+    ctx.lineWidth = mine ? 2 : 1.2; ctx.setLineDash([5, 5]);
+    ctx.beginPath(); ctx.moveTo(sx(u.x), sy(u.y));
+    for (let k = u.pi; k < u.path.length; k++) ctx.lineTo(sx(u.path[k][0]), sy(u.path[k][1]));
+    ctx.stroke(); ctx.setLineDash([]);
+    if (mine) { const e = u.path[u.path.length - 1]; ctx.fillStyle = 'rgba(255,236,170,.9)'; ctx.beginPath(); ctx.arc(sx(e[0]), sy(e[1]), 3.5, 0, 7); ctx.fill(); }
+  }
+}
+function drawSites(t) {
+  const z = Math.max(0.7, Math.min(1.6, cam.s / 12));
+  for (const s of sites) {
+    const X = sx(s.x), Y = sy(s.y);
+    if (X < -60 || Y < -60 || X > CW + 60 || Y > CH + 60) continue;
+    const col = s.owner ? players[s.owner].col : [214, 206, 182];
+    if (s.base) {
+      const dead = s.hp <= 0, r = 15 * z;
+      // star fort
+      ctx.beginPath();
+      for (let k = 0; k < 10; k++) { const a = -Math.PI / 2 + k * Math.PI / 5, rr2 = k % 2 ? r * 0.62 : r; ctx.lineTo(X + Math.cos(a) * rr2, Y + Math.sin(a) * rr2); }
+      ctx.closePath(); ctx.fillStyle = dead ? '#5b5650' : rgb(col); ctx.fill();
+      ctx.lineWidth = 2.5; ctx.strokeStyle = s.hit ? '#fff' : 'rgba(20,16,10,.85)'; ctx.stroke();
+      if (s.hit) s.hit--;
+      ctx.fillStyle = '#fff'; ctx.font = `800 ${11 * z}px ${UI_FONT}`; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+      ctx.fillText(dead ? '✕' : 'HQ', X, Y + 1);
+      if (!dead) hpBar(X, Y - r - 6, 30 * z, s.hp / BASE_HP);
+      if (state === 'demo' || !dead) { ctx.font = `700 ${12 * z}px ${UI_FONT}`; ctx.fillStyle = 'rgba(255,255,255,.9)'; ctx.strokeStyle = 'rgba(0,0,0,.6)'; ctx.lineWidth = 3; ctx.strokeText(players[s.owner].name, X, Y + r + 9); ctx.fillText(players[s.owner].name, X, Y + r + 9); }
+    } else {
+      const r = 9 * z;
+      ctx.beginPath(); ctx.arc(X, Y, r, 0, 7); ctx.fillStyle = rgb(col); ctx.fill();
+      ctx.lineWidth = 2; ctx.strokeStyle = 'rgba(20,16,10,.8)'; ctx.stroke();
+      // little house
+      ctx.fillStyle = s.owner ? '#fff' : '#5a4f3a';
+      ctx.beginPath(); ctx.moveTo(X - r * 0.5, Y + r * 0.45); ctx.lineTo(X - r * 0.5, Y - r * 0.05); ctx.lineTo(X, Y - r * 0.55); ctx.lineTo(X + r * 0.5, Y - r * 0.05); ctx.lineTo(X + r * 0.5, Y + r * 0.45); ctx.closePath(); ctx.fill();
+      if (s.cap > 0) {
+        ctx.strokeStyle = rgb(players[s.capBy].col); ctx.lineWidth = 3.5;
+        ctx.beginPath(); ctx.arc(X, Y, r + 4, -Math.PI / 2, -Math.PI / 2 + Math.PI * 2 * s.cap / (s.owner ? CAP_ENEMY : CAP_NEUTRAL)); ctx.stroke();
+      }
     }
+    if (s.q.length && (s.owner === 1 || !human)) {
+      const r = (s.base ? 19 : 13) * z;
+      ctx.strokeStyle = '#f2cf63'; ctx.lineWidth = 3;
+      ctx.beginPath(); ctx.arc(X, Y, r, -Math.PI / 2, -Math.PI / 2 + Math.PI * 2 * s.prog / UNITS[s.q[0]].build); ctx.stroke();
+      if (s.q.length > 1) { ctx.fillStyle = '#f2cf63'; ctx.font = `800 ${11 * z}px ${UI_FONT}`; ctx.fillText('+' + (s.q.length - 1), X + r, Y - r); }
+    }
+    if (s === spawnSite && state === 'play' && human && human.alive) {
+      ctx.strokeStyle = 'rgba(242,207,99,' + (0.6 + 0.4 * Math.sin(t * 4)) + ')'; ctx.lineWidth = 2; ctx.setLineDash([4, 4]);
+      ctx.beginPath(); ctx.arc(X, Y, (s.base ? 24 : 17) * z, 0, 7); ctx.stroke(); ctx.setLineDash([]);
+    }
+  }
+}
+function hpBar(X, Y, w, f) {
+  f = Math.max(0, Math.min(1, f));
+  ctx.fillStyle = 'rgba(0,0,0,.6)'; ctx.fillRect(X - w / 2 - 1, Y - 1, w + 2, 5);
+  ctx.fillStyle = f > 0.6 ? '#8bd17c' : f > 0.3 ? '#e9b949' : '#f0705f'; ctx.fillRect(X - w / 2, Y, w * f, 3);
+}
+function drawUnits(t) {
+  const r = tokenR(), w = r * 2.3, h = r * 1.6;
+  for (const pass of [0, 1]) for (const u of units) {
+    if (!!u.k.air !== !!pass) continue;
+    if (u.p !== 1 && !seen(u.x, u.y)) continue;
+    let X = sx(u.x), Y = sy(u.y);
+    if (X < -40 || Y < -40 || X > CW + 40 || Y > CH + 40) continue;
+    const col = players[u.p].col;
+    if (u.k.air) {
+      ctx.fillStyle = 'rgba(0,0,0,.25)'; ctx.beginPath(); ctx.ellipse(X, Y + 4, w * 0.4, h * 0.3, 0, 0, 7); ctx.fill();
+      Y -= r * 1.4 + Math.sin(t * 3 + u.id) * 1.5;
+    }
+    if (selected.has(u)) {
+      ctx.strokeStyle = `rgba(255,236,150,${0.7 + 0.3 * Math.sin(t * 6)})`; ctx.lineWidth = 3;
+      ctx.beginPath(); ctx.roundRect(X - w / 2 - 4, Y - h / 2 - 4, w + 8, h + 8, 6); ctx.stroke();
+    }
+    ctx.fillStyle = rgb(col);
+    ctx.beginPath(); ctx.roundRect(X - w / 2, Y - h / 2, w, h, 3); ctx.fill();
+    ctx.lineWidth = u.hit ? 2.5 : 1.5; ctx.strokeStyle = u.hit ? '#ffe39a' : 'rgba(15,12,8,.9)'; ctx.stroke();
+    // NATO-style glyph
+    ctx.strokeStyle = '#fff'; ctx.lineWidth = Math.max(1.3, r * 0.16);
+    const gx = w / 2 - 2, gy = h / 2 - 2;
+    ctx.beginPath();
+    if (u.type === 'inf') { ctx.moveTo(X - gx, Y - gy); ctx.lineTo(X + gx, Y + gy); ctx.moveTo(X + gx, Y - gy); ctx.lineTo(X - gx, Y + gy); }
+    else if (u.type === 'tank') ctx.ellipse(X, Y, gx * 0.65, gy * 0.55, 0, 0, 7);
+    else { ctx.ellipse(X - gx * 0.32, Y, gx * 0.32, gy * 0.45, 0, 0, 7); ctx.moveTo(X + gx * 0.64, Y); ctx.ellipse(X + gx * 0.32, Y, gx * 0.32, gy * 0.45, 0, 0, 7); }
+    ctx.stroke();
+    if (u.hp < u.k.hp) hpBar(X, Y + h / 2 + 3, w, u.hp / u.k.hp);
   }
 }
 
 // ---------- WebGL map ----------
-// The map is drawn by a shader that blends each pixel's 3×3 neighbouring cells with a smooth kernel,
-// so every border and coastline comes out as a soft curve instead of a staircase of pixels.
-const glc = $('gl');
-let gl = null, glU = {}, glMap = null, glPal = null, mapBytes = null, glW = 0, glH = 0, GDPR = 1;
-const palBytes = new Uint8Array(256 * 4);
+let gl = null, glU = {}, glMap = null, mapBytes = new Uint8Array(NC * 4);
 const GL_VS = 'attribute vec2 a;void main(){gl_Position=vec4(a,0.,1.);}';
 const GL_FS = `#extension GL_OES_standard_derivatives : enable
 precision highp float;
-uniform sampler2D uMap; uniform sampler2D uPal; uniform sampler2D uProv;
-uniform vec2 uSize; uniform vec3 uCam; uniform vec2 uView; uniform float uTime;
+uniform sampler2D uMap; uniform vec2 uSize; uniform vec3 uCam; uniform vec2 uView; uniform float uTime;
+uniform vec3 uC1; uniform vec3 uC2; uniform vec3 uC3; uniform vec3 uC4;
 float hsh(vec2 q){ return fract(sin(dot(q, vec2(127.1, 311.7))) * 43758.5453); }
 float vn(vec2 q){ vec2 i = floor(q), f = fract(q); f = f * f * (3.0 - 2.0 * f);
   return mix(mix(hsh(i), hsh(i + vec2(1.0, 0.0)), f.x), mix(hsh(i + vec2(0.0, 1.0)), hsh(i + vec2(1.0, 1.0)), f.x), f.y); }
@@ -1320,125 +937,82 @@ vec4 cellAt(vec2 c){ c = clamp(c, vec2(0.0), uSize - 1.0); return texture2D(uMap
 void main(){
   vec2 sp = vec2(gl_FragCoord.x, uView.y - gl_FragCoord.y);
   vec2 p = (sp - uCam.xy) / uCam.z;
-  // Cubic B-spline over a 4x4 block of cells: wide enough that stair steps melt into round curves.
-  vec2 q0 = p - 0.5, c = floor(q0), f = q0 - c, f2 = f * f, f3 = f2 * f;
-  vec4 wx = vec4((1.0 - f.x) * (1.0 - f.x) * (1.0 - f.x), 3.0 * f3.x - 6.0 * f2.x + 4.0, -3.0 * f3.x + 3.0 * f2.x + 3.0 * f.x + 1.0, f3.x) / 6.0;
-  vec4 wy = vec4((1.0 - f.y) * (1.0 - f.y) * (1.0 - f.y), 3.0 * f3.y - 6.0 * f2.y + 4.0, -3.0 * f3.y + 3.0 * f2.y + 3.0 * f.y + 1.0, f3.y) / 6.0;
-  float id[16]; float w[16]; float g[16]; float fl[16]; float mt[16]; float ft[16]; float fo[16]; float vi[16];
-  for (int j = 0; j < 4; j++) for (int i = 0; i < 4; i++) {
-    vec4 m = cellAt(c + vec2(float(i - 1), float(j - 1)));
-    id[j * 4 + i] = floor(m.r * 255.0 + 0.5);
-    w[j * 4 + i] = wx[i] * wy[j];
-    g[j * 4 + i] = m.g;
-    float bb = floor(m.b * 255.0 + 0.5);
-    vi[j * 4 + i] = bb >= 127.5 ? 1.0 : 0.0;
-    fl[j * 4 + i] = (bb - vi[j * 4 + i] * 128.0) / 127.0;
-    float a = floor(m.a * 255.0 + 0.5), tt = floor((a + 0.5) / 60.0);
-    mt[j * 4 + i] = tt == 2.0 ? 1.0 : 0.0;
-    fo[j * 4 + i] = tt == 3.0 ? 1.0 : 0.0;
-    ft[j * 4 + i] = mod(a, 60.0) >= 29.0 ? 1.0 : 0.0;
+  if (p.x < 0.0 || p.y < 0.0 || p.x > uSize.x || p.y > uSize.y) { gl_FragColor = vec4(0.047, 0.133, 0.16, 1.0); return; }
+  // quadratic B-spline over the 3x3 cells around the pixel: cheap, and enough to round off every stair step
+  vec2 pc = floor(p), t = p - pc - 0.5;
+  vec3 qx = vec3(0.5 * (0.5 - t.x) * (0.5 - t.x), 0.75 - t.x * t.x, 0.5 * (0.5 + t.x) * (0.5 + t.x));
+  vec3 qy = vec3(0.5 * (0.5 - t.y) * (0.5 - t.y), 0.75 - t.y * t.y, 0.5 * (0.5 + t.y) * (0.5 + t.y));
+  vec4 so = vec4(0.0);
+  float wat = 0.0, rok = 0.0, fst = 0.0, bh = 0.0, bv = 0.0, shd = 0.0, fl = 0.0;
+  for (int j = 0; j < 3; j++) for (int i = 0; i < 3; i++) {
+    vec4 m = cellAt(pc + vec2(float(i - 1), float(j - 1)));
+    float w = qx[i] * qy[j];
+    float o = floor(m.r * 255.0 + 0.5), tt = floor(m.g * 255.0 + 0.5);
+    so += w * vec4(equal(vec4(o), vec4(1.0, 2.0, 3.0, 4.0)));
+    wat += w * float(tt < 0.5); rok += w * float(abs(tt - 2.0) < 0.5); fst += w * float(abs(tt - 3.0) < 0.5);
+    bh += w * float(abs(tt - 4.0) < 0.5); bv += w * float(abs(tt - 5.0) < 0.5);
+    shd += w * m.a; fl += w * m.b;
   }
-  float best = 0.0, bw = -1.0;
-  float sum[16];
-  for (int k = 0; k < 16; k++) {
-    float a = 0.0;
-    for (int l = 0; l < 16; l++) if (id[l] == id[k]) a += w[l];
-    sum[k] = a;
-    if (a > bw) { bw = a; best = id[k]; }
+  // which owner wins this pixel, and by how much over the runner-up
+  float best = 1.0 - so.x - so.y - so.z - so.w, sec = -1.0, bid = 0.0, sid = 0.0;
+  vec3 bc = vec3(0.0), sc = vec3(0.0);
+  if (so.x > best) { sec = best; sid = bid; sc = bc; best = so.x; bid = 1.0; bc = uC1; } else if (so.x > sec) { sec = so.x; sid = 1.0; sc = uC1; }
+  if (so.y > best) { sec = best; sid = bid; sc = bc; best = so.y; bid = 2.0; bc = uC2; } else if (so.y > sec) { sec = so.y; sid = 2.0; sc = uC2; }
+  if (so.z > best) { sec = best; sid = bid; sc = bc; best = so.z; bid = 3.0; bc = uC3; } else if (so.z > sec) { sec = so.z; sid = 3.0; sc = uC3; }
+  if (so.w > best) { sec = best; sid = bid; sc = bc; best = so.w; bid = 4.0; bc = uC4; } else if (so.w > sec) { sec = so.w; sid = 4.0; sc = uC4; }
+  float d = best - sec, e = d / max(fwidth(d), 1e-4);
+  // land
+  vec3 col = mix(vec3(0.58, 0.68, 0.38), vec3(0.47, 0.60, 0.32), shd);
+  col *= 0.96 + 0.08 * vn(p * 1.7);
+  float fa = smoothstep(0.3, 0.62, fst);
+  col = mix(col, vec3(0.30, 0.46, 0.26), fa);
+  if (fa > 0.01) {
+    vec2 q = p * 1.25, ci = floor(q);
+    float h1 = hsh(ci), h2 = hsh(ci + 7.3);
+    vec2 r = fract(q) - 0.5 - (vec2(h1, h2) - 0.5) * 0.35;
+    r.x += sin(uTime * 1.6 + h1 * 6.28) * 0.03;
+    float tree = smoothstep(0.36, 0.26, length(r)) * step(0.15, h1) * fa;
+    float hl = smoothstep(0.28, 0.0, length(r + vec2(0.09, 0.11)));
+    col = mix(col, vec3(0.20, 0.36, 0.20) * (0.85 + 0.35 * hl), tree);
   }
-  float sw = 0.0, sec = best;
-  for (int k = 0; k < 16; k++) if (id[k] != best && sum[k] > sw) { sw = sum[k]; sec = id[k]; }
-  float shd = 0.0, fla = 0.0, mnt = 0.0, frt = 0.0, fst = 0.0, vis = 0.0;
-  for (int k = 0; k < 16; k++) {
-    shd += w[k] * g[k]; vis += w[k] * vi[k];
-    if (id[k] == best) { fla += w[k] * fl[k]; mnt += w[k] * mt[k]; frt += w[k] * ft[k]; fst += w[k] * fo[k]; }
+  float ra = smoothstep(0.3, 0.6, rok);
+  if (ra > 0.01) {
+    float ridge = smoothstep(0.75, 1.0, sin((p.x * 0.7 - p.y * 1.1) * 3.0 + vn(p * 0.8) * 3.0) * 0.5 + 0.5);
+    vec3 rock = vec3(0.60, 0.57, 0.52) * (0.9 + 0.2 * vn(p * 2.3)) - 0.08 * ridge;
+    col = mix(col, rock, ra);
+    float rl = 1.0 - smoothstep(0.6, 1.6, abs(rok - 0.45) / max(fwidth(rok), 1e-4));
+    col = mix(col, vec3(0.30, 0.28, 0.25), rl * 0.6);
   }
-  mnt /= bw; frt /= bw; fla /= bw; fst /= bw;
-  float d = bw - sw;
-  float e = d / max(fwidth(d), 1e-4);   // roughly: pixels to the nearest border
-  vec3 col;
-  if (best < 0.5) {
-    col = mix(vec3(0.07, 0.25, 0.31), vec3(0.12, 0.40, 0.44), smoothstep(0.2, 1.0, shd));
-    float wv = sin(p.x * 0.45 + p.y * 0.18 + uTime * 0.9) * sin(p.y * 0.37 - p.x * 0.12 - uTime * 0.7);
-    col += 0.022 * wv;
-    if (sec > 0.5) {
-      col = mix(col, vec3(0.42, 0.72, 0.70), 0.45 * (1.0 - smoothstep(0.0, 0.45, d)));
-      col = mix(col, vec3(0.93, 0.96, 0.90), (1.0 - smoothstep(0.6, 2.2, e)) * 0.85);
-    }
-  } else {
-    vec3 base;
-    if (best < 1.5) base = mix(vec3(0.90, 0.85, 0.68), vec3(0.76, 0.75, 0.55), shd);
-    else base = texture2D(uPal, vec2((best + 0.5) / 256.0, 0.5)).rgb;
-    if (mnt > 0.01) {
-      // mountains: a gentle shade plus fine contour ridges, like relief on a printed map
-      vec3 rock = best < 1.5 ? vec3(0.74, 0.68, 0.56) : base * 0.9;
-      float ridge = smoothstep(0.82, 1.0, sin((p.x * 0.55 - p.y * 0.9) * 3.0) * 0.5 + 0.5);
-      base = mix(base, rock * (1.0 - 0.07 * ridge), smoothstep(0.25, 0.65, mnt));
-    }
-    if (fst > 0.05) {
-      // forest: undergrowth tint plus little swaying tree crowns once you zoom in
-      float fa = smoothstep(0.25, 0.7, fst);
-      base = mix(base, best < 1.5 ? vec3(0.60, 0.69, 0.47) : base * 0.9, fa);
-      vec2 q = p * 1.15, ci = floor(q);
-      float h1 = hsh(ci), h2 = hsh(ci + 7.3);
-      vec2 r = fract(q) - 0.5 - (vec2(h1, h2) - 0.5) * 0.35;
-      r.x += sin(uTime * 1.6 + h1 * 6.28) * 0.035;
-      float tree = smoothstep(0.37, 0.27, length(r)) * step(0.2, h1) * smoothstep(1.4, 3.0, uCam.z) * fa;
-      float hl = smoothstep(0.28, 0.0, length(r + vec2(0.09, 0.11)));
-      vec3 canopy = best < 1.5 ? vec3(0.30, 0.47, 0.27) : base * 0.68;
-      base = mix(base, canopy * (0.88 + 0.3 * hl), tree);
-    }
-    if (frt > 0.5) base *= 0.9 + 0.1 * step(0.5, fract((p.x + p.y) * 0.5));
-    col = base;
-    if (best > 1.5) {
-      float inner = smoothstep(1.6, 3.0, e) * (1.0 - smoothstep(3.5, 7.0, e));
-      col = mix(col, min(vec3(1.0), col * 1.18 + 0.05), inner * 0.55);
-    }
-    // province borders: fine lines inside countries and across free land (only once zoomed in a little)
-    if (uCam.z > 1.1) {
-      vec2 pc = floor(p); vec2 pt = p - pc - 0.5;
-      vec3 qx = vec3(0.5*(0.5-pt.x)*(0.5-pt.x), 0.75 - pt.x*pt.x, 0.5*(0.5+pt.x)*(0.5+pt.x));
-      vec3 qy = vec3(0.5*(0.5-pt.y)*(0.5-pt.y), 0.75 - pt.y*pt.y, 0.5*(0.5+pt.y)*(0.5+pt.y));
-      float pid[9]; float pw[9];
-      for (int j = 0; j < 3; j++) for (int i = 0; i < 3; i++) {
-        vec4 m = texture2D(uProv, (clamp(pc + vec2(float(i - 1), float(j - 1)), vec2(0.0), uSize - 1.0) + 0.5) / uSize);
-        pid[j * 3 + i] = floor(m.r * 255.0 + 0.5) + 256.0 * floor(m.g * 255.0 + 0.5);
-        pw[j * 3 + i] = qx[i] * qy[j];
-      }
-      float pbw = -1.0, pb = 0.0, psw = 0.0;
-      float ps[9];
-      for (int k = 0; k < 9; k++) {
-        float a = 0.0;
-        for (int l = 0; l < 9; l++) if (pid[l] == pid[k]) a += pw[l];
-        ps[k] = a;
-        if (a > pbw) { pbw = a; pb = pid[k]; }
-      }
-      for (int k = 0; k < 9; k++) if (pid[k] != pb && pid[k] > 0.5 && ps[k] > psw) psw = ps[k];
-      if (psw > 0.0 && pb > 0.5) {
-        float pd = pbw - psw, pe = pd / max(fwidth(pd), 1e-4);
-        float pl = (1.0 - smoothstep(0.35, 1.1, pe)) * smoothstep(1.5, 3.0, e) * smoothstep(0.8, 1.6, uCam.z);
-        col = mix(col, col * 0.55, pl * 0.6);
-      }
-    }
-    float line = 1.0 - smoothstep(0.7, 1.9, e);
-    vec3 ink = best > 1.5 ? base * 0.42 : vec3(0.40, 0.36, 0.26);
-    if (sec < 0.5) ink = vec3(0.10, 0.17, 0.16);
-    if (best > 1.5 || sec < 0.5) col = mix(col, ink, line);
-    col = mix(col, vec3(1.0), fla * 0.6);
+  // territory: a wash of the owner's colour, a lighter band just inside the border, then an inked border line
+  if (bid > 0.5) {
+    col = mix(col, bc, 0.42);
+    float inner = smoothstep(1.4, 2.6, e) * (1.0 - smoothstep(3.0, 7.0, e));
+    col = mix(col, min(vec3(1.0), bc * 1.25 + 0.08), inner * 0.45);
   }
-  // drifting cloud shadows
-  float cl = vn(p * 0.035 + vec2(uTime * 0.025, uTime * 0.01)) * 0.6 + vn(p * 0.08 - vec2(uTime * 0.018, -uTime * 0.012)) * 0.4;
-  col *= 1.0 - smoothstep(0.58, 0.85, cl) * 0.16;
-  // fog of war: what your borders and armies can't see is greyed out under a slow mist
-  float fog = 1.0 - smoothstep(0.15, 0.85, vis);
-  if (fog > 0.0) {
-    float mist = vn(p * 0.07 + vec2(uTime * 0.04, uTime * 0.02));
-    vec3 grey = vec3(dot(col, vec3(0.3, 0.55, 0.15))) * vec3(0.62, 0.68, 0.72) + mist * 0.07;
-    col = mix(col, grey, fog * 0.62);
+  if (bid > 0.5 || sid > 0.5) {
+    vec3 ink = bid > 0.5 ? bc * 0.45 : sc * 0.45;
+    col = mix(col, ink, 1.0 - smoothstep(0.6, 1.8, e));
   }
+  // bridges: planks laid across the way you walk
+  float bw = bh + bv;
+  if (bw > 0.05) {
+    float pl = bh > bv ? fract(p.x * 2.5) : fract(p.y * 2.5);
+    vec3 wood = vec3(0.55, 0.40, 0.24) * (0.85 + 0.2 * step(0.18, pl));
+    col = mix(col, wood, smoothstep(0.3, 0.5, bw));
+  }
+  // water with a soft shore line
+  float ew = (wat - 0.5) / max(fwidth(wat), 1e-4);
+  vec3 sea = mix(vec3(0.20, 0.50, 0.62), vec3(0.11, 0.33, 0.47), smoothstep(0.5, 1.0, wat));
+  float wv = sin(p.x * 0.9 + p.y * 0.4 + uTime * 1.1) * sin(p.y * 0.8 - p.x * 0.3 - uTime * 0.8);
+  sea += 0.03 * wv;
+  float wl = smoothstep(-0.8, 0.8, ew) * (1.0 - smoothstep(0.3, 0.5, bw));
+  col = mix(col, sea, wl);
+  col = mix(col, vec3(0.88, 0.92, 0.84), (1.0 - smoothstep(0.4, 1.6, abs(ew))) * 0.7 * (1.0 - smoothstep(0.3, 0.5, bw)));
+  col = mix(col, vec3(1.0), fl * 0.5);
+  float cl = vn(p * 0.05 + vec2(uTime * 0.03, uTime * 0.012));
+  col *= 1.0 - smoothstep(0.62, 0.9, cl) * 0.12;
   gl_FragColor = vec4(col, 1.0);
 }`;
-// If the phone's GPU gives up (context lost), fall back to the plain canvas map instead of a black screen.
 glc.addEventListener('webglcontextlost', e => { e.preventDefault(); gl = null; glc.style.display = 'none'; dirty = true; });
 function initGL() {
   try { gl = glc.getContext('webgl', { antialias: false, alpha: false }); } catch (e) { gl = null; }
@@ -1452,41 +1026,24 @@ function initGL() {
     const buf = gl.createBuffer(); gl.bindBuffer(gl.ARRAY_BUFFER, buf);
     gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([-1, -1, 1, -1, -1, 1, 1, 1]), gl.STATIC_DRAW);
     const a = gl.getAttribLocation(prog, 'a'); gl.enableVertexAttribArray(a); gl.vertexAttribPointer(a, 2, gl.FLOAT, false, 0, 0);
-    for (const n of ['uMap', 'uPal', 'uProv', 'uSize', 'uCam', 'uView', 'uTime']) glU[n] = gl.getUniformLocation(prog, n);
-    const mk = unit => {
-      const tx = gl.createTexture(); gl.activeTexture(gl.TEXTURE0 + unit); gl.bindTexture(gl.TEXTURE_2D, tx);
-      gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.NEAREST); gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.NEAREST);
-      gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE); gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
-      return tx;
-    };
-    glMap = mk(0); glPal = mk(1); glProv = mk(2);
-    gl.uniform1i(glU.uMap, 0); gl.uniform1i(glU.uPal, 1); gl.uniform1i(glU.uProv, 2);
+    for (const n of ['uMap', 'uSize', 'uCam', 'uView', 'uTime', 'uC1', 'uC2', 'uC3', 'uC4']) glU[n] = gl.getUniformLocation(prog, n);
+    glMap = gl.createTexture(); gl.activeTexture(gl.TEXTURE0); gl.bindTexture(gl.TEXTURE_2D, glMap);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.NEAREST); gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.NEAREST);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE); gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
+    gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, W, H, 0, gl.RGBA, gl.UNSIGNED_BYTE, mapBytes);
+    gl.uniform1i(glU.uMap, 0);
   } catch (e) { console.warn('WebGL off:', e); gl = null; glc.style.display = 'none'; }
 }
-let glProv = null;
 function uploadMap() {
-  if (!mapBytes || mapBytes.length !== NC * 4) mapBytes = new Uint8Array(NC * 4);
-  if (provDirty) {
-    // Province ids go in their own texture, so the shader can draw province borders as smooth lines too.
-    const pb = new Uint8Array(NC * 4);
-    for (let i = 0; i < NC; i++) { const v = prov[i] + 1; pb[i * 4] = v & 255; pb[i * 4 + 1] = v >> 8; pb[i * 4 + 3] = 255; }
-    gl.activeTexture(gl.TEXTURE2); gl.bindTexture(gl.TEXTURE_2D, glProv);
-    gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, W, H, 0, gl.RGBA, gl.UNSIGNED_BYTE, pb);
-    provDirty = false;
-  }
+  let fading = false;
   for (let i = 0, q = 0; i < NC; i++, q += 4) {
-    const o = own[i], f = flash[i];
-    mapBytes[q] = o + 1; mapBytes[q + 1] = shade[i] * 255; mapBytes[q + 2] = (f >> 1) | (!vis || vis[i] ? 128 : 0);
-    mapBytes[q + 3] = terr[i] * 60 + (o > 0 && fortCover[i] === o ? 30 : 0);
-    if (f) flash[i] = f > 40 ? f - 40 : 0;
+    const f = flash[i];
+    mapBytes[q] = own[i] > 0 ? own[i] : 0; mapBytes[q + 1] = terr[i]; mapBytes[q + 2] = f; mapBytes[q + 3] = shade[i] * 255;
+    if (f) { flash[i] = f > 30 ? f - 30 : 0; fading = true; }
   }
   gl.activeTexture(gl.TEXTURE0); gl.bindTexture(gl.TEXTURE_2D, glMap);
-  if (glW !== W || glH !== H) { gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, W, H, 0, gl.RGBA, gl.UNSIGNED_BYTE, mapBytes); glW = W; glH = H; }
-  else gl.texSubImage2D(gl.TEXTURE_2D, 0, 0, 0, W, H, gl.RGBA, gl.UNSIGNED_BYTE, mapBytes);
-  palBytes.fill(0);
-  for (let k = 1; k <= P && k < 254; k++) { const c = players[k].col; palBytes[(k + 1) * 4] = c[0]; palBytes[(k + 1) * 4 + 1] = c[1]; palBytes[(k + 1) * 4 + 2] = c[2]; palBytes[(k + 1) * 4 + 3] = 255; }
-  gl.activeTexture(gl.TEXTURE1); gl.bindTexture(gl.TEXTURE_2D, glPal);
-  gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, 256, 1, 0, gl.RGBA, gl.UNSIGNED_BYTE, palBytes);
+  gl.texSubImage2D(gl.TEXTURE_2D, 0, 0, 0, W, H, gl.RGBA, gl.UNSIGNED_BYTE, mapBytes);
+  if (fading) dirty = true;
 }
 function renderGL(now) {
   gl.viewport(0, 0, glc.width, glc.height);
@@ -1494,295 +1051,137 @@ function renderGL(now) {
   gl.uniform3f(glU.uCam, cam.x * GDPR, cam.y * GDPR, cam.s * GDPR);
   gl.uniform2f(glU.uView, glc.width, glc.height);
   gl.uniform1f(glU.uTime, now / 1000);
+  for (let k = 1; k <= 4; k++) { const c = COLORS[k]; gl.uniform3f(glU['uC' + k], c[0] / 255, c[1] / 255, c[2] / 255); }
   gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
 }
 initGL();
 
-
-// Sea lanes: dotted lines between the towns they join.
-function drawLanes() {
-  if (cam.s < 0.9) return;
-  ctx.save(); ctx.setLineDash([4, 5]); ctx.strokeStyle = 'rgba(235,245,240,.45)'; ctx.lineWidth = 1.5;
-  ctx.beginPath();
-  for (const Pv of provs) for (const n of Pv.sea) {
-    if (n < Pv.id) continue;
-    const [x0, y0] = xy(Pv.town), [x1, y1] = xy(provs[n].town);
-    ctx.moveTo(sx(x0), sy(y0)); ctx.lineTo(sx(x1), sy(y1));
-  }
-  ctx.stroke(); ctx.restore();
-}
-// Every province shows its garrison on a counter at its town: a star for capitals, a tower for cities.
-// A battle shows crossed swords and the attackers' strength.
-const badgeSize = () => Math.max(9, Math.min(16, cam.s * 3));
-function drawTowns(now) {
-  if (!provs.length) return;
-  const fs = badgeSize();
-  for (const Pv of provs) {
-    const [x, y] = xy(Pv.town), X = sx(x), Y = sy(y);
-    if (X < -40 || Y < -30 || X > CW + 40 || Y > CH + 30) continue;
-    const o = Pv.owner, fill = o > 0 ? players[o].css : 'rgba(120,110,85,.92)', hid = o > 0 && !friend(o) && !seen(Pv.town);
-    if (o === 0 && cam.s < 1.3 && !isTown(Pv)) { ctx.fillStyle = fill; ctx.beginPath(); ctx.arc(X, Y, 2.5, 0, 7); ctx.fill(); continue; }
-    const icon = Pv.capOf ? '★' : (Pv.city || Pv.built) ? '♜' : '', txt = hid ? '?' : fmt(Pv.troops);
-    ctx.font = `800 ${fs}px ${UI_FONT}`;
-    const tw = ctx.measureText(icon + txt).width, w = tw + fs * 0.8, h = fs * 1.35;
-    if (Pv.id === selProv) { ctx.strokeStyle = '#f2cf63'; ctx.lineWidth = 3; ctx.beginPath(); ctx.roundRect(X - w / 2 - 4, Y - h / 2 - 4, w + 8, h + 8, h / 2 + 4); ctx.stroke(); }
-    ctx.fillStyle = 'rgba(0,0,0,.35)'; ctx.beginPath(); ctx.roundRect(X - w / 2 + 1.5, Y - h / 2 + 2, w, h, Pv.capOf || Pv.city ? 3 : h / 2); ctx.fill();
-    ctx.fillStyle = fill; ctx.beginPath(); ctx.roundRect(X - w / 2, Y - h / 2, w, h, Pv.capOf || Pv.city ? 3 : h / 2); ctx.fill();
-    ctx.lineWidth = Pv.fort ? 2.5 : 1.3; ctx.strokeStyle = Pv.fort ? '#2b2414' : o > 0 ? '#fffaf0' : 'rgba(255,250,240,.5)'; ctx.stroke();
-    ctx.fillStyle = '#fffaf0'; ctx.fillText(icon + txt, X, Y + 1);
-    // Tanks and planes ride on small tabs under the counter.
-    if (!hid && (Pv.tanks >= 0.5 || Pv.planes >= 1)) {
-      const parts = []; if (Pv.tanks >= 0.5) parts.push('▰' + Math.round(Pv.tanks)); if (Pv.planes >= 1) parts.push('✈' + Pv.planes);
-      ctx.font = `700 ${fs * 0.75}px ${UI_FONT}`;
-      const t2 = parts.join(' '), w2 = ctx.measureText(t2).width + fs * 0.5;
-      ctx.fillStyle = 'rgba(20,16,8,.8)'; ctx.beginPath(); ctx.roundRect(X - w2 / 2, Y + h / 2 + 1, w2, fs * 0.95, 3); ctx.fill();
-      ctx.fillStyle = '#f2cf63'; ctx.fillText(t2, X, Y + h / 2 + 1 + fs * 0.5);
-    }
-    if (Pv.sieges.length) {
-      const pulse = 0.5 + 0.5 * Math.sin(now / 120 + Pv.id);
-      ctx.font = `${fs * 1.2}px system-ui,sans-serif`; ctx.globalAlpha = 0.6 + pulse * 0.4;
-      ctx.fillText('⚔️', X + w / 2 + fs * 0.6, Y - h / 2 - fs * 0.2); ctx.globalAlpha = 1;
-      let yy = Y - h / 2 - fs * 0.9;
-      for (const sg of Pv.sieges) {
-        if (!friend(sg.a) && !seen(Pv.town)) continue;
-        pill('⚔ ' + fmt(powerOf(sg.n, sg.k, true)), X, yy, players[sg.a].css, fs * 0.8); yy -= fs * 1.3;
-      }
-      // sparks
-      for (let k = 0; k < 4; k++) {
-        const a = now / 90 + k * 1.7 + Pv.id, r = w * 0.6 + 4;
-        ctx.fillStyle = k % 2 ? 'rgba(255,200,80,.9)' : 'rgba(255,110,40,.9)';
-        ctx.beginPath(); ctx.arc(X + Math.cos(a) * r, Y + Math.sin(a * 1.3) * r * 0.5, 2, 0, 7); ctx.fill();
-      }
-    }
-  }
-}
-// Marching armies: a counter that walks from town to town (a boat over sea lanes), plus planes in the air.
-function drawMarches(frac, now) {
-  const fs = badgeSize();
-  if (drag) {
-    const [x0, y0] = drag.m ? marchPos(drag.m) : xy(provs[drag.from].town), X = sx(x0), Y = sy(y0), a = Math.atan2(drag.y - Y, drag.x - X);
-    ctx.strokeStyle = 'rgba(242,207,99,.95)'; ctx.fillStyle = 'rgba(242,207,99,.95)'; ctx.lineWidth = 4; ctx.lineCap = 'round';
-    ctx.beginPath(); ctx.moveTo(X, Y); ctx.lineTo(drag.x, drag.y); ctx.stroke();
-    ctx.beginPath(); ctx.moveTo(drag.x + Math.cos(a) * 6, drag.y + Math.sin(a) * 6);
-    ctx.lineTo(drag.x + Math.cos(a + 2.5) * 16, drag.y + Math.sin(a + 2.5) * 16); ctx.lineTo(drag.x + Math.cos(a - 2.5) * 16, drag.y + Math.sin(a - 2.5) * 16); ctx.fill();
-    ctx.lineCap = 'butt';
-    const t = provAt(cellAt(drag.x, drag.y));
-    if (t >= 0 && t !== drag.from) { const [tx, ty] = xy(provs[t].town); ctx.strokeStyle = '#f2cf63'; ctx.lineWidth = 2.5; ctx.beginPath(); ctx.arc(sx(tx), sy(ty), fs * 1.4, 0, 7); ctx.stroke(); }
-  }
-  if (placing === 'air' && selProv >= 0) {
-    const [x, y] = xy(provs[selProv].town);
-    ctx.save(); ctx.setLineDash([8, 6]); ctx.strokeStyle = 'rgba(255,120,80,.85)'; ctx.lineWidth = 2;
-    ctx.beginPath(); ctx.arc(sx(x), sy(y), PLANE_RANGE * cam.s, 0, 7); ctx.stroke(); ctx.restore();
-  }
-  if (selMarch && !marches.includes(selMarch)) selMarch = null;
-  for (const m of marches) {
-    const [x, y] = marchPos(m, marchSpeed(m) * frac);
-    if (!friend(m.a) && !seenXY(x, y)) continue;
-    const X = sx(x), Y = sy(y), sea = m.seg < m.path.length - 1 && isSea(m.path[m.seg], m.path[m.seg + 1]);
-    if (m.a === 1) {
-      // your own marches show the road ahead
-      ctx.save(); ctx.setLineDash([5, 5]); ctx.lineDashOffset = -now / 40; ctx.strokeStyle = 'rgba(242,207,99,.75)'; ctx.lineWidth = 2;
-      ctx.beginPath(); ctx.moveTo(X, Y);
-      for (let k = m.seg + 1; k < m.path.length; k++) { const [a, b] = xy(provs[m.path[k]].town); ctx.lineTo(sx(a), sy(b)); }
-      ctx.stroke(); ctx.restore();
-    }
-    const bob = -Math.abs(Math.sin(now / 120 + m.id)) * 2;
-    if (sea) { ctx.font = `${fs * 1.4}px system-ui,sans-serif`; ctx.fillText('⛵', X, Y - fs * 0.9 + bob); }
-    else {
-      for (let k = 0; k < 3; k++) {   // dust behind the column
-        const ph = (now / 600 + k / 3 + m.id * 0.37) % 1;
-        ctx.fillStyle = `rgba(214,196,160,${0.45 * (1 - ph)})`; ctx.beginPath(); ctx.arc(X - 6 - ph * 10 + Math.sin(k * 2 + m.id) * 3, Y + 4, 2 + ph * 4, 0, 7); ctx.fill();
-      }
-    }
-    if (m === selMarch) { ctx.strokeStyle = '#f2cf63'; ctx.lineWidth = 3; ctx.beginPath(); ctx.arc(X, Y + bob, fs * 1.5 + Math.sin(now / 150) * 2, 0, 7); ctx.stroke(); }
-    pill((m.k >= 0.5 ? '▰' + Math.round(m.k) + ' ' : '') + fmt(m.n), X, Y + bob, players[m.a].css, fs * 0.85);
-  }
-  for (const f of flights) {
-    const x = f.px + (f.x - f.px) * frac, y = f.py + (f.y - f.py) * frac;
-    if (!friend(f.a) && !seenXY(x, y)) continue;
-    const X = sx(x), Y = sy(y) - fs, a = Math.atan2(f.y - f.py, f.x - f.px);
-    ctx.fillStyle = 'rgba(0,0,0,.25)'; ctx.beginPath(); ctx.ellipse(X + 6, Y + fs + 4, fs * 0.5, fs * 0.2, 0, 0, 7); ctx.fill();
-    ctx.save(); ctx.translate(X, Y); ctx.rotate(a + Math.PI / 4);
-    ctx.font = `${fs * 1.5}px system-ui,sans-serif`; ctx.fillText('✈️', 0, 0); ctx.restore();
-    ctx.font = `700 ${fs * 0.8}px ${UI_FONT}`; ctx.fillStyle = players[f.a].css; ctx.fillText(f.n, X, Y + fs);
-    if (f.mode === 'bomb' && (T + f.id) % 6 < 3) { ctx.fillStyle = 'rgba(255,150,50,.85)'; ctx.beginPath(); ctx.arc(X + Math.sin(now / 50) * 6, Y + fs * 1.6, 4, 0, 7); ctx.fill(); }
-  }
-}
-
 // ---------- HUD ----------
-let hudT = 0;
+let hudT = 0, toastTimer = 0;
 function updateHud() {
-  if (state === 'spawn') { $('spawnCount').textContent = Math.ceil(spawnTimer); return; }
-  if (state !== 'play' && state !== 'over') return;
-  const p = human, mx = p.hold || 1;
-  let sent = 0; for (const m of marches) if (m.a === 1) sent += m.n;
-  $('troops').innerHTML = fmt(p.troops) + ' <small>' + (p.tanks >= 0.5 ? ' ▰' + Math.round(p.tanks) : '') + (p.planes ? ' ✈' + p.planes : '') + (sent >= 1 ? ' · ⚔ ' + fmt(sent) : '') + '</small>';
-  $('inc').textContent = '+' + (p.alive ? (p.grow || 0).toFixed(1).replace('.', ',') : 0) + '/s';
-  $('gold').innerHTML = '🪙 ' + fmt(p.gold) + ' <small>+' + fmt(p.alive ? goldRate(p) : 0) + '</small>';
-  $('land').innerHTML = '<b>' + (p.count / landCells * 100).toFixed(1).replace('.', ',') + '%</b>';
-  $('capbar').firstChild.style.width = Math.min(100, p.troops / mx * 100) + '%';
-  const pc = peace();
-  $('clock').textContent = pc ? '🕊 Fredstid ' + fmtTime(PEACE_TICKS - T) : fmtTime(T);
-  $('clock').classList.toggle('peace', pc);
-  const sp = selProv >= 0 ? provs[selProv] : null;
-  $('hint').innerHTML = placing === 'air' ? 'Tryk på den provins flyene skal bombe'
-    : selMarch ? 'Hær valgt: tryk på en provins for at sende den derhen i stedet'
-    : sp ? '<b>' + fmt(sp.troops) + '</b> tropper' + (sp.tanks >= 0.5 ? ', <b>' + Math.round(sp.tanks) + '</b> kampvogne' : '') + ' · tryk på et mål for at sende ' + Math.round(ratio() * 100) + '%'
-    : pc ? 'Træk fra en provins til en anden for at sende tropper. Lande kan angribes om <b>' + Math.ceil((PEACE_TICKS - T) * DT) + ' s</b>'
-    : 'Træk fra en provins for at sende tropper · skyderen styrer hvor mange';
-  const list = players.slice(1).filter(q => q.alive).sort((a, b) => b.count - a.count);
-  let html = '', shown = 0;
-  list.forEach((q, i) => {
-    if (shown >= 5 && !q.isHuman) return;
-    if (shown >= 5 && q.isHuman) html += '<div class="r" style="opacity:.5"><b>…</b></div>';
-    html += `<div class="r${q.isHuman ? ' me' : ''}"><b>${i + 1}</b><i style="background:${q.css}"></i><span>${allied(1, q.id) ? '🤝 ' : ''}${esc(q.name)}</span><em>${(q.count / landCells * 100).toFixed(0)}%</em></div>`;
-    shown++;
-  });
-  html += `<div class="r" style="color:var(--muted);justify-content:center">${list.length} lande tilbage</div>`;
-  $('lb').innerHTML = html;
-  if (!$('buildSheet').classList.contains('hidden')) fillBuild();
-  fillProv();
-  if (!$('nationSheet').classList.contains('hidden')) fillNation();
+  if (!players.length) return;
+  $('clock').textContent = fmtTime(T);
+  const rows = players.slice(1).slice().sort((a, b) => (b.alive - a.alive) || b.count - a.count);
+  $('lb').innerHTML = rows.map((p, k) => `<div class="r${p === human ? ' me' : ''}"><b>${k + 1}</b><i style="background:${rgb(p.col)}"></i><span>${esc(p.name)}${p.alive ? '' : ' ✕'}</span><em>${Math.round(p.count / nOwnable * 100)}%</em></div>`).join('');
+  if (state !== 'play' || !human) return;
+  const nt = towns.reduce((n, t) => n + (t.owner === 1), 0);
+  $('gold').textContent = fmt(human.gold);
+  $('inc').textContent = '+' + (INC_BASE + nt * INC_TOWN + human.count * INC_CELL).toFixed(1).replace('.', ',') + '/s';
+  const n = unitCount(human);
+  $('army').innerHTML = `${n} <small>/ ${MAX_UNITS} tropper</small>`;
+  $('land').innerHTML = `<b>${Math.round(human.count / nOwnable * 100)}%</b> land`;
+  if (spawnSite && spawnSite.owner !== 1) spawnSite = human.base;
+  for (const b of document.querySelectorAll('#hire button[data-t]')) {
+    const k = UNITS[b.dataset.t];
+    b.classList.toggle('cant', !human.alive || human.gold < k.cost || n >= MAX_UNITS);
+    const q = spawnSite ? spawnSite.q.filter(x => x === b.dataset.t).length : 0;
+    const i = b.querySelector('i'); i.textContent = q; i.classList.toggle('hidden', !q);
+  }
+  const mine = units.filter(u => u.p === 1);
+  const all = mine.length && mine.every(u => selected.has(u));
+  $('btnAll').innerHTML = all ? 'Fravælg' : 'Vælg<br>alle';
+  $('btnAll').classList.toggle('on', !!all);
+  let hint;
+  if (!human.alive) hint = 'Dit HQ er faldet. Du ser med.';
+  else if (!mine.length) hint = n ? 'Din første trop er på vej ud af ' + (spawnSite && spawnSite.town ? 'byen' : 'dit HQ') : 'Hyr en trop. Den bygges i ' + (spawnSite && spawnSite.town ? 'den valgte by' : 'dit HQ');
+  else if (!selected.size) hint = 'Tryk på en trop for at vælge den, eller <b>træk en rute</b> fra den';
+  else hint = `Tryk på kortet for at sende ${selected.size === 1 ? 'tropen' : selected.size + ' tropper'} dertil, eller træk en rute`;
+  $('hint').innerHTML = hint;
 }
 function esc(s) { return s.replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c])); }
-let toastTimer = 0;
-function toast(msg) { const t = $('toast'); t.textContent = msg; t.classList.add('on'); clearTimeout(toastTimer); toastTimer = setTimeout(() => t.classList.remove('on'), 1800); }
-function show(id, on) { $(id).classList.toggle('hidden', !on); if (!on) $(id).classList.remove('on'); }
+function toast(msg) { const t = $('toast'); t.textContent = msg; t.classList.add('on'); clearTimeout(toastTimer); toastTimer = setTimeout(() => t.classList.remove('on'), 1900); }
+function show(id, on) { $(id).classList.toggle('hidden', !on); }
 function buzz(p) { if (navigator.vibrate) try { navigator.vibrate(p); } catch (e) {} }
 
-// Build menu. With `at` set (long press on your own land) the building goes right there.
-let buildAt = -1, placing = null, nationId = 0;
-function openBuild(at) {
-  closeSheets(); buildAt = at; fillBuild(); show('buildSheet', true); show('bottom', false);
-}
-function fillBuild() {
-  const p = human;
-  const html = BUILD_KEYS.map(k => {
-    const b = BUILDS[k], c = costOf(p, k), locked = b.needs && !p.nb[b.needs];
-    const cant = p.gold < c || locked;
-    return `<button class="bitem${cant ? ' cant' : ''}" data-k="${k}" ${cant ? 'disabled' : ''}><span class="ic">${b.ic}</span><b>${b.name}${p.nb[k] ? ' · ' + p.nb[k] : ''}</b><small>${locked ? 'Kræver en raketsilo' : b.desc}</small><span class="cost">🪙 ${fmt(c)}</span></button>`;
-  }).join('');
-  if ($('buildGrid').dataset.html !== html) { $('buildGrid').dataset.html = html; $('buildGrid').innerHTML = html; }
-}
-$('buildGrid').addEventListener('click', e => {
-  const el = e.target.closest('.bitem'); if (!el || el.disabled) return;
-  const k = el.dataset.k;
-  if (buildAt >= 0 && k !== 'nuke') { const err = build(human, k, buildAt); closeSheets(); toast(err || BUILDS[k].name + ' bygget'); if (!err) buzz(15); return; }
-  closeSheets();
-  placing = k; show('placeBar', true); show('bottom', false);
-  $('placeText').textContent = k === 'nuke' ? 'Tryk på målet for atombomben' : 'Tryk på dit land for at bygge ' + BUILDS[k].name.toLowerCase();
-});
-function openNation(id) {
-  closeSheets(); nationId = id; fillNation(); show('nationSheet', true); show('bottom', false);
-}
-function fillNation() {
-  const q = players[nationId];
-  if (!q || !q.alive) { closeSheets(); return; }
-  const al = allied(1, q.id), adjacent = adj[1 * S + q.id], amount = human.troops * ratio();
-  $('nsColor').style.background = q.css; $('nsName').textContent = q.name;
-  $('nsTroops').textContent = fmt(q.troops); $('nsLand').textContent = (q.count / landCells * 100).toFixed(1).replace('.', ',') + '%';
-  $('nsRel').textContent = al ? 'Allieret' : (attacks.some(a => a.a === q.id && a.t === 1) ? 'Angriber dig' : 'Neutral');
-  const acts = [], amt = `<span class="amt">${fmt(amount)}</span>`;
-  if (!al) {
-    acts.push(`<button class="act" data-a="ally">🤝 Foreslå alliance</button>`);
-  } else {
-    acts.push(`<button class="act" disabled>Alliancen holder i ${Math.ceil((allyUntil[1 * S + q.id] - T) * DT / 30) / 2} min mere</button>`);
-    acts.push(`<button class="act red" data-a="break">Bryd alliancen</button>`);
-  }
-  // Only rebuild the buttons when they change, so a tap never lands on a replaced button.
-  const key = [al, acts.length, al ? acts[0] : ''].join();
-  if ($('nsActs').dataset.key !== key) { $('nsActs').dataset.key = key; $('nsActs').innerHTML = acts.join(''); }
-  else $('nsActs').querySelectorAll('.amt').forEach(e => e.textContent = fmt(amount));
-}
-$('nsActs').addEventListener('click', e => {
-  const el = e.target.closest('button'); if (!el || el.disabled) return;
-  const id = nationId, q = players[id], a = el.dataset.a;
-  if (a === 'ally') toast(proposeAlliance(1, id) ? q.name + ' sagde ja til en alliance!' : q.name + ' afviste alliancen');
-  else if (a === 'break') { breakAlliance(1, id); toast('Alliancen med ' + q.name + ' er brudt'); }
-  closeSheets();
-});
-function closeSheets() {
-  ['buildSheet', 'nationSheet', 'placeBar'].forEach(id => show(id, false));
-  placing = null; buildAt = -1;
-  if (state === 'play' || state === 'over') show('bottom', true);
-}
-$('btnBuild').onclick = () => openBuild(-1);
-// The action row under the slider for the province you tapped: buy tanks and planes there, send its planes, or build.
-function fillProv() {
-  const el = $('provActs'), Pv = selProv >= 0 ? provs[selProv] : null, on = !!Pv && Pv.owner === 1 && state === 'play';
-  el.classList.toggle('hidden', !on);
-  if (!on) { el.dataset.key = ''; return; }
-  const g = human.gold, items = [
-    ['tank', '▰ Kampvogn', '🪙 ' + TANK_GOLD, g >= TANK_GOLD],
-    ['plane', '✈️ Fly', '🪙 ' + PLANE_GOLD, g >= PLANE_GOLD],
-    ['air', '🎯 Bomb', Pv.planes ? Pv.planes + ' fly klar' : 'ingen fly', Pv.planes > 0],
-    ['build', '🏗 Byg', 'her', true],
-  ];
-  const key = items.map(i => i[3]).join() + selProv + Pv.planes + (placing === 'air');
-  if (el.dataset.key === key) return;
-  el.dataset.key = key;
-  el.innerHTML = items.map(i => `<button data-a="${i[0]}" class="${i[3] ? '' : 'cant'}${i[0] === 'air' && placing === 'air' ? ' on' : ''}">${i[1]}<small>${i[2]}</small></button>`).join('');
-}
-$('provActs').addEventListener('click', e => {
-  const b = e.target.closest('button'); if (!b || selProv < 0) return;
-  const a = b.dataset.a, pi = selProv;
-  if (a === 'tank' || a === 'plane') { const err = buyUnit(human, pi, a); toast(err || (a === 'tank' ? '▰ Kampvogn købt. Den følger med, når du sender tropper herfra' : '✈️ Fly købt. Tryk Bomb for at sende det')); if (!err) buzz(15); }
-  else if (a === 'air') {
-    if (!provs[pi].planes) { toast('Køb et fly først'); return; }
-    placing = placing === 'air' ? null : 'air';
-    if (placing) toast('Tryk på den provins flyene skal bombe (inden for ringen)');
-  } else if (a === 'build') { const t = provs[pi].town; selProv = -1; openBuild(t); }
-  fillProv();
-});
-$('buildClose').onclick = $('nsClose').onclick = $('placeCancel').onclick = closeSheets;
-
 // ---------- Input ----------
+const world = (px, py) => [(px - cam.x) / cam.s, (py - cam.y) / cam.s];
+function unitAt(px, py) {
+  const r = Math.max(20, tokenR() * 1.7);
+  let best = null, bd = r * r;
+  for (const u of units) {
+    if (u.p !== 1) continue;
+    const Y = sy(u.y) - (u.k.air ? tokenR() * 1.4 : 0), d = (sx(u.x) - px) ** 2 + (Y - py) ** 2;
+    if (d < bd) { bd = d; best = u; }
+  }
+  return best;
+}
+function siteAt(px, py) {
+  const r = Math.max(20, cam.s * 1.6);
+  return sites.find(s => (sx(s.x) - px) ** 2 + (sy(s.y) - py) ** 2 < r * r) || null;
+}
+function sendSelected(wx, wy) {
+  const list = [...selected];
+  let ok = 0;
+  list.forEach((u, k) => {
+    const n = list.length, a = k / n * Math.PI * 2, r = n > 1 ? 0.6 + 0.15 * n : 0;
+    ok += orderPoints(u, [[wx + Math.cos(a) * r, wy + Math.sin(a) * r]]);
+  });
+  if (!ok) toast('Der kan dine tropper ikke komme hen');
+}
+function tapAt(px, py) {
+  if (state !== 'play' || !human.alive) return;
+  const u = unitAt(px, py);
+  if (u) {
+    if (selected.has(u) && selected.size === 1) selected.clear();
+    else { selected.clear(); selected.add(u); }
+    buzz(8); return;
+  }
+  const [wx, wy] = world(px, py);
+  if (selected.size) { sendSelected(wx, wy); buzz(10); return; }
+  const s = siteAt(px, py);
+  if (s && s.owner === 1) { spawnSite = s; toast(s.base ? 'Nye tropper bygges i dit HQ' : 'Nye tropper bygges i denne by'); return; }
+  if (s && s.town) { toast(s.owner ? 'By ejet af ' + players[s.owner].name + '. Stil en trop i den for at tage den' : 'Fri by. Stil en soldat eller kampvogn i den for at tage den'); return; }
+  if (s && s.base && s.owner !== 1) { toast(players[s.owner].name + 's HQ. Ødelæg det for at slå dem ud'); return; }
+}
 const ptrs = new Map();
-let gesture = null, pressTimer = 0, drag = null;
+let gesture = null, pinch = null, route = null;
 cv.addEventListener('pointerdown', e => {
   cv.setPointerCapture(e.pointerId);
   ptrs.set(e.pointerId, { x: e.clientX, y: e.clientY });
-  clearTimeout(pressTimer);
-  if (ptrs.size === 1) {
-    gesture = { tap: true, t: performance.now(), x0: e.clientX, y0: e.clientY, unit: state === 'play' && !placing && human.alive ? myProvAt(e.clientX, e.clientY) : -1, march: state === 'play' && !placing ? marchAt(e.clientX, e.clientY) : null };
-    pressTimer = setTimeout(() => { if (gesture && gesture.tap && ptrs.size === 1) { gesture.tap = false; longPress(gesture.x0, gesture.y0); } }, 450);
-  } else if (gesture) { gesture.tap = false; gesture.unit = -1; drag = null; }
+  if (ptrs.size === 1) gesture = { tap: true, t: performance.now(), x0: e.clientX, y0: e.clientY, unit: state === 'play' && human && human.alive ? unitAt(e.clientX, e.clientY) : null };
+  else { if (gesture) { gesture.tap = false; gesture.unit = null; } route = null; }
   pinchStart();
 });
 cv.addEventListener('pointermove', e => {
   if (!ptrs.has(e.pointerId)) return;
   const prev = ptrs.get(e.pointerId);
   ptrs.set(e.pointerId, { x: e.clientX, y: e.clientY });
-  if (gesture && Math.hypot(e.clientX - gesture.x0, e.clientY - gesture.y0) > 10) { gesture.tap = false; clearTimeout(pressTimer); }
-  if (ptrs.size === 1) {
-    if (gesture && (gesture.march || gesture.unit >= 0) && !gesture.tap) drag = { from: gesture.march ? -1 : gesture.unit, m: gesture.march, x: e.clientX, y: e.clientY };
-    else if (gesture && !gesture.tap) { cam.x += e.clientX - prev.x; cam.y += e.clientY - prev.y; clampCam(); }
+  if (gesture && gesture.tap && Math.hypot(e.clientX - gesture.x0, e.clientY - gesture.y0) > 10) {
+    gesture.tap = false;
+    if (gesture.unit) route = [[gesture.unit.x, gesture.unit.y]];
+  }
+  if (ptrs.size === 1 && gesture && !gesture.tap) {
+    if (route) {
+      const [wx, wy] = world(e.clientX, e.clientY), l = route[route.length - 1];
+      if (Math.hypot(wx - l[0], wy - l[1]) > 0.6) route.push([wx, wy]);
+    } else { cam.x += e.clientX - prev.x; cam.y += e.clientY - prev.y; clampCam(); }
   } else if (ptrs.size === 2 && pinch) {
     const [a, b] = [...ptrs.values()];
     const d = Math.hypot(a.x - b.x, a.y - b.y), mx = (a.x + b.x) / 2, my = (a.y + b.y) / 2;
-    const ns = pinch.s * d / pinch.d;
-    cam.s = ns; cam.x = mx - pinch.wx * ns; cam.y = my - pinch.wy * ns; clampCam();
+    cam.s = pinch.s * d / pinch.d; cam.x = mx - pinch.wx * cam.s; cam.y = my - pinch.wy * cam.s; clampCam();
   }
 });
-let pinch = null;
 function pinchStart() {
   if (ptrs.size !== 2) { pinch = null; return; }
-  const [a, b] = [...ptrs.values()];
-  const mx = (a.x + b.x) / 2, my = (a.y + b.y) / 2;
+  const [a, b] = [...ptrs.values()], mx = (a.x + b.x) / 2, my = (a.y + b.y) / 2;
   pinch = { d: Math.max(1, Math.hypot(a.x - b.x, a.y - b.y)), s: cam.s, wx: (mx - cam.x) / cam.s, wy: (my - cam.y) / cam.s };
 }
 function ptrEnd(e) {
   if (!ptrs.has(e.pointerId)) return;
   ptrs.delete(e.pointerId);
-  clearTimeout(pressTimer);
-  if (ptrs.size === 0 && drag) { const t = provAt(cellAt(e.clientX, e.clientY)); if (t >= 0 && drag.m) reorder(drag.m, t); else if (t >= 0 && t !== drag.from) command(drag.from, t); }
-  else if (ptrs.size === 0 && gesture && gesture.tap && performance.now() - gesture.t < 450) tap(e.clientX, e.clientY);
-  drag = null;
-  if (ptrs.size === 0) gesture = null;
+  if (ptrs.size === 0) {
+    if (route && gesture && gesture.unit && route.length > 1 && units.includes(gesture.unit)) {
+      const u0 = gesture.unit, group = selected.has(u0) ? [...selected] : [u0];
+      if (!selected.has(u0)) { selected.clear(); selected.add(u0); }
+      for (const u of group) orderPoints(u, route.slice(1));
+      buzz(10);
+    } else if (gesture && gesture.tap && performance.now() - gesture.t < 500) tapAt(e.clientX, e.clientY);
+    route = null; gesture = null;
+  }
   pinchStart();
 }
 cv.addEventListener('pointerup', ptrEnd);
-cv.addEventListener('pointercancel', e => { if (gesture) gesture.tap = false; ptrEnd(e); });
+cv.addEventListener('pointercancel', e => { if (gesture) gesture.tap = false; route = null; ptrEnd(e); });
 cv.addEventListener('contextmenu', e => e.preventDefault());
 cv.addEventListener('wheel', e => {
   e.preventDefault();
@@ -1791,109 +1190,45 @@ cv.addEventListener('wheel', e => {
 }, { passive: false });
 document.addEventListener('gesturestart', e => e.preventDefault());
 
-function cellAt(px, py) {
-  const x = Math.floor((px - cam.x) / cam.s), y = Math.floor((py - cam.y) / cam.s);
-  return x < 0 || y < 0 || x >= W || y >= H ? -1 : y * W + x;
-}
-function tap(px, py) {
-  const i = cellAt(px, py);
-  if (i < 0) return;
-  if (state === 'spawn') {
-    if (terr[i] === 0) { toast('Vælg et sted på land'); return; }
-    const was = human.spawn;
-    if (was >= 0) clearSpawn(human);
-    if (!spawnOk(i, 8)) { if (was >= 0) placeSpawn(human, was); toast(islandSize[island[i]] < 250 ? 'Den ø er for lille' : 'For tæt på et andet land'); return; }
-    placeSpawn(human, i); dirty = true; buzz(10);
-    $('spawnText').innerHTML = 'Godt valg! Tryk igen for at flytte, eller <b>start</b>';
-    return;
-  }
-  if (state !== 'play' || !human.alive) return;
-  const pi = provAt(i);
-  if (placing === 'air') { if (pi >= 0 && pi !== selProv) { const err = airStrike(1, selProv, pi); toast(err || '✈️ Flyene er på vej'); if (!err) buzz(15); } placing = null; selProv = -1; return; }
-  const mh = marchAt(px, py);
-  if (mh) { selMarch = selMarch === mh ? null : mh; selProv = -1; buzz(10); if (selMarch) toast('Hær valgt. Tryk hvor den skal hen'); return; }
-  if (selMarch) { if (pi >= 0) reorder(selMarch, pi); selMarch = null; return; }
-  if (placing) {
-    const err = build(human, placing, i);
-    if (err) { toast(err); return; }
-    toast(placing === 'nuke' ? 'Atombomben er affyret!' : BUILDS[placing].name + ' bygget'); buzz(15); closeSheets();
-    return;
-  }
-  if (pi < 0) { selProv = -1; return; }
-  if (selProv >= 0 && pi !== selProv && provs[selProv].owner === 1) { command(selProv, pi); return; }
-  if (provs[pi].owner === 1) { selProv = selProv === pi ? -1 : pi; buzz(10); return; }
-  selProv = -1;
-  toast('Træk fra en af dine provinser hertil for at angribe');
-}
-// Send troops from one of your provinces to another province.
-function command(from, to) {
-  const err = sendTroops(1, from, to, ratio());
-  selProv = -1;
-  if (err) { toast(err); return; }
-  const m = marches[marches.length - 1], B = provs[to];
-  toast('Sender ' + fmt(m.n) + (m.k >= 1 ? ' + ' + m.k + ' kampvogne' : '') + (B.owner === 1 ? ' til provinsen' : B.owner === 0 ? ' ud i frit land' : ' mod ' + players[B.owner].name));
-  buzz(15);
-}
-function reorder(m, to) {
-  if (!marches.includes(m)) { toast('Hæren er allerede fremme'); return; }
-  const err = redirect(m, to); selMarch = null;
-  toast(err || 'Hæren skifter kurs'); if (!err) buzz(15);
-}
-// Your marching army under a finger.
-function marchAt(px, py) {
-  let best = null, bd = 24 * 24;
-  for (const m of marches) {
-    if (m.a !== 1) continue;
-    const [x, y] = marchPos(m), d = (sx(x) - px) ** 2 + (sy(y) - py) ** 2;
-    if (d < bd) { bd = d; best = m; }
-  }
-  return best;
-}
-// The province under a finger, if it is yours.
-function myProvAt(px, py) { const pi = provAt(cellAt(px, py)); return pi >= 0 && provs[pi].owner === 1 ? pi : -1; }
-function longPress(px, py) {
-  if (state !== 'play' || !human.alive) return;
-  const i = cellAt(px, py);
-  if (i < 0) return;
-  buzz(20);
-  if (own[i] === 1) openBuild(i);
-  else if (own[i] > 0) openNation(own[i]);
-  else tap(px, py);
-}
-function blocked(t) {
-  if (t > 0 && allied(1, t)) { toast('I er allierede. Bryd alliancen først'); return true; }
-  if (t > 0 && peace()) { toast('Fredstid. Du kan angribe om ' + Math.ceil((PEACE_TICKS - T) * DT) + ' s'); return true; }
-  return false;
-}
-const ratio = () => +$('ratio').value / 100;
+for (const b of document.querySelectorAll('#hire button[data-t]')) b.onclick = () => {
+  if (state !== 'play') return;
+  const type = b.dataset.t, k = UNITS[type];
+  if (!spawnSite || spawnSite.owner !== 1) spawnSite = human.base;
+  const r = hire(human, type, spawnSite);
+  if (r === 'gold') toast(`${k.name} koster ${k.cost} guld`);
+  else if (r === 'full') toast(`Du kan højst have ${MAX_UNITS} tropper`);
+  else if (r === 'queue') toast('Køen her er fuld. Vælg en anden by');
+  else if (r === 'site') toast('Du kan ikke bygge her');
+  else buzz(8);
+  updateHud();
+};
+$('btnAll').onclick = () => {
+  const mine = units.filter(u => u.p === 1);
+  if (mine.length && mine.every(u => selected.has(u))) selected.clear();
+  else { selected.clear(); for (const u of mine) selected.add(u); }
+  if (!mine.length) toast('Du har ingen tropper endnu');
+  updateHud();
+};
 
-// ---------- UI wiring ----------
 function bindSeg(id, key) {
   const el = $(id);
   const sync = () => el.querySelectorAll('button').forEach(b => b.classList.toggle('on', +b.dataset.v === settings[key]));
   el.addEventListener('click', e => { const b = e.target.closest('button'); if (!b) return; settings[key] = +b.dataset.v; sync(); saveSettings(); });
   sync();
 }
-bindSeg('diff', 'diff'); bindSeg('size', 'size'); bindSeg('mapType', 'mapType'); bindSeg('fog', 'fog');
+bindSeg('diff', 'diff');
 $('name').value = settings.name;
 $('name').addEventListener('input', () => { settings.name = $('name').value; saveSettings(); });
-$('bots').value = settings.bots; $('botsVal').textContent = settings.bots;
-$('bots').addEventListener('input', () => { settings.bots = +$('bots').value; $('botsVal').textContent = settings.bots; saveSettings(); });
-$('ratio').addEventListener('input', () => { $('ratioVal').textContent = $('ratio').value + '%'; });
-try { const r = localStorage.getItem('tw.ratio3'); if (r) { $('ratio').value = r; $('ratioVal').textContent = r + '%'; } } catch (e) {}
-$('ratio').addEventListener('change', () => { try { localStorage.setItem('tw.ratio3', $('ratio').value); } catch (e) {} });
-
-$('btnPlay').onclick = () => { $('name').blur(); newGame(); };
-$('btnStart').onclick = startPlay;
-$('btnPause').onclick = () => { if (state === 'play') { paused = true; show('pause', true); } };
+$('btnPlay').onclick = () => { $('name').blur(); delete $('over').dataset.shown; newGame(); };
+$('btnPause').onclick = () => { if (state === 'play' || state === 'over') { paused = true; show('pause', true); } };
 $('btnResume').onclick = () => { paused = false; show('pause', false); };
-$('btnRestart').onclick = () => { paused = false; newGame(); };
+$('btnRestart').onclick = $('btnAgain').onclick = () => { delete $('over').dataset.shown; newGame(); };
 $('btnQuit').onclick = $('btnMenu').onclick = () => { paused = false; toMenu(); };
-$('btnAgain').onclick = () => newGame();
 $('btnWatch').onclick = () => { watching = true; show('over', false); };
-$('speed').onclick = () => { speed = speed === 1 ? 2 : speed === 2 ? 4 : 1; $('speed').textContent = speed + '×'; };
+$('speed').onclick = () => { speed = speed === 1 ? 2 : speed === 2 ? 3 : 1; $('speed').textContent = speed + '×'; };
 function toMenu() {
-  closeSheets(); show('pause', false); show('over', false); show('top', false); show('bottom', false); show('spawnBar', false); show('menu', true);
+  show('pause', false); show('over', false); show('top', false); show('bottom', false); show('menu', true);
+  delete $('over').dataset.shown;
   startDemo();
 }
 document.addEventListener('visibilitychange', () => { if (document.hidden && state === 'play') { paused = true; show('pause', true); } });
@@ -1902,45 +1237,30 @@ document.addEventListener('visibilitychange', () => { if (document.hidden && sta
 let paused = false, last = performance.now(), acc = 0;
 function frame(now) {
   const dt = Math.min(250, now - last); last = now;
-  if (state === 'spawn') {
-    spawnTimer -= dt / 1000;
-    if (spawnTimer <= 0) startPlay();
-  } else if ((state === 'play' || state === 'over') && !paused) {
-    acc += dt * speed;
+  if ((state === 'play' || state === 'over' || state === 'demo') && !paused) {
+    acc += dt * (state === 'demo' ? 2 : speed);
     let n = 0;
     while (acc >= TICK_MS && n < 8) { step(); acc -= TICK_MS; n++; }
     if (n === 8) acc = 0;
+    if (state === 'demo' && (players.filter(p => p && p.alive).length <= 1 || T > 6000)) startDemo();
   }
-  render(now);
+  try { render(now); } catch (e) { console.error(e); }
   if (now - hudT > 200) { hudT = now; updateHud(); }
   requestAnimationFrame(frame);
 }
 addEventListener('resize', resize);
 resize();
 
-// A random map plays itself behind the menu.
-function demoMap() {
-  genMap(); fitCamera(); makePlayers(); attacks = []; buildings = []; boats = []; nukes = []; booms = []; marches = []; flights = []; selProv = -1; T = 0; vis = null;
-  players[1].isHuman = false; players[1].name = 'Askeland';
-  for (let k = 1; k <= P; k++) { randomSpawn(players[k]); }
-  dirty = true;
-}
+// Four bots play a match behind the menu.
 function startDemo() {
-  state = 'demo'; seed = (Date.now() & 0xffff) | 1; demoMap();
-  const run = () => {
-    if (state !== 'demo') return;
-    step();
-    let alive = 0; for (let k = 1; k <= P; k++) alive += players[k].alive;
-    if (alive <= 1 || T > 3000) demoMap();
-    setTimeout(run, TICK_MS);
-  };
-  run();
+  state = 'demo'; seed = (Date.now() & 0xffff) | 1;
+  newWorld(true); fitCamera();
 }
 startDemo();
 if ('serviceWorker' in navigator && location.protocol === 'https:') navigator.serviceWorker.register('sw.js').catch(() => {});
 requestAnimationFrame(frame);
-window.TW = { get marches() { return marches; }, get provs() { return provs; }, sendTroops, airStrike, buyUnit, command, cam, get W() { return W; }, get players() { return players; }, get attacks() { return attacks; }, get boats() { return boats; }, get buildings() { return buildings; }, get nukes() { return nukes; },
-  step, build, proposeAlliance, allied, get state() { return state; }, get T() { return T; }, get landCells() { return landCells; }, newGame, startPlay, own: () => own, get S() { return S; }, adj: () => adj, settings };
+window.TW = { get units() { return units; }, get players() { return players; }, get sites() { return sites; }, get towns() { return towns; }, get state() { return state; }, get T() { return T; },
+  get selected() { return selected; }, get nOwnable() { return nOwnable; }, step, hire, orderPoints, findPath, fill, newGame, tapAt, own: () => own, terr: () => terr, cam, settings, get gl() { return !!gl; } };
 </script>
 </body>
 </html>
