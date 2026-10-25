@@ -66,6 +66,9 @@ button:disabled{opacity:.4;cursor:default}
 
 #toast{position:fixed;left:50%;bottom:calc(var(--safe-b) + 170px);transform:translateX(-50%);background:rgba(0,0,0,.78);padding:8px 14px;border-radius:12px;font-size:14px;opacity:0;transition:opacity .25s;pointer-events:none;max-width:92vw;text-align:center}
 #toast.on{opacity:1}
+#toast.go{pointer-events:auto;background:rgba(150,30,20,.92);font-weight:700;cursor:pointer}
+#lb .r em.u{min-width:22px;text-align:right}
+#land small{color:var(--muted)}
 
 
 /* Overlays */
@@ -116,6 +119,7 @@ details ul{padding-left:18px;margin:8px 0 0}
 <div id="top" class="hidden">
   <button class="iconbtn" id="btnPause" aria-label="Pause">&#9776;</button>
   <button class="iconbtn" id="speed" aria-label="Hastighed">1×</button>
+  <button class="iconbtn" id="btnHome" aria-label="Til dit HQ">&#8962;</button>
   <div id="clock">0:00</div>
   <div id="lb"></div>
 </div>
@@ -151,10 +155,11 @@ details ul{padding-left:18px;margin:8px 0 0}
     <details><summary>Sådan spiller du</summary><ul>
       <li>Du og 3 computere starter med et <b>hovedkvarter (HQ)</b> i hvert sit hjørne og 100 guld. Ingen tropper.</li>
       <li><b>Hyr</b> soldater (rundt mærke med en figur), kampvogne og fly med knapperne forneden. De bliver bygget i dit HQ, eller i en by du ejer, hvis du har trykket på den. Højst 10 tropper ad gangen.</li>
-      <li><b>Tryk på en trop</b> for at vælge den, og <b>tryk på en provins</b>, så finder den selv vejen dertil. Træk med fingeren for at flytte kortet. <b>Vælg alle</b> sender hele hæren.</li>
+      <li><b>Tryk på en trop</b> for at vælge den, og <b>tryk på en provins</b>, så finder den selv vejen dertil. Står flere tropper oven i hinanden, så tryk igen for at vælge den næste. Træk med fingeren for at flytte kortet. <b>Vælg alle</b> sender hele hæren.</li>
       <li>Kortet er delt i <b>provinser</b>, som i Supremacy. Stil en soldat eller kampvogn i en provins uden fjender, så bliver den din efter et par sekunder. Fly kan ikke tage land.</li>
       <li>Hver provins giver guld. Provinser med en <b>by</b> giver mere og kan bygge tropper.</li>
       <li>Fjendtlige tropper kan <b>ikke gå igennem hinanden</b>, så fronten er dér, hvor hærene mødes. En provins med fjendtlige tropper i kan ikke tages. Tropper skyder selv. <b>Kampvogne</b> slår soldater, <b>fly</b> slår kampvogne, og <b>soldater</b> kan skyde fly ned. Skov giver dækning. Floder krydses ved broerne.</li>
+      <li>Bliver dit HQ eller en by angrebet, får du en <b>rød advarsel</b>: tryk på den for at se hvor. ⌂ hopper hjem til dit HQ.</li>
       <li>Dit land heler dine tropper. Ødelæg de andres <b>HQ</b>, eller ej 70 % af landet, for at vinde.</li>
     </ul></details>
   </div>
@@ -166,6 +171,7 @@ details ul{padding-left:18px;margin:8px 0 0}
     <button class="big" id="btnResume">Fortsæt</button>
     <button class="sec" id="btnRestart">Nyt spil</button>
     <button class="sec" id="btnQuit">Til menuen</button>
+    <div id="pauseHelp"></div>
   </div>
 </div>
 
@@ -210,8 +216,8 @@ const VS = { inf: { inf: 1, tank: 0.5, plane: 0.7 }, tank: { inf: 1.6, tank: 1, 
 const VS_BASE = { inf: 1, tank: 1.5, plane: 1.2 };
 const MAX_UNITS = 10, QUEUE = 3;
 // fronts: enemy ground troops can't pass through each other, and land an enemy troop stands near can't be painted
-const BLOCK = 1.0;
-const BASE_HP = 1200, BASE_DPS = 16, BASE_RANGE = 4.5, BASE_REGEN = 4;
+const BLOCK = 1.2;
+const BASE_HP = 1800, BASE_DPS = 16, BASE_RANGE = 4.5, BASE_REGEN = 4;
 const TOWN_DPS = 6, TOWN_RANGE = 3.2, CAP_NEUTRAL = 20, CAP_ENEMY = 40, CAP_TOWN = 1.5;
 const START_GOLD = 100, INC_BASE = 1.8, INC_TOWN = 1.2, INC_PROV = 0.15;
 const HEAL = 3, HEAL_SITE = 12, FOREST_COVER = 0.7, WIN_SHARE = 0.7;
@@ -383,7 +389,7 @@ function newWorld(demo) {
     pr.hq = k; setProvOwner(pr, k);
   }
   sites = [...players.slice(1).map(p => p.base), ...towns];
-  units = []; shots = []; booms = []; selected.clear(); spawnSite = human ? human.base : null;
+  units = []; shots = []; booms = []; alerts = []; for (const k in lastAlarm) delete lastAlarm[k]; selected.clear(); spawnSite = human ? human.base : null;
   T = 0; uid = 1; dirty = true;
 }
 
@@ -519,7 +525,7 @@ function separate() {
   for (let a = 0; a < units.length; a++) for (let b = a + 1; b < units.length; b++) {
     const A = units[a], B = units[b];
     if (!!A.k.air !== !!B.k.air) continue;
-    const dx = B.x - A.x, dy = B.y - A.y, d = Math.hypot(dx, dy), m = A.p === B.p || A.k.air ? 0.75 : BLOCK;
+    const dx = B.x - A.x, dy = B.y - A.y, d = Math.hypot(dx, dy), m = A.p === B.p || A.k.air ? 1.0 : BLOCK;
     if (d >= m || d < 1e-4) continue;
     const f = (m - d) * 0.25, nx = dx / d * f, ny = dy / d * f;
     const ia = cellOf(A.x - nx, A.y - ny), ib = cellOf(B.x + nx, B.y + ny);
@@ -550,7 +556,8 @@ function combat() {
     for (let k = 1; k <= 4; k++) {
       const b = players[k].base;
       if (k === u.p || b.hp <= 0 || Math.hypot(b.x - u.x, b.y - u.y) > u.k.range + 1.2) continue;
-      b.hp -= u.k.dps * VS_BASE[u.type] * DT; b.hit = 4; b.lastHit = T; u.tgt = b; u.aim = Math.atan2(b.y - u.y, b.x - u.x);
+      b.hp -= u.k.dps * VS_BASE[u.type] * DT; b.hit = 4; b.lastHit = T; u.tgt = b;
+      if (k === 1) alarm('hq', b.x, b.y, 'Dit HQ bliver angrebet!'); u.aim = Math.atan2(b.y - u.y, b.x - u.x);
       if (u.cool-- <= 0) { u.cool = u.type === 'tank' ? 8 : 4; shot(u.x, u.y, b.x, b.y, u.p, u.type === 'tank'); }
       if (b.hp <= 0) eliminate(players[k], u.p);
       break;
@@ -592,10 +599,11 @@ function stepProvinces() {
     if (others && !(m & (1 << pr.owner)) && !(others & (others - 1)) && !locked) {
       const who = 31 - Math.clz32(others);
       if (pr.capBy !== who) { pr.capBy = who; pr.cap = 0; }
+      if (pr.owner === 1 && pr.town && pr.cap === 0) alarm('p' + pr.id, pr.cx, pr.cy, players[who].name + ' prøver at tage din by!');
       if (++pr.cap >= (pr.owner ? CAP_ENEMY : CAP_NEUTRAL) * (pr.town ? CAP_TOWN : 1)) {
         const old = pr.owner;
         setProvOwner(pr, who);
-        if (state === 'play' && pr.town) { if (who === 1) toast('Du erobrede en by!'); else if (old === 1) toast(players[who].name + ' tog din by'); }
+        if (state === 'play' && pr.town) { if (who === 1) toast('Du erobrede en by!'); else if (old === 1) toast(players[who].name + ' tog din by', [pr.cx, pr.cy]); }
       }
     } else if (pr.cap > 0) pr.cap = Math.max(0, pr.cap - 2);
   }
@@ -767,8 +775,9 @@ function clampCam() {
   const minS = Math.min(CW / W, CH / H) * 0.95, maxS = 44;
   cam.s = Math.max(minS, Math.min(maxS, cam.s));
   const mw = W * cam.s, mh = H * cam.s;
-  cam.x = mw < CW ? (CW - mw) / 2 : Math.min(CW * 0.25, Math.max(CW * 0.75 - mw, cam.x));
-  cam.y = mh < CH ? (CH - mh) / 2 : Math.min(CH * 0.25, Math.max(CH * 0.75 - mh, cam.y));
+  cam.x = mw < CW ? (CW - mw) / 2 : Math.min(0, Math.max(CW - mw, cam.x));
+  // a little slack at top and bottom so the edges can be pulled out from under the bars
+  cam.y = mh < CH ? (CH - mh) / 2 : Math.min(70, Math.max(CH - 190 - mh, cam.y));
 }
 function fmt(n) { n = Math.max(0, n); return n < 1000 ? String(Math.floor(n)) : (n / 1000).toFixed(1).replace('.', ',') + 'k'; }
 function fmtTime(t) { const s = Math.floor(t * DT); return Math.floor(s / 60) + ':' + String(s % 60).padStart(2, '0'); }
@@ -821,6 +830,7 @@ function render(now) {
     ctx.beginPath(); ctx.arc(X, Y, r, -Math.PI / 2, -Math.PI / 2 + Math.PI * 2 * f); ctx.stroke();
   }
   drawUnits(t);
+  drawAlerts(t);
   for (const s of shots) {
     if (!seen(s.x0, s.y0) && !seen(s.x1, s.y1)) continue;
     ctx.strokeStyle = s.heavy ? 'rgba(255,214,120,.95)' : 'rgba(255,245,200,.85)'; ctx.lineWidth = s.heavy ? 2.5 : 1.4;
@@ -837,7 +847,7 @@ function tokenR() { return Math.max(9, Math.min(18, cam.s * 0.75)); }
 function drawPaths() {
   ctx.lineCap = 'round'; ctx.lineJoin = 'round';
   for (const u of units) {
-    if (!u.path || (u.p !== 1 && !(human === null || !human.alive)) ) continue;
+    if (!u.path || !selected.has(u)) continue;
     const mine = u.p === 1 && human;
     ctx.strokeStyle = mine ? (selected.has(u) ? 'rgba(255,236,170,.9)' : 'rgba(255,255,255,.55)') : rgb(players[u.p].col, 0.35);
     ctx.lineWidth = mine ? 2 : 1.2; ctx.setLineDash([5, 5]);
@@ -1108,13 +1118,13 @@ function updateHud() {
   if (!players.length) return;
   $('clock').textContent = fmtTime(T);
   const rows = players.slice(1).slice().sort((a, b) => (b.alive - a.alive) || b.count - a.count);
-  $('lb').innerHTML = rows.map((p, k) => `<div class="r${p === human ? ' me' : ''}"><b>${k + 1}</b><i style="background:${rgb(p.col)}"></i><span>${esc(p.name)}${p.alive ? '' : ' ✕'}</span><em>${Math.round(p.count / nOwnable * 100)}%</em></div>`).join('');
+  $('lb').innerHTML = rows.map((p, k) => `<div class="r${p === human ? ' me' : ''}"><b>${k + 1}</b><i style="background:${rgb(p.col)}"></i><span>${esc(p.name)}${p.alive ? '' : ' ✕'}</span><em>${Math.round(p.count / nOwnable * 100)}%</em><em class="u">${p.alive ? units.filter(u => u.p === p.id).length + '⚔' : ''}</em></div>`).join('');
   if (state !== 'play' || !human) return;
   $('gold').textContent = fmt(human.gold);
   $('inc').textContent = '+' + income(human).toFixed(1).replace('.', ',') + '/s';
   const n = unitCount(human);
   $('army').innerHTML = `${n} <small>/ ${MAX_UNITS} tropper</small>`;
-  $('land').innerHTML = `<b>${Math.round(human.count / nOwnable * 100)}%</b> land`;
+  $('land').innerHTML = `<b>${Math.round(human.count / nOwnable * 100)}%</b> <small>/ ${WIN_SHARE * 100}% land</small>`;
   if (spawnSite && spawnSite.owner !== 1) spawnSite = human.base;
   for (const b of document.querySelectorAll('#hire button[data-t]')) {
     const k = UNITS[b.dataset.t];
@@ -1135,22 +1145,56 @@ function updateHud() {
   $('hint').innerHTML = hint;
 }
 function esc(s) { return s.replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c])); }
-function toast(msg) { const t = $('toast'); t.textContent = msg; t.classList.add('on'); clearTimeout(toastTimer); toastTimer = setTimeout(() => t.classList.remove('on'), 1900); }
+let toastAt = null;
+function toast(msg, at) {
+  const t = $('toast'); t.textContent = at ? msg + '  ›' : msg; t.classList.add('on'); t.classList.toggle('go', !!at); toastAt = at || null;
+  clearTimeout(toastTimer); toastTimer = setTimeout(() => { t.classList.remove('on', 'go'); toastAt = null; }, at ? 3500 : 1900);
+}
+$('toast').onclick = () => { if (toastAt) { centerOn(toastAt[0], toastAt[1]); $('toast').classList.remove('on', 'go'); toastAt = null; } };
+function centerOn(x, y) { if (cam.s < 10) cam.s = 13; cam.x = CW / 2 - x * cam.s; cam.y = CH * 0.42 - y * cam.s; clampCam(); }
+// Warnings when something of yours is attacked, with a red ping on the map (or an arrow when it's off screen).
+let alerts = [];
+const lastAlarm = {};
+function alarm(key, x, y, msg) {
+  if (state !== 'play' || !human || !human.alive) return;
+  if (lastAlarm[key] !== undefined && T - lastAlarm[key] < 150) return;
+  // never more than one warning every 8 seconds, except for the HQ
+  if (key !== 'hq' && T - (lastAlarm.any ?? -999) < 80) return;
+  lastAlarm[key] = lastAlarm.any = T; alerts.push({ x, y, t0: T });
+  toast(msg, [x, y]); buzz([60, 40, 60]);
+}
+function drawAlerts(t) {
+  alerts = alerts.filter(a => T - a.t0 < 60);
+  for (const a of alerts) {
+    const X = sx(a.x), Y = sy(a.y), f = ((T - a.t0) % 15) / 15;
+    if (X > 20 && Y > 70 && X < CW - 20 && Y < CH - 190) {
+      ctx.strokeStyle = `rgba(240,70,50,${1 - f})`; ctx.lineWidth = 3;
+      ctx.beginPath(); ctx.arc(X, Y, 14 + f * 30, 0, 7); ctx.stroke();
+    } else {
+      const cx = CW / 2, cy = (70 + CH - 190) / 2, ang = Math.atan2(Y - cy, X - cx);
+      const ex = Math.max(28, Math.min(CW - 28, cx + Math.cos(ang) * CW)), ey = Math.max(84, Math.min(CH - 200, cy + Math.sin(ang) * CH));
+      ctx.save(); ctx.translate(ex, ey); ctx.rotate(ang);
+      ctx.fillStyle = `rgba(230,60,40,${0.75 + 0.25 * Math.sin(t * 8)})`; ctx.strokeStyle = '#fff'; ctx.lineWidth = 2;
+      ctx.beginPath(); ctx.moveTo(16, 0); ctx.lineTo(-10, -12); ctx.lineTo(-4, 0); ctx.lineTo(-10, 12); ctx.closePath(); ctx.fill(); ctx.stroke();
+      ctx.restore();
+    }
+  }
+}
 function show(id, on) { $(id).classList.toggle('hidden', !on); }
 function buzz(p) { if (navigator.vibrate) try { navigator.vibrate(p); } catch (e) {} }
 
 // ---------- Input ----------
 const world = (px, py) => [(px - cam.x) / cam.s, (py - cam.y) / cam.s];
-function unitAt(px, py) {
-  const r = Math.max(20, tokenR() * 1.7);
-  let best = null, bd = r * r;
+function unitsAt(px, py) {
+  const r = Math.max(20, tokenR() * 1.7), out = [];
   for (const u of units) {
     if (u.p !== 1) continue;
     const Y = sy(u.y) - (u.k.air ? tokenR() * 1.5 : 0), d = (sx(u.x) - px) ** 2 + (Y - py) ** 2;
-    if (d < bd) { bd = d; best = u; }
+    if (d < r * r) out.push([d, u]);
   }
-  return best;
+  return out.sort((a, b) => a[0] - b[0]).map(a => a[1]);
 }
+function unitAt(px, py) { return unitsAt(px, py)[0] || null; }
 function siteAt(px, py) {
   const r = Math.max(20, cam.s * 1.6);
   return sites.find(s => (sx(s.x) - px) ** 2 + (sy(s.y) - py) ** 2 < r * r) || null;
@@ -1174,10 +1218,13 @@ function sendSelected(wx, wy) {
 }
 function tapAt(px, py) {
   if (state !== 'play' || !human.alive) return;
-  const u = unitAt(px, py);
-  if (u) {
-    if (selected.has(u) && selected.size === 1) selected.clear();
-    else { selected.clear(); selected.add(u); }
+  // tapping a clump again picks the next troop in it, and after the last one deselects
+  const near = unitsAt(px, py);
+  if (near.length) {
+    const cur = selected.size === 1 ? [...selected][0] : null, k = near.indexOf(cur);
+    selected.clear();
+    if (k < 0) selected.add(near[0]);
+    else if (k + 1 < near.length) selected.add(near[k + 1]);
     buzz(8); return;
   }
   const [wx, wy] = world(px, py);
@@ -1284,6 +1331,8 @@ $('btnPause').onclick = () => { if (state === 'play' || state === 'over') { paus
 $('btnResume').onclick = () => { paused = false; show('pause', false); };
 $('btnRestart').onclick = $('btnAgain').onclick = () => { delete $('over').dataset.shown; newGame(); };
 $('btnQuit').onclick = $('btnMenu').onclick = () => { paused = false; toMenu(); };
+$('pauseHelp').appendChild(document.querySelector('#menu details').cloneNode(true));
+$('btnHome').onclick = () => { if (human) centerOn(human.base.x + 4, human.base.y - 4); };
 $('btnWatch').onclick = () => { watching = true; show('over', false); };
 $('speed').onclick = () => { speed = speed === 1 ? 2 : speed === 2 ? 3 : 1; $('speed').textContent = speed + '×'; };
 function toMenu() {
