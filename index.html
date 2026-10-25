@@ -1197,7 +1197,8 @@ function resize() {
   DPR = Math.min(2, devicePixelRatio || 1);
   CW = innerWidth; CH = innerHeight;
   cv.width = Math.round(CW * DPR); cv.height = Math.round(CH * DPR);
-  GDPR = Math.min(DPR, 1.5);
+  // Phones draw the map shader at 1× so heavy GPUs never stall; the overlay stays sharp.
+  GDPR = matchMedia('(pointer: coarse)').matches ? 1 : Math.min(DPR, 1.5);
   glc.width = Math.round(CW * GDPR); glc.height = Math.round(CH * GDPR);
   if (W) clampCam();
 }
@@ -1393,8 +1394,8 @@ void main(){
       float inner = smoothstep(1.6, 3.0, e) * (1.0 - smoothstep(3.5, 7.0, e));
       col = mix(col, min(vec3(1.0), col * 1.18 + 0.05), inner * 0.55);
     }
-    // province borders: fine lines inside countries and across free land
-    {
+    // province borders: fine lines inside countries and across free land (only once zoomed in a little)
+    if (uCam.z > 1.1) {
       vec2 pc = floor(p); vec2 pt = p - pc - 0.5;
       vec3 qx = vec3(0.5*(0.5-pt.x)*(0.5-pt.x), 0.75 - pt.x*pt.x, 0.5*(0.5+pt.x)*(0.5+pt.x));
       vec3 qy = vec3(0.5*(0.5-pt.y)*(0.5-pt.y), 0.75 - pt.y*pt.y, 0.5*(0.5+pt.y)*(0.5+pt.y));
@@ -1437,6 +1438,8 @@ void main(){
   }
   gl_FragColor = vec4(col, 1.0);
 }`;
+// If the phone's GPU gives up (context lost), fall back to the plain canvas map instead of a black screen.
+glc.addEventListener('webglcontextlost', e => { e.preventDefault(); gl = null; glc.style.display = 'none'; dirty = true; });
 function initGL() {
   try { gl = glc.getContext('webgl', { antialias: false, alpha: false }); } catch (e) { gl = null; }
   if (!gl || !gl.getExtension('OES_standard_derivatives')) { gl = null; glc.style.display = 'none'; return; }
