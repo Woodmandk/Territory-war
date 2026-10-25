@@ -201,9 +201,9 @@ details ul{padding-left:18px;margin:8px 0 0}
       <li>Du og 3 computere starter med et <b>hovedkvarter (HQ)</b> i hvert sit hjørne og 100 guld. Ingen tropper.</li>
       <li><b>Hyr</b> soldater, kampvogne og fly med knapperne forneden. De bliver bygget i dit HQ, eller i en by du ejer, hvis du har trykket på den. Højst 10 tropper ad gangen.</li>
       <li><b>Tryk på en trop</b> for at vælge den, og tryk på kortet for at sende den dertil. Eller <b>træk en rute</b> med fingeren, startende fra tropen.</li>
-      <li>Jorden dine tropper går på, bliver din. Går en trop ud og <b>tilbage til dit land</b> i en løkke, bliver alt indeni dit. Fly maler ikke.</li>
-      <li><b>Byer</b> giver guld og kan bygge tropper. Stil en soldat eller kampvogn i en by for at erobre den.</li>
-      <li>Fjendtlige tropper kan <b>ikke gå igennem hinanden</b>, så der opstår fronter, hvor hærene mødes. Land, hvor fjenden har tropper stående, kan du ikke male. Tropper skyder selv. <b>Kampvogne</b> slår soldater, <b>fly</b> slår kampvogne, og <b>soldater</b> kan skyde fly ned. Skov giver dækning. Floder krydses ved broerne.</li>
+      <li>Kortet er delt i <b>provinser</b>, som i Supremacy. Stil en soldat eller kampvogn i en provins uden fjender, så bliver den din efter et par sekunder. Fly kan ikke tage land.</li>
+      <li>Hver provins giver guld. Provinser med en <b>by</b> giver mere og kan bygge tropper.</li>
+      <li>Fjendtlige tropper kan <b>ikke gå igennem hinanden</b>, så fronten er dér, hvor hærene mødes. En provins med fjendtlige tropper i kan ikke tages. Tropper skyder selv. <b>Kampvogne</b> slår soldater, <b>fly</b> slår kampvogne, og <b>soldater</b> kan skyde fly ned. Skov giver dækning. Floder krydses ved broerne.</li>
       <li>Dit land heler dine tropper. Ødelæg de andres <b>HQ</b>, eller ej 70 % af landet, for at vinde.</li>
     </ul></details>
   </div>
@@ -249,9 +249,9 @@ const TICK_MS = 100, DT = TICK_MS / 1000;
 const W = 80, H = 80, NC = W * H, HALF = 40;
 // speed and ranges are in cells (per second); build is seconds in the factory
 const UNITS = {
-  inf:   { name: 'Soldat',   cost: 40,  hp: 100, dps: 12, range: 2.4, speed: 1.5, paint: 1.4, build: 3, sight: 7 },
-  tank:  { name: 'Kampvogn', cost: 120, hp: 340, dps: 26, range: 3.0, speed: 1.1, paint: 1.9, build: 6, sight: 7 },
-  plane: { name: 'Fly',      cost: 160, hp: 90,  dps: 22, range: 3.4, speed: 3.2, paint: 0,   build: 6, sight: 10, air: true },
+  inf:   { name: 'Soldat',   cost: 40,  hp: 100, dps: 12, range: 2.4, speed: 1.5, build: 3, sight: 7 },
+  tank:  { name: 'Kampvogn', cost: 120, hp: 340, dps: 26, range: 3.0, speed: 1.1, build: 6, sight: 7 },
+  plane: { name: 'Fly',      cost: 160, hp: 90,  dps: 22, range: 3.4, speed: 3.2, build: 6, sight: 10, air: true },
 };
 const UKEYS = ['inf', 'tank', 'plane'];
 // damage multiplier, attacker -> target: tanks beat soldiers, planes beat tanks, soldiers shoot planes down
@@ -259,10 +259,10 @@ const VS = { inf: { inf: 1, tank: 0.5, plane: 0.7 }, tank: { inf: 1.6, tank: 1, 
 const VS_BASE = { inf: 1, tank: 1.5, plane: 1.2 };
 const MAX_UNITS = 10, QUEUE = 3;
 // fronts: enemy ground troops can't pass through each other, and land an enemy troop stands near can't be painted
-const BLOCK = 1.0, ZOC = 3;
-const BASE_HP = 1200, BASE_DPS = 16, BASE_RANGE = 4.5, BASE_REGEN = 4, START_R = 6, CORE_R = 3.5;
-const TOWN_R = 1.6, TOWN_DPS = 6, TOWN_RANGE = 3.2, TOWN_PAINT = 3, CAP_NEUTRAL = 30, CAP_ENEMY = 60;
-const START_GOLD = 100, INC_BASE = 1.8, INC_TOWN = 1.2, INC_CELL = 0.003;
+const BLOCK = 1.0;
+const BASE_HP = 1200, BASE_DPS = 16, BASE_RANGE = 4.5, BASE_REGEN = 4;
+const TOWN_DPS = 6, TOWN_RANGE = 3.2, CAP_NEUTRAL = 20, CAP_ENEMY = 40, CAP_TOWN = 1.5;
+const START_GOLD = 100, INC_BASE = 1.8, INC_TOWN = 1.2, INC_PROV = 0.15;
 const HEAL = 3, HEAL_SITE = 12, FOREST_COVER = 0.7, WIN_SHARE = 0.7;
 const DIFFS = [{ inc: 0.75, think: 16, atk: 1800 }, { inc: 1, think: 10, atk: 1300 }, { inc: 1.3, think: 6, atk: 900 }];
 const COLORS = [null, [52, 124, 200], [206, 68, 56], [214, 160, 30], [140, 92, 200]];
@@ -283,7 +283,8 @@ function fbm(x, y, s, oct) { let t = 0, amp = 1, f = 1, n = 0; for (let o = 0; o
 
 // ---------- World ----------
 // terrain: 0 water, 1 grass, 2 rock, 3 forest, 4 bridge you cross east-west, 5 bridge you cross north-south
-const terr = new Uint8Array(NC), own = new Int8Array(NC), prot = new Int8Array(NC), townCell = new Int16Array(NC);
+const terr = new Uint8Array(NC), own = new Int8Array(NC), prov = new Int16Array(NC);
+let provs = [];
 const shade = new Float32Array(NC), flash = new Uint8Array(NC);
 let state = 'demo', T = 0, players = [], units = [], sites = [], towns = [], shots = [], booms = [], human = null, nOwnable = 1;
 let selected = new Set(), spawnSite = null, watching = false, speed = 1, dirty = true, uid = 1;
@@ -318,6 +319,46 @@ function genMap() {
     for (const b of [10 + ((rng() * 5) | 0), 25 + ((rng() * 4) | 0)]) for (let k = HALF - 6; k < HALF; k++) for (const o of [0, 1]) {
       if (q[(b + o) * HALF + k] === 0) q[(b + o) * HALF + k] = 4;
       if (q[k * HALF + b + o] === 0) q[k * HALF + b + o] = 5;
+    }
+    // provinces like Supremacy: grown from seeds (HQ, towns, scattered points) over the land, with noisy edges
+    const qp = new Int16Array(HALF * HALF).fill(-1), okq = i => q[i] === 1 || q[i] === 3 || q[i] === 4 || q[i] === 5;
+    const seeds = [[9, 9], ...tq];
+    for (let n = 0; n < 600 && seeds.length < 14; n++) {
+      const x = (rng() * HALF) | 0, y = (rng() * HALF) | 0;
+      if (okq(y * HALF + x) && seeds.every(([a, b]) => Math.hypot(a - x, b - y) >= 7)) seeds.push([x, y]);
+    }
+    const cost = new Float32Array(HALF * HALF).fill(1e9), buckets = [];
+    seeds.forEach(([x, y], k) => { const i = y * HALF + x; qp[i] = k; cost[i] = 0; (buckets[0] = buckets[0] || []).push(i); });
+    for (let c = 0; c < buckets.length; c++) {
+      const L = buckets[c]; if (!L) continue;
+      for (const i of L) {
+        if (cost[i] < c) continue;
+        const x = i % HALF, y = (i / HALF) | 0;
+        for (const [X, Y] of [[x - 1, y], [x + 1, y], [x, y - 1], [x, y + 1]]) {
+          if (X < 0 || Y < 0 || X >= HALF || Y >= HALF) continue;
+          const j = Y * HALF + X;
+          if (!okq(j)) continue;
+          const nc = c + 10 + (q[j] === 3 ? 4 : 0) + ((fbm(X * 0.3, Y * 0.3, s + 11, 2) * 9) | 0);
+          if (nc < cost[j]) { cost[j] = nc; qp[j] = qp[i]; (buckets[nc] = buckets[nc] || []).push(j); }
+        }
+      }
+    }
+    for (let i = 0; i < HALF * HALF; i++) if (okq(i) && qp[i] < 0) q[i] = 2;
+    const NQ = seeds.length;
+    provs = [];
+    for (const [fx, fy] of [[0, 0], [1, 0], [0, 1], [1, 1]]) for (const [x, y] of seeds)
+      provs.push({ id: provs.length, cx: (fx ? W - 1 - x : x) + 0.5, cy: (fy ? H - 1 - y : y) + 0.5, cells: [], nb: [], owner: 0, cap: 0, capBy: 0, town: null, hq: 0 });
+    for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) {
+      const i = y * W + x, qx = x < HALF ? x : W - 1 - x, qy = y < HALF ? y : H - 1 - y, v = qp[qy * HALF + qx];
+      prov[i] = v < 0 ? -1 : v + NQ * ((x >= HALF ? 1 : 0) + (y >= HALF ? 2 : 0));
+      if (prov[i] >= 0) provs[prov[i]].cells.push(i);
+    }
+    for (let i = 0; i < NC; i++) {
+      const a = prov[i]; if (a < 0) continue;
+      for (const j of [i % W < W - 1 ? i + 1 : -1, i < NC - W ? i + W : -1]) {
+        const b = j >= 0 ? prov[j] : -1;
+        if (b >= 0 && b !== a && !provs[a].nb.includes(b)) { provs[a].nb.push(b); provs[b].nb.push(a); }
+      }
     }
     for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) {
       const i = y * W + x, qx = x < HALF ? x : W - 1 - x, qy = y < HALF ? y : H - 1 - y;
@@ -360,18 +401,15 @@ function setOwn(i, p) {
   if (p > 0) { players[p].count++; players[p].painted = true; }
   flash[i] = 220; dirty = true;
 }
-function canPaint(i, p) {
-  const o = own[i];
-  if (o < 0 || o === p) return false;
-  if (prot[i] && prot[i] !== p) return false;
-  const tc = townCell[i];
-  if (tc >= 0 && towns[tc].owner > 0 && towns[tc].owner !== p) return false;
-  return !(o > 0 && held(i, o));
-}
-function held(i, o) {
-  const x = i % W + 0.5, y = ((i / W) | 0) + 0.5;
-  for (const v of units) if (v.p === o && !v.k.air && (v.x - x) ** 2 + (v.y - y) ** 2 < ZOC * ZOC) return true;
-  return false;
+function setProvOwner(pr, p) {
+  const old = pr.owner;
+  pr.owner = p; pr.cap = 0; pr.capBy = 0;
+  for (const i of pr.cells) setOwn(i, p);
+  const t = pr.town;
+  if (t) {
+    if (old) { for (const q of t.q) players[old].gold += UNITS[q].cost; if (spawnSite === t && old === 1 && human) spawnSite = human.base; }
+    t.owner = p; t.q = []; t.prog = 0;
+  }
 }
 // a ground troop may not step closer into an enemy ground troop
 function blockedAt(u, X, Y) {
@@ -383,44 +421,16 @@ function blockedAt(u, X, Y) {
   }
   return false;
 }
-function paintDisc(x, y, r, p) {
-  for (let cy = Math.max(0, Math.floor(y - r)); cy <= Math.min(H - 1, Math.floor(y + r)); cy++)
-    for (let cx = Math.max(0, Math.floor(x - r)); cx <= Math.min(W - 1, Math.floor(x + r)); cx++) {
-      const i = cy * W + cx;
-      if ((cx + 0.5 - x) ** 2 + (cy + 0.5 - y) ** 2 <= r * r && canPaint(i, p)) setOwn(i, p);
-    }
-}
-// paper.io style: whatever your land walls off from the map edge becomes yours
-const fillMark = new Uint8Array(NC), fillQ = new Int32Array(NC);
-function fill(p) {
-  fillMark.fill(0); let h = 0, t = 0;
-  const push = i => { if (!fillMark[i] && own[i] !== p) { fillMark[i] = 1; fillQ[t++] = i; } };
-  for (let x = 0; x < W; x++) { push(x); push((H - 1) * W + x); }
-  for (let y = 0; y < H; y++) { push(y * W); push(y * W + W - 1); }
-  while (h < t) {
-    const i = fillQ[h++], x = i % W;
-    if (x > 0) push(i - 1); if (x < W - 1) push(i + 1); if (i >= W) push(i - W); if (i < NC - W) push(i + W);
-  }
-  let got = 0;
-  for (let i = 0; i < NC; i++) if (!fillMark[i] && canPaint(i, p)) { setOwn(i, p); got++; }
-  return got;
-}
-
 function newWorld(demo) {
   genMap();
-  own.fill(0); prot.fill(0); townCell.fill(-1); flash.fill(0);
+  own.fill(0); flash.fill(0);
   nOwnable = 0;
-  for (let i = 0; i < NC; i++) { if (terr[i] === 0 || terr[i] === 2) own[i] = -1; else nOwnable++; }
-  towns.forEach((t, k) => {
-    for (let y = Math.floor(t.y - 2); y <= t.y + 2; y++) for (let x = Math.floor(t.x - 2); x <= t.x + 2; x++) {
-      const i = cellOf(x, y); if (i >= 0 && Math.hypot(x + 0.5 - t.x, y + 0.5 - t.y) <= TOWN_R + 0.3) townCell[i] = k;
-    }
-  });
+  for (let i = 0; i < NC; i++) { if (prov[i] < 0) own[i] = -1; else nOwnable++; }
+  for (const t of towns) { const pr = provs[prov[cellOf(t.x, t.y)]]; pr.town = t; t.prov = pr; }
   makePlayers(demo);
   for (let k = 1; k <= 4; k++) {
-    const b = players[k].base;
-    for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) if (Math.hypot(x + 0.5 - b.x, y + 0.5 - b.y) <= CORE_R) prot[y * W + x] = k;
-    paintDisc(b.x, b.y, START_R, k);
+    const pr = provs[prov[cellOf(players[k].base.x, players[k].base.y)]];
+    pr.hq = k; setProvOwner(pr, k);
   }
   sites = [...players.slice(1).map(p => p.base), ...towns];
   units = []; shots = []; booms = []; selected.clear(); spawnSite = human ? human.base : null;
@@ -615,29 +625,28 @@ function eliminate(p, by) {
   booms.push({ x: p.base.x, y: p.base.y, t: 0, big: true, huge: true });
   units = units.filter(u => u.p !== p.id);
   for (const u of [...selected]) if (u.p === p.id) selected.delete(u);
-  for (let i = 0; i < NC; i++) { if (own[i] === p.id) setOwn(i, 0); if (prot[i] === p.id) prot[i] = 0; }
-  for (const t of towns) if (t.owner === p.id) { t.owner = 0; t.q = []; t.prog = 0; }
+  for (const pr of provs) if (pr.owner === p.id) setProvOwner(pr, 0);
   p.base.q = []; p.count = 0;
   if (state === 'play' && by === 1 && p !== human) toast(p.name + ' er slået ud!');
 }
-function stepTowns() {
-  for (const t of towns) {
-    let who = 0, mixed = false, def = false;
-    for (const u of units) {
-      if (u.k.air || Math.hypot(u.x - t.x, u.y - t.y) > TOWN_R + 0.4) continue;
-      if (u.p === t.owner) def = true;
-      else if (!who) who = u.p; else if (who !== u.p) mixed = true;
-    }
-    if (who && !mixed && !def) {
-      if (t.capBy !== who) { t.capBy = who; t.cap = 0; }
-      if (++t.cap >= (t.owner ? CAP_ENEMY : CAP_NEUTRAL)) {
-        const old = t.owner;
-        if (old) { for (const q of t.q) players[old].gold += UNITS[q].cost; if (spawnSite === t && old === 1) spawnSite = human.base; }
-        t.owner = who; t.cap = 0; t.capBy = 0; t.q = []; t.prog = 0;
-        paintDisc(t.x, t.y, TOWN_PAINT, who);
-        if (state === 'play') { if (who === 1) toast('Du erobrede en by!'); else if (old === 1) toast(players[who].name + ' tog din by'); }
+// A province turns yours when only your ground troops stand in it for a few seconds.
+let provPres = new Int32Array(0);
+function stepProvinces() {
+  if (provPres.length !== provs.length) provPres = new Int32Array(provs.length);
+  provPres.fill(0);
+  for (const u of units) { if (u.k.air) continue; const ci = cellOf(u.x, u.y), pi = ci >= 0 ? prov[ci] : -1; if (pi >= 0) provPres[pi] |= 1 << u.p; }
+  for (const pr of provs) {
+    const m = provPres[pr.id], others = m & ~(1 << pr.owner);
+    const locked = pr.hq && players[pr.hq].alive;
+    if (others && !(m & (1 << pr.owner)) && !(others & (others - 1)) && !locked) {
+      const who = 31 - Math.clz32(others);
+      if (pr.capBy !== who) { pr.capBy = who; pr.cap = 0; }
+      if (++pr.cap >= (pr.owner ? CAP_ENEMY : CAP_NEUTRAL) * (pr.town ? CAP_TOWN : 1)) {
+        const old = pr.owner;
+        setProvOwner(pr, who);
+        if (state === 'play' && pr.town) { if (who === 1) toast('Du erobrede en by!'); else if (old === 1) toast(players[who].name + ' tog din by'); }
       }
-    } else if (t.cap > 0) t.cap = Math.max(0, t.cap - 2);
+    } else if (pr.cap > 0) pr.cap = Math.max(0, pr.cap - 2);
   }
 }
 function stepSites() {
@@ -656,17 +665,14 @@ function step() {
   T++;
   for (const u of units) moveUnit(u);
   separate();
-  for (const u of units) if (u.k.paint) paintDisc(u.x, u.y, u.k.paint, u.p);
   combat();
-  stepTowns();
+  stepProvinces();
   stepSites();
   for (let k = 1; k <= 4; k++) {
     const p = players[k];
     if (!p.alive) continue;
-    if (T % 5 === k % 5 && p.painted) { p.painted = false; fill(p.id); }
     if (T % 10 === 0) {
-      const nt = towns.reduce((n, t) => n + (t.owner === k), 0);
-      p.gold += (INC_BASE + nt * INC_TOWN + p.count * INC_CELL) * (p.human ? 1 : DIFFS[settings.diff].inc);
+      p.gold += income(p) * (p.human ? 1 : DIFFS[settings.diff].inc);
       const b = p.base;
       if (T - (b.lastHit || -99) > 50) b.hp = Math.min(BASE_HP, b.hp + BASE_REGEN);
     }
@@ -685,6 +691,12 @@ function step() {
   for (const b of booms) b.t += DT;
   booms = booms.filter(b => b.t < (b.huge ? 1.6 : 0.7));
   if (state === 'play') checkEnd();
+}
+
+function income(p) {
+  let n = INC_BASE;
+  for (const pr of provs) if (pr.owner === p.id) n += INC_PROV + (pr.town ? INC_TOWN : 0);
+  return n;
 }
 
 // ---------- Bots ----------
@@ -711,6 +723,8 @@ function botThink(p) {
     if (u.tgt) continue;
     if (threat && u.job !== 'def' && Math.hypot(threat.x - u.x, threat.y - u.y) < 30) { orderPoints(u, [[threat.x, threat.y]]); u.job = 'def'; continue; }
     if (u.path) continue;
+    // stay put while taking a province
+    if (u.job && u.job.cells && u.job.owner !== p.id && prov[cellOf(u.x, u.y)] === u.job.id && !(u.job.hq && players[u.job.hq].alive)) continue;
     u.job = null;
     if (p.mode === 1 && p.target) {
       const b = p.target.base;
@@ -722,20 +736,21 @@ function botThink(p) {
       else orderPoints(u, [[p.base.x + rr(-6, 6), p.base.y + rr(-6, 6)]]);
       continue;
     }
-    const goal = towns.filter(t => t.owner !== p.id && !units.some(v => v !== u && v.p === p.id && v.job === t))
-      .map(t => ({ t, d: Math.hypot(t.x - u.x, t.y - u.y) + (t.owner ? 12 : 0) })).sort((a, b) => a.d - b.d)[0];
-    if (goal && goal.d < 34 && rng() < 0.55) { orderPoints(u, [[goal.t.x, goal.t.y]]); u.job = goal.t; continue; }
-    loopOrder(u, p);
+    provOrder(u, p);
   }
 }
-// Walk out of your land, swing sideways and come home: the loop fills in behind you.
-function loopOrder(u, p) {
-  const b = p.base, a0 = Math.atan2(HALF - b.y, HALF - b.x) + rr(-1.3, 1.3);
-  let r0 = 3;
-  while (r0 < 45) { const i = cellOf(b.x + Math.cos(a0) * r0, b.y + Math.sin(a0) * r0); if (i < 0 || (own[i] !== p.id && own[i] >= 0)) break; r0++; }
-  const out = r0 + rr(3, 7), turn = rr(0.35, 0.7) * (rng() < 0.5 ? -1 : 1), back = Math.max(3, r0 - 2);
-  const pt = (a, r) => [b.x + Math.cos(a) * r, b.y + Math.sin(a) * r];
-  orderPoints(u, [pt(a0, out), pt(a0 + turn, out), pt(a0 + turn, back)]);
+// Next province along our border that nobody of ours is already heading for; towns first, enemy land last.
+function provOrder(u, p) {
+  let best = null, bd = 1e9;
+  for (const pr of provs) {
+    if (pr.owner === p.id || (pr.hq && players[pr.hq].alive)) continue;
+    if (!pr.nb.some(j => provs[j].owner === p.id)) continue;
+    if (units.some(v => v !== u && v.p === p.id && v.job === pr)) continue;
+    const d = Math.hypot(pr.cx - u.x, pr.cy - u.y) + (pr.owner ? 10 : 0) - (pr.town ? 6 : 0) + rng() * 4;
+    if (d < bd) { bd = d; best = pr; }
+  }
+  if (best) { orderPoints(u, [[best.cx + rr(-0.6, 0.6), best.cy + rr(-0.6, 0.6)]]); u.job = best; }
+  else orderPoints(u, [[p.base.x + rr(-5, 5), p.base.y + rr(-5, 5)]]);
 }
 
 // ---------- Game flow ----------
@@ -835,6 +850,13 @@ function render(now) {
   const t = now / 1000;
   drawPaths();
   drawSites(t);
+  for (const pr of provs) {
+    if (!pr.cap || !seen(pr.cx, pr.cy)) continue;
+    const X = sx(pr.cx), Y = sy(pr.cy), r = Math.max(10, cam.s * 0.9) + (pr.town ? 4 : 0), f = pr.cap / ((pr.owner ? CAP_ENEMY : CAP_NEUTRAL) * (pr.town ? CAP_TOWN : 1));
+    ctx.strokeStyle = 'rgba(0,0,0,.45)'; ctx.lineWidth = 6; ctx.beginPath(); ctx.arc(X, Y, r, 0, 7); ctx.stroke();
+    ctx.strokeStyle = rgb(players[pr.capBy].col); ctx.lineWidth = 4;
+    ctx.beginPath(); ctx.arc(X, Y, r, -Math.PI / 2, -Math.PI / 2 + Math.PI * 2 * f); ctx.stroke();
+  }
   drawUnits(t);
   for (const s of shots) {
     if (!seen(s.x0, s.y0) && !seen(s.x1, s.y1)) continue;
@@ -891,10 +913,6 @@ function drawSites(t) {
       // little house
       ctx.fillStyle = s.owner ? '#fff' : '#5a4f3a';
       ctx.beginPath(); ctx.moveTo(X - r * 0.5, Y + r * 0.45); ctx.lineTo(X - r * 0.5, Y - r * 0.05); ctx.lineTo(X, Y - r * 0.55); ctx.lineTo(X + r * 0.5, Y - r * 0.05); ctx.lineTo(X + r * 0.5, Y + r * 0.45); ctx.closePath(); ctx.fill();
-      if (s.cap > 0) {
-        ctx.strokeStyle = rgb(players[s.capBy].col); ctx.lineWidth = 3.5;
-        ctx.beginPath(); ctx.arc(X, Y, r + 4, -Math.PI / 2, -Math.PI / 2 + Math.PI * 2 * s.cap / (s.owner ? CAP_ENEMY : CAP_NEUTRAL)); ctx.stroke();
-      }
     }
     if (s.q.length && (s.owner === 1 || !human)) {
       const r = (s.base ? 19 : 13) * z;
@@ -964,7 +982,8 @@ void main(){
   vec3 qx = vec3(0.5 * (0.5 - t.x) * (0.5 - t.x), 0.75 - t.x * t.x, 0.5 * (0.5 + t.x) * (0.5 + t.x));
   vec3 qy = vec3(0.5 * (0.5 - t.y) * (0.5 - t.y), 0.75 - t.y * t.y, 0.5 * (0.5 + t.y) * (0.5 + t.y));
   vec4 so = vec4(0.0);
-  float wat = 0.0, rok = 0.0, fst = 0.0, bh = 0.0, bv = 0.0, shd = 0.0, fl = 0.0;
+  float wat = 0.0, rok = 0.0, fst = 0.0, bh = 0.0, bv = 0.0, fl = 0.0, ws = 0.0;
+  float pid0 = floor(cellAt(pc).a * 255.0 + 0.5), shd = vn(p * 0.21) * 0.7 + vn(p * 0.5) * 0.3;
   for (int j = 0; j < 3; j++) for (int i = 0; i < 3; i++) {
     vec4 m = cellAt(pc + vec2(float(i - 1), float(j - 1)));
     float w = qx[i] * qy[j];
@@ -972,7 +991,7 @@ void main(){
     so += w * vec4(equal(vec4(o), vec4(1.0, 2.0, 3.0, 4.0)));
     wat += w * float(tt < 0.5); rok += w * float(abs(tt - 2.0) < 0.5); fst += w * float(abs(tt - 3.0) < 0.5);
     bh += w * float(abs(tt - 4.0) < 0.5); bv += w * float(abs(tt - 5.0) < 0.5);
-    shd += w * m.a; fl += w * m.b;
+    fl += w * m.b; ws += w * float(abs(floor(m.a * 255.0 + 0.5) - pid0) < 0.5);
   }
   // which owner wins this pixel, and by how much over the runner-up
   float best = 1.0 - so.x - so.y - so.z - so.w, sec = -1.0, bid = 0.0, sid = 0.0;
@@ -1019,6 +1038,8 @@ void main(){
     vec3 ink = bid > 0.5 ? bc * 0.45 : sc * 0.45;
     col = mix(col, ink, 1.0 - smoothstep(0.6, 1.8, e));
   }
+  // thin province borders, like a printed map
+  if (pid0 > 0.5) col = mix(col, col * 0.62, (1.0 - smoothstep(0.5, 0.5 + 1.4 * fwidth(ws), ws)) * 0.75);
   // bridges: planks laid across the way you walk
   float bw = bh + bv;
   if (bw > 0.05) {
@@ -1064,7 +1085,7 @@ function uploadMap() {
   let fading = false;
   for (let i = 0, q = 0; i < NC; i++, q += 4) {
     const f = flash[i];
-    mapBytes[q] = own[i] > 0 ? own[i] : 0; mapBytes[q + 1] = terr[i]; mapBytes[q + 2] = f; mapBytes[q + 3] = shade[i] * 255;
+    mapBytes[q] = own[i] > 0 ? own[i] : 0; mapBytes[q + 1] = terr[i]; mapBytes[q + 2] = f; mapBytes[q + 3] = prov[i] + 1;
     if (f) { flash[i] = f > 30 ? f - 30 : 0; fading = true; }
   }
   gl.activeTexture(gl.TEXTURE0); gl.bindTexture(gl.TEXTURE_2D, glMap);
@@ -1090,9 +1111,8 @@ function updateHud() {
   const rows = players.slice(1).slice().sort((a, b) => (b.alive - a.alive) || b.count - a.count);
   $('lb').innerHTML = rows.map((p, k) => `<div class="r${p === human ? ' me' : ''}"><b>${k + 1}</b><i style="background:${rgb(p.col)}"></i><span>${esc(p.name)}${p.alive ? '' : ' ✕'}</span><em>${Math.round(p.count / nOwnable * 100)}%</em></div>`).join('');
   if (state !== 'play' || !human) return;
-  const nt = towns.reduce((n, t) => n + (t.owner === 1), 0);
   $('gold').textContent = fmt(human.gold);
-  $('inc').textContent = '+' + (INC_BASE + nt * INC_TOWN + human.count * INC_CELL).toFixed(1).replace('.', ',') + '/s';
+  $('inc').textContent = '+' + income(human).toFixed(1).replace('.', ',') + '/s';
   const n = unitCount(human);
   $('army').innerHTML = `${n} <small>/ ${MAX_UNITS} tropper</small>`;
   $('land').innerHTML = `<b>${Math.round(human.count / nOwnable * 100)}%</b> land`;
@@ -1285,8 +1305,8 @@ function startDemo() {
 startDemo();
 if ('serviceWorker' in navigator && location.protocol === 'https:') navigator.serviceWorker.register('sw.js').catch(() => {});
 requestAnimationFrame(frame);
-window.TW = { get units() { return units; }, get players() { return players; }, get sites() { return sites; }, get towns() { return towns; }, get state() { return state; }, get T() { return T; },
-  get selected() { return selected; }, get nOwnable() { return nOwnable; }, step, hire, orderPoints, findPath, fill, newGame, tapAt, own: () => own, terr: () => terr, cam, settings, get gl() { return !!gl; } };
+window.TW = { get units() { return units; }, get players() { return players; }, get sites() { return sites; }, get towns() { return towns; }, get provs() { return provs; }, get state() { return state; }, get T() { return T; },
+  get selected() { return selected; }, get nOwnable() { return nOwnable; }, step, hire, orderPoints, findPath, newGame, tapAt, own: () => own, terr: () => terr, cam, settings, get gl() { return !!gl; } };
 </script>
 </body>
 </html>
