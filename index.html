@@ -44,7 +44,6 @@ button:disabled{opacity:.4;cursor:default}
 #top>*{pointer-events:auto}
 .iconbtn{width:44px;height:44px;border-radius:14px;background:var(--panel);display:grid;place-items:center;font-size:20px;backdrop-filter:blur(6px);flex:none}
 #clock{background:var(--panel);border-radius:12px;padding:6px 10px;font-size:13px;color:var(--muted);font-variant-numeric:tabular-nums;margin-top:6px;white-space:nowrap}
-#clock.peace{color:var(--good)}
 #speed{font-size:14px;font-weight:700}
 #lb{margin-left:auto;background:var(--panel);border-radius:14px;padding:6px 8px;font-size:12px;min-width:132px;max-width:46vw;backdrop-filter:blur(6px)}
 #lb .r{display:flex;align-items:center;gap:6px;padding:2px 0;white-space:nowrap}
@@ -57,59 +56,17 @@ button:disabled{opacity:.4;cursor:default}
 #bottom{position:fixed;left:0;right:0;bottom:0;padding:0 10px calc(var(--safe-b) + 10px);pointer-events:none}
 #hud{pointer-events:auto;background:var(--panel);border-radius:20px;padding:10px 14px 10px;max-width:540px;margin:0 auto;backdrop-filter:blur(6px)}
 #stats{display:flex;align-items:baseline;gap:10px;flex-wrap:wrap}
-#troops{font-family:var(--display);font-weight:400;font-size:26px;font-variant-numeric:tabular-nums}
-#troops small{font-size:13px;color:var(--muted);font-weight:600}
 #inc{color:var(--good);font-size:13px;font-weight:700;font-variant-numeric:tabular-nums}
 #gold{color:var(--gold);font-size:15px;font-weight:800;font-variant-numeric:tabular-nums}
 #gold small{font-size:12px;font-weight:600;opacity:.8}
 #land{margin-left:auto;font-size:13px;color:var(--muted);font-variant-numeric:tabular-nums}
 #land b{color:var(--text)}
-#capbar{height:6px;border-radius:3px;background:var(--panel2);margin:6px 0 8px;overflow:hidden}
-#capbar div{height:100%;width:0;background:linear-gradient(90deg,var(--accent2),var(--accent));border-radius:3px}
-#ratioRow{display:flex;align-items:center;gap:10px}
-#ratioRow label{font-size:13px;color:var(--muted);white-space:nowrap}
-#ratioVal{font-weight:800;color:var(--accent);min-width:40px;text-align:right;font-variant-numeric:tabular-nums}
-#btnBuild{flex:none;height:42px;padding:0 13px;border-radius:12px;font-size:16px !important;background:var(--brass);color:var(--ink);font-weight:800;font-size:15px;box-shadow:0 3px 0 var(--brass-edge)}
-input[type=range]{-webkit-appearance:none;appearance:none;flex:1;min-width:60px;height:34px;background:transparent;margin:0}
-input[type=range]::-webkit-slider-runnable-track{height:8px;border-radius:4px;background:linear-gradient(90deg,var(--accent2),var(--accent))}
-input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:28px;height:28px;border-radius:50%;background:#fff;margin-top:-10px;box-shadow:0 2px 6px rgba(0,0,0,.4)}
-input[type=range]::-moz-range-track{height:8px;border-radius:4px;background:linear-gradient(90deg,var(--accent2),var(--accent))}
-input[type=range]::-moz-range-thumb{width:28px;height:28px;border-radius:50%;background:#fff;border:0}
-#provActs{display:flex;gap:6px;margin-top:8px}
-#provActs button{flex:1;padding:8px 2px 6px;border-radius:11px;font-size:13px;font-weight:800;background:rgba(255,255,255,.1);color:#fffaf0;line-height:1.15}
-#provActs button small{display:block;font-size:11px;font-weight:600;opacity:.75}
-#provActs button.cant{opacity:.38}
-#provActs button.on{background:var(--accent);color:#1b1608}
 #hint{text-align:center;font-size:12px;color:var(--muted);margin-top:4px;min-height:15px}
 #hint b{color:var(--good)}
 
 #toast{position:fixed;left:50%;bottom:calc(var(--safe-b) + 170px);transform:translateX(-50%);background:rgba(0,0,0,.78);padding:8px 14px;border-radius:12px;font-size:14px;opacity:0;transition:opacity .25s;pointer-events:none;max-width:92vw;text-align:center}
 #toast.on{opacity:1}
 
-/* Sheets (build menu, country menu, placing) */
-.sheet{position:fixed;left:0;right:0;bottom:0;padding:0 10px calc(var(--safe-b) + 10px);z-index:5}
-.sheet .in{max-width:540px;margin:0 auto;background:linear-gradient(180deg,var(--card1),var(--card2));border-radius:22px;padding:14px;box-shadow:0 -10px 40px rgba(0,0,0,.4);border:1px solid rgba(255,255,255,.08)}
-.sheet h3{margin:0 0 10px;font-size:17px;display:flex;align-items:center;gap:8px}
-.sheet h3 i{width:14px;height:14px;border-radius:4px;display:inline-block}
-.sheet h3 .x{margin-left:auto;width:34px;height:34px;border-radius:10px;background:rgba(255,255,255,.1);font-size:16px}
-.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(118px,1fr));gap:8px}
-.sheetSub{margin:-4px 0 10px;font-size:13px;color:var(--muted)}
-.bitem{background:rgba(0,0,0,.25);border-radius:14px;padding:10px 8px;text-align:center;display:flex;flex-direction:column;align-items:center;gap:2px}
-.bitem .ic{font-size:26px;line-height:1.1}
-.bitem b{font-size:14px}
-.bitem small{font-size:11px;color:var(--muted);line-height:1.25}
-.bitem .cost{color:var(--gold);font-weight:800;font-size:13px;margin-top:2px}
-.bitem.cant .cost{color:var(--bad)}
-.info{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:10px}
-.info div{background:rgba(0,0,0,.22);border-radius:12px;padding:8px;text-align:center}
-.info b{display:block;font-size:17px}
-.info span{font-size:11px;color:var(--muted)}
-.acts{display:grid;gap:8px}
-.act{padding:13px;border-radius:14px;font-size:16px;font-weight:700;background:rgba(255,255,255,.1)}
-.act.main{background:var(--brass);color:var(--ink)}
-.act.red{background:rgba(248,113,113,.25)}
-#placeBar .in{display:flex;align-items:center;gap:10px}
-#placeBar p{margin:0;flex:1;font-size:15px}
 
 /* Overlays */
 .ov{position:fixed;inset:0;display:flex;align-items:center;justify-content:center;padding:calc(var(--safe-t) + 16px) 16px calc(var(--safe-b) + 16px);background:rgba(6,16,28,.55);backdrop-filter:blur(3px);overflow:auto;z-index:10}
@@ -124,8 +81,6 @@ input[type=range]::-moz-range-thumb{width:28px;height:28px;border-radius:50%;bac
 .seg{display:flex;background:rgba(0,0,0,.25);border-radius:12px;padding:3px;gap:3px}
 .seg button{flex:1;padding:10px 4px;border-radius:9px;font-size:14px;font-weight:600;color:var(--muted);background:transparent}
 .seg button.on{background:var(--accent);color:var(--ink)}
-.rowr{display:flex;align-items:center;gap:10px}
-.rowr output{min-width:28px;text-align:right;font-weight:800;color:var(--accent)}
 .big{display:block;width:100%;padding:14px;border-radius:14px;font-family:var(--display);font-weight:400;font-size:21px;letter-spacing:1px;background:var(--brass);color:var(--ink);box-shadow:0 4px 0 var(--brass-edge);margin-top:6px}
 .big:active{transform:translateY(2px);box-shadow:0 2px 0 var(--brass-edge)}
 .sec{display:block;width:100%;padding:13px;border-radius:14px;font-size:16px;font-weight:700;background:rgba(255,255,255,.1);margin-top:10px}
@@ -137,12 +92,8 @@ details ul{padding-left:18px;margin:8px 0 0}
 .endstats b{display:block;font-size:20px}
 .endstats span{font-size:12px;color:var(--muted)}
 
-#spawnBar{position:fixed;left:0;right:0;bottom:0;padding:0 12px calc(var(--safe-b) + 12px);pointer-events:none}
-#spawnBar .in{pointer-events:auto;max-width:460px;margin:0 auto;background:var(--panel);border-radius:20px;padding:14px;text-align:center;backdrop-filter:blur(6px)}
-#spawnBar p{margin:0 0 10px;font-size:15px}
-#spawnBar p b{color:var(--accent)}
 
-/* Units game: hire row and NATO-style unit glyphs */
+/* Hire row: the same troop silhouettes as on the map */
 #stats{align-items:center}
 #gold{font-family:var(--display);font-weight:400;font-size:24px}
 #army{font-size:15px;font-weight:800;font-variant-numeric:tabular-nums}
@@ -151,7 +102,7 @@ details ul{padding-left:18px;margin:8px 0 0}
 #hire button{flex:1;padding:7px 2px 6px;border-radius:12px;background:rgba(255,255,255,.1);color:#fffaf0;display:flex;flex-direction:column;align-items:center;gap:2px;font-size:13px;font-weight:800;line-height:1.1;position:relative}
 #hire button small{font-size:12px;font-weight:700;color:var(--gold)}
 #hire button.cant{opacity:.4}
-#hire button svg{width:30px;height:20px}
+#hire button svg{width:26px;height:26px}
 #hire button i{position:absolute;top:4px;right:6px;font-style:normal;font-size:11px;background:var(--accent);color:var(--ink);border-radius:8px;padding:0 5px}
 #btnAll{flex:.8 !important;background:rgba(233,185,73,.18) !important}
 #btnAll.on{background:var(--accent) !important;color:var(--ink) !important}
@@ -178,9 +129,9 @@ details ul{padding-left:18px;margin:8px 0 0}
       <div id="land"><b>0%</b> land</div>
     </div>
     <div id="hire">
-      <button data-t="inf"><svg viewBox="0 0 30 20"><rect x="1.5" y="1.5" width="27" height="17" rx="2" fill="none" stroke="currentColor" stroke-width="2"/><path d="M2 2L28 18M28 2L2 18" stroke="currentColor" stroke-width="2"/></svg>Soldat<small>40</small><i class="hidden"></i></button>
-      <button data-t="tank"><svg viewBox="0 0 30 20"><rect x="1.5" y="1.5" width="27" height="17" rx="2" fill="none" stroke="currentColor" stroke-width="2"/><ellipse cx="15" cy="10" rx="9" ry="4.5" fill="none" stroke="currentColor" stroke-width="2"/></svg>Kampvogn<small>120</small><i class="hidden"></i></button>
-      <button data-t="plane"><svg viewBox="0 0 30 20"><rect x="1.5" y="1.5" width="27" height="17" rx="2" fill="none" stroke="currentColor" stroke-width="2"/><path d="M15 10C12 4 6 4 6 10S12 16 15 10C18 4 24 4 24 10S18 16 15 10Z" fill="none" stroke="currentColor" stroke-width="2"/></svg>Fly<small>160</small><i class="hidden"></i></button>
+      <button data-t="inf"><svg viewBox="-12 -12 24 24"><circle r="10.5" fill="none" stroke="currentColor" stroke-width="1.6"/><path d="M-3.4 6.6L-3 .4Q0-1 3 .4L3.4 6.6Z" fill="currentColor"/><circle cy="-2.7" r="1.9" fill="currentColor"/><path d="M-3.8-2.9A2.7 2.7 0 0 1 3.8-2.9Z" fill="currentColor"/><path d="M-4 5.2L5.2-4.8" stroke="#1a1f1b" stroke-width="1.2" stroke-linecap="round"/></svg>Soldat<small>40</small><i class="hidden"></i></button>
+      <button data-t="tank"><svg viewBox="-13 -11 27 22"><rect x="-10.5" y="-8.6" width="21" height="4.2" rx="1.4" fill="currentColor" opacity=".55"/><rect x="-10.5" y="4.4" width="21" height="4.2" rx="1.4" fill="currentColor" opacity=".55"/><rect x="-9.5" y="-5.6" width="19" height="11.2" rx="2.2" fill="currentColor"/><rect x="1.5" y="-1.1" width="12.5" height="2.2" rx=".6" fill="#1a1f1b"/><circle r="4.4" fill="#1a1f1b"/><circle r="3.2" fill="currentColor"/></svg>Kampvogn<small>120</small><i class="hidden"></i></button>
+      <button data-t="plane"><svg viewBox="-12 -12 24 24"><g transform="rotate(-90) scale(10)"><path d="M1.1 0Q1-.2.6-.2L.25-.2-.15-1.05-.42-1.05-.25-.2-.75-.17-1-.5-1.15-.5-1.05 0-1.15.5-1 .5-.75.17-.25.2-.42 1.05-.15 1.05.25.2.6.2Q1 .2 1.1 0Z" fill="currentColor"/></g></svg>Fly<small>160</small><i class="hidden"></i></button>
       <button id="btnAll">Vælg<br>alle</button>
     </div>
     <div id="hint"></div>
@@ -199,7 +150,7 @@ details ul{padding-left:18px;margin:8px 0 0}
     <button class="big" id="btnPlay">SPIL</button>
     <details><summary>Sådan spiller du</summary><ul>
       <li>Du og 3 computere starter med et <b>hovedkvarter (HQ)</b> i hvert sit hjørne og 100 guld. Ingen tropper.</li>
-      <li><b>Hyr</b> soldater, kampvogne og fly med knapperne forneden. De bliver bygget i dit HQ, eller i en by du ejer, hvis du har trykket på den. Højst 10 tropper ad gangen.</li>
+      <li><b>Hyr</b> soldater (rundt mærke med en figur), kampvogne og fly med knapperne forneden. De bliver bygget i dit HQ, eller i en by du ejer, hvis du har trykket på den. Højst 10 tropper ad gangen.</li>
       <li><b>Tryk på en trop</b> for at vælge den, og <b>tryk på en provins</b>, så finder den selv vejen dertil. Træk med fingeren for at flytte kortet. <b>Vælg alle</b> sender hele hæren.</li>
       <li>Kortet er delt i <b>provinser</b>, som i Supremacy. Stil en soldat eller kampvogn i en provins uden fjender, så bliver den din efter et par sekunder. Fly kan ikke tage land.</li>
       <li>Hver provins giver guld. Provinser med en <b>by</b> giver mere og kan bygge tropper.</li>
@@ -265,7 +216,7 @@ const TOWN_DPS = 6, TOWN_RANGE = 3.2, CAP_NEUTRAL = 20, CAP_ENEMY = 40, CAP_TOWN
 const START_GOLD = 100, INC_BASE = 1.8, INC_TOWN = 1.2, INC_PROV = 0.15;
 const HEAL = 3, HEAL_SITE = 12, FOREST_COVER = 0.7, WIN_SHARE = 0.7;
 const DIFFS = [{ inc: 0.75, think: 16, atk: 1800 }, { inc: 1, think: 10, atk: 1300 }, { inc: 1.3, think: 6, atk: 900 }];
-const COLORS = [null, [52, 124, 200], [206, 68, 56], [214, 160, 30], [140, 92, 200]];
+const COLORS = [null, [52, 124, 200], [206, 68, 56], [214, 160, 30], [150, 78, 214]];
 const BOT_NAMES = ['Nordmark', 'Ravnsborg', 'Sydhavn', 'Jernriget', 'Ulvedal', 'Vestria', 'Isfjord', 'Bjergland', 'Askeland'];
 // corners: you start bottom left
 const CORNERS = [null, [9, 70], [70, 9], [9, 9], [70, 70]];
@@ -379,7 +330,6 @@ function flood(start) {
   return seen;
 }
 
-function hsl(h, s, l) { return `hsl(${h},${s}%,${l}%)`; }
 const rgb = (c, a = 1) => `rgba(${c[0]},${c[1]},${c[2]},${a})`;
 function makePlayers(demo) {
   const names = BOT_NAMES.slice().sort(() => rng() - 0.5);
@@ -388,7 +338,7 @@ function makePlayers(demo) {
     const [cx, cy] = CORNERS[k];
     const base = { x: cx + 0.5, y: cy + 0.5, owner: k, hp: BASE_HP, q: [], prog: 0, base: true };
     players.push({ id: k, name: k === 1 && !demo ? (settings.name.trim() || 'Dig') : names[k], col: COLORS[k], human: k === 1 && !demo, alive: true,
-      gold: START_GOLD, count: 0, peak: 0, kills: 0, painted: false, base, think: k * 3, mode: 0, place: 0 });
+      gold: START_GOLD, count: 0, peak: 0, kills: 0, base, think: k * 3, mode: 0, place: 0 });
   }
   human = demo ? null : players[1];
 }
@@ -398,7 +348,7 @@ function setOwn(i, p) {
   if (o === p || o < 0) return;
   if (o > 0) players[o].count--;
   own[i] = p;
-  if (p > 0) { players[p].count++; players[p].painted = true; }
+  if (p > 0) players[p].count++;
   flash[i] = 220; dirty = true;
 }
 function setProvOwner(pr, p) {
@@ -591,6 +541,7 @@ function combat() {
   for (const u of units) {
     const e = enemyNear(u, u.k.range);
     u.tgt = e;
+    if (e) u.aim = Math.atan2(e.y - u.y, e.x - u.x);
     if (e) {
       damage(e, u.k.dps * VS[u.type][e.type] * DT, u.p);
       if (u.cool-- <= 0) { u.cool = u.type === 'tank' ? 8 : 4; shot(u.x, u.y, e.x, e.y, u.p, u.type === 'tank'); }
@@ -599,7 +550,7 @@ function combat() {
     for (let k = 1; k <= 4; k++) {
       const b = players[k].base;
       if (k === u.p || b.hp <= 0 || Math.hypot(b.x - u.x, b.y - u.y) > u.k.range + 1.2) continue;
-      b.hp -= u.k.dps * VS_BASE[u.type] * DT; b.hit = 4; b.lastHit = T; u.tgt = b;
+      b.hp -= u.k.dps * VS_BASE[u.type] * DT; b.hit = 4; b.lastHit = T; u.tgt = b; u.aim = Math.atan2(b.y - u.y, b.x - u.x);
       if (u.cool-- <= 0) { u.cool = u.type === 'tank' ? 8 : 4; shot(u.x, u.y, b.x, b.y, u.p, u.type === 'tank'); }
       if (b.hp <= 0) eliminate(players[k], u.p);
       break;
@@ -882,7 +833,7 @@ function render(now) {
     ctx.beginPath(); ctx.arc(sx(b.x), sy(b.y), r, 0, 7); ctx.fill();
   }
 }
-function tokenR() { return Math.max(7, Math.min(15, cam.s * 0.55)); }
+function tokenR() { return Math.max(9, Math.min(18, cam.s * 0.75)); }
 function drawPaths() {
   ctx.lineCap = 'round'; ctx.lineJoin = 'round';
   for (const u of units) {
@@ -893,7 +844,11 @@ function drawPaths() {
     ctx.beginPath(); ctx.moveTo(sx(u.x), sy(u.y));
     for (let k = u.pi; k < u.path.length; k++) ctx.lineTo(sx(u.path[k][0]), sy(u.path[k][1]));
     ctx.stroke(); ctx.setLineDash([]);
-    if (mine) { const e = u.path[u.path.length - 1]; ctx.fillStyle = 'rgba(255,236,170,.9)'; ctx.beginPath(); ctx.arc(sx(e[0]), sy(e[1]), 3.5, 0, 7); ctx.fill(); }
+    if (mine) {
+      const e = u.path[u.path.length - 1], X = sx(e[0]), Y = sy(e[1]);
+      ctx.strokeStyle = 'rgba(20,16,10,.9)'; ctx.lineWidth = 2; ctx.beginPath(); ctx.moveTo(X, Y); ctx.lineTo(X, Y - 16); ctx.stroke();
+      ctx.fillStyle = '#f2cf63'; ctx.beginPath(); ctx.moveTo(X, Y - 16); ctx.lineTo(X + 10, Y - 12.5); ctx.lineTo(X, Y - 9); ctx.closePath(); ctx.fill();
+    }
   }
 }
 function drawSites(t) {
@@ -939,34 +894,70 @@ function hpBar(X, Y, w, f) {
   ctx.fillStyle = 'rgba(0,0,0,.6)'; ctx.fillRect(X - w / 2 - 1, Y - 1, w + 2, 5);
   ctx.fillStyle = f > 0.6 ? '#8bd17c' : f > 0.3 ? '#e9b949' : '#f0705f'; ctx.fillRect(X - w / 2, Y, w * f, 3);
 }
+// Troops: a soldier is a round badge with a helmeted figure, a tank is a tank seen from above with a turret
+// that turns to its target, and a plane is a plane silhouette flying above its shadow.
+const lighten = (c, f) => c.map(v => Math.round(v + (255 - v) * f));
+function soldierShape(flip) {
+  ctx.save(); if (flip) ctx.scale(-1, 1);
+  ctx.fillStyle = '#fff';
+  ctx.beginPath(); ctx.moveTo(-0.34, 0.66); ctx.lineTo(-0.3, 0.04); ctx.quadraticCurveTo(0, -0.1, 0.3, 0.04); ctx.lineTo(0.34, 0.66); ctx.closePath(); ctx.fill();
+  ctx.beginPath(); ctx.arc(0, -0.27, 0.19, 0, 7); ctx.fill();
+  ctx.beginPath(); ctx.arc(0, -0.33, 0.27, Math.PI, 0); ctx.lineTo(0.38, -0.29); ctx.lineTo(-0.38, -0.29); ctx.closePath(); ctx.fill();
+  ctx.strokeStyle = 'rgba(30,24,14,.9)'; ctx.lineWidth = 0.12; ctx.lineCap = 'round';
+  ctx.beginPath(); ctx.moveTo(-0.4, 0.52); ctx.lineTo(0.52, -0.48); ctx.stroke();
+  ctx.restore();
+}
+function tankShape(col, turn) {
+  ctx.fillStyle = 'rgba(28,24,18,.95)';
+  ctx.beginPath(); ctx.roundRect(-1.05, -0.86, 2.1, 0.42, 0.14); ctx.roundRect(-1.05, 0.44, 2.1, 0.42, 0.14); ctx.fill();
+  ctx.fillStyle = rgb(col); ctx.strokeStyle = 'rgba(20,16,10,.9)'; ctx.lineWidth = 0.1;
+  ctx.beginPath(); ctx.roundRect(-0.95, -0.56, 1.9, 1.12, 0.22); ctx.fill(); ctx.stroke();
+  ctx.rotate(turn);
+  ctx.fillStyle = rgb(lighten(col, 0.55));
+  ctx.beginPath(); ctx.roundRect(0.15, -0.11, 1.25, 0.22, 0.06); ctx.fill(); ctx.stroke();
+  ctx.beginPath(); ctx.arc(0, 0, 0.44, 0, 7); ctx.fill(); ctx.stroke();
+}
+function planePath() {
+  ctx.beginPath();
+  ctx.moveTo(1.1, 0); ctx.quadraticCurveTo(1.0, -0.2, 0.6, -0.2);
+  ctx.lineTo(0.25, -0.2); ctx.lineTo(-0.15, -1.05); ctx.lineTo(-0.42, -1.05); ctx.lineTo(-0.25, -0.2);
+  ctx.lineTo(-0.75, -0.17); ctx.lineTo(-1.0, -0.5); ctx.lineTo(-1.15, -0.5); ctx.lineTo(-1.05, 0);
+  ctx.lineTo(-1.15, 0.5); ctx.lineTo(-1.0, 0.5); ctx.lineTo(-0.75, 0.17);
+  ctx.lineTo(-0.25, 0.2); ctx.lineTo(-0.42, 1.05); ctx.lineTo(-0.15, 1.05); ctx.lineTo(0.25, 0.2);
+  ctx.lineTo(0.6, 0.2); ctx.quadraticCurveTo(1.0, 0.2, 1.1, 0); ctx.closePath();
+}
 function drawUnits(t) {
-  const r = tokenR(), w = r * 2.3, h = r * 1.6;
+  const r = tokenR();
   for (const pass of [0, 1]) for (const u of units) {
     if (!!u.k.air !== !!pass) continue;
     if (u.p !== 1 && !seen(u.x, u.y)) continue;
     let X = sx(u.x), Y = sy(u.y);
     if (X < -40 || Y < -40 || X > CW + 40 || Y > CH + 40) continue;
-    const col = players[u.p].col;
+    const col = players[u.p].col, R = u.type === 'plane' ? r * 1.25 : u.type === 'tank' ? r * 1.05 : r * 0.95;
     if (u.k.air) {
-      ctx.fillStyle = 'rgba(0,0,0,.25)'; ctx.beginPath(); ctx.ellipse(X, Y + 4, w * 0.4, h * 0.3, 0, 0, 7); ctx.fill();
-      Y -= r * 1.4 + Math.sin(t * 3 + u.id) * 1.5;
+      ctx.save(); ctx.translate(X + R * 0.25, Y + R * 0.35); ctx.rotate(u.dir); ctx.scale(R * 0.85, R * 0.85);
+      planePath(); ctx.fillStyle = 'rgba(0,0,0,.22)'; ctx.fill(); ctx.restore();
+      Y -= r * 1.5 + Math.sin(t * 3 + u.id) * 1.5;
     }
     if (selected.has(u)) {
       ctx.strokeStyle = `rgba(255,236,150,${0.7 + 0.3 * Math.sin(t * 6)})`; ctx.lineWidth = 3;
-      ctx.beginPath(); ctx.roundRect(X - w / 2 - 4, Y - h / 2 - 4, w + 8, h + 8, 6); ctx.stroke();
+      ctx.beginPath(); ctx.arc(X, Y, R * 1.3 + 4, 0, 7); ctx.stroke();
     }
-    ctx.fillStyle = rgb(col);
-    ctx.beginPath(); ctx.roundRect(X - w / 2, Y - h / 2, w, h, 3); ctx.fill();
-    ctx.lineWidth = u.hit ? 2.5 : 1.5; ctx.strokeStyle = u.hit ? '#ffe39a' : 'rgba(15,12,8,.9)'; ctx.stroke();
-    // NATO-style glyph
-    ctx.strokeStyle = '#fff'; ctx.lineWidth = Math.max(1.3, r * 0.16);
-    const gx = w / 2 - 2, gy = h / 2 - 2;
-    ctx.beginPath();
-    if (u.type === 'inf') { ctx.moveTo(X - gx, Y - gy); ctx.lineTo(X + gx, Y + gy); ctx.moveTo(X + gx, Y - gy); ctx.lineTo(X - gx, Y + gy); }
-    else if (u.type === 'tank') ctx.ellipse(X, Y, gx * 0.65, gy * 0.55, 0, 0, 7);
-    else { ctx.ellipse(X - gx * 0.32, Y, gx * 0.32, gy * 0.45, 0, 0, 7); ctx.moveTo(X + gx * 0.64, Y); ctx.ellipse(X + gx * 0.32, Y, gx * 0.32, gy * 0.45, 0, 0, 7); }
-    ctx.stroke();
-    if (u.hp < u.k.hp) hpBar(X, Y + h / 2 + 3, w, u.hp / u.k.hp);
+    ctx.save(); ctx.translate(X, Y);
+    if (u.type === 'inf') {
+      ctx.beginPath(); ctx.arc(0, 0, R, 0, 7); ctx.fillStyle = rgb(col); ctx.fill();
+      ctx.lineWidth = u.hit ? 2.5 : 1.6; ctx.strokeStyle = u.hit ? '#ffe39a' : 'rgba(15,12,8,.9)'; ctx.stroke();
+      ctx.scale(R, R); soldierShape(Math.cos(u.dir) < -0.1);
+    } else if (u.type === 'tank') {
+      ctx.rotate(u.dir); ctx.scale(R, R); tankShape(u.hit ? lighten(col, 0.4) : col, (u.aim ?? u.dir) - u.dir);
+    } else {
+      ctx.rotate(u.dir); ctx.scale(R, R);
+      planePath(); ctx.fillStyle = rgb(u.hit ? lighten(col, 0.4) : col); ctx.fill();
+      ctx.lineWidth = 0.12; ctx.strokeStyle = '#fff'; ctx.stroke();
+      ctx.fillStyle = '#fff'; ctx.beginPath(); ctx.arc(0.5, 0, 0.13, 0, 7); ctx.fill();
+    }
+    ctx.restore();
+    if (u.hp < u.k.hp) hpBar(X, Y + R * 1.15 + 2, R * 2, u.hp / u.k.hp);
   }
 }
 
@@ -1033,7 +1024,7 @@ void main(){
   }
   // territory: a wash of the owner's colour, a lighter band just inside the border, then an inked border line
   if (bid > 0.5) {
-    col = mix(col, bc, 0.42);
+    col = mix(col, bc, 0.5);
     float inner = smoothstep(1.4, 2.6, e) * (1.0 - smoothstep(3.0, 7.0, e));
     col = mix(col, min(vec3(1.0), bc * 1.25 + 0.08), inner * 0.45);
   }
@@ -1139,7 +1130,8 @@ function updateHud() {
   if (!human.alive) hint = 'Dit HQ er faldet. Du ser med.';
   else if (!mine.length) hint = n ? 'Din første trop er på vej ud af ' + (spawnSite && spawnSite.town ? 'byen' : 'dit HQ') : 'Hyr en trop. Den bygges i ' + (spawnSite && spawnSite.town ? 'den valgte by' : 'dit HQ');
   else if (!selected.size) hint = 'Tryk på en trop for at vælge den';
-  else hint = `<b>Tryk på en provins</b> for at sende ${selected.size === 1 ? 'tropen' : selected.size + ' tropper'} dertil`;
+  else if (selected.size === 1) { const u = [...selected][0]; hint = `${u.k.name}, ${Math.ceil(u.hp)}/${u.k.hp} liv. <b>Tryk på en provins</b> for at sende den dertil`; }
+  else hint = `${selected.size} tropper valgt. <b>Tryk på en provins</b> for at sende dem dertil`;
   $('hint').innerHTML = hint;
 }
 function esc(s) { return s.replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c])); }
@@ -1154,7 +1146,7 @@ function unitAt(px, py) {
   let best = null, bd = r * r;
   for (const u of units) {
     if (u.p !== 1) continue;
-    const Y = sy(u.y) - (u.k.air ? tokenR() * 1.4 : 0), d = (sx(u.x) - px) ** 2 + (Y - py) ** 2;
+    const Y = sy(u.y) - (u.k.air ? tokenR() * 1.5 : 0), d = (sx(u.x) - px) ** 2 + (Y - py) ** 2;
     if (d < bd) { bd = d; best = u; }
   }
   return best;
@@ -1190,10 +1182,25 @@ function tapAt(px, py) {
   }
   const [wx, wy] = world(px, py);
   if (selected.size) { sendSelected(wx, wy); buzz(10); return; }
+  // no troop selected: tell what was tapped
+  const e = enemyAt(px, py);
+  if (e) { toast(`${players[e.p].name}: ${e.k.name.toLowerCase()}, ${Math.ceil(e.hp)}/${e.k.hp} liv`); return; }
   const s = siteAt(px, py);
   if (s && s.owner === 1) { spawnSite = s; toast(s.base ? 'Nye tropper bygges i dit HQ' : 'Nye tropper bygges i denne by'); return; }
   if (s && s.town) { toast(s.owner ? 'By ejet af ' + players[s.owner].name + '. Stil en trop i den for at tage den' : 'Fri by. Stil en soldat eller kampvogn i den for at tage den'); return; }
   if (s && s.base && s.owner !== 1) { toast(players[s.owner].name + 's HQ. Ødelæg det for at slå dem ud'); return; }
+  const pr = provAtWorld(wx, wy);
+  if (pr) toast(pr.owner === 1 ? 'Din provins. Vælg en trop for at sende den et sted hen' : pr.owner ? players[pr.owner].name + 's provins' : 'Fri provins. Send en soldat eller kampvogn derind for at tage den');
+}
+function enemyAt(px, py) {
+  const r = Math.max(20, tokenR() * 1.7);
+  let best = null, bd = r * r;
+  for (const u of units) {
+    if (u.p === 1 || !seen(u.x, u.y)) continue;
+    const Y = sy(u.y) - (u.k.air ? tokenR() * 1.5 : 0), d = (sx(u.x) - px) ** 2 + (Y - py) ** 2;
+    if (d < bd) { bd = d; best = u; }
+  }
+  return best;
 }
 const ptrs = new Map();
 let gesture = null, pinch = null;
