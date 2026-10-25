@@ -153,8 +153,9 @@ details ul{padding-left:18px;margin:8px 0 0}
 #hire button.cant{opacity:.4}
 #hire button svg{width:30px;height:20px}
 #hire button i{position:absolute;top:4px;right:6px;font-style:normal;font-size:11px;background:var(--accent);color:var(--ink);border-radius:8px;padding:0 5px}
-#btnAll{flex:.8 !important;background:rgba(233,185,73,.18) !important}
-#btnAll.on{background:var(--accent) !important;color:var(--ink) !important}
+#btnAll,#btnFront{flex:.8 !important;background:rgba(233,185,73,.18) !important}
+#btnFront{background:rgba(240,112,95,.22) !important}
+#btnAll.on,#btnFront.on{background:var(--accent) !important;color:var(--ink) !important}
 #hint{margin-top:6px}
 </style>
 </head>
@@ -182,6 +183,7 @@ details ul{padding-left:18px;margin:8px 0 0}
       <button data-t="tank"><svg viewBox="0 0 30 20"><rect x="1.5" y="1.5" width="27" height="17" rx="2" fill="none" stroke="currentColor" stroke-width="2"/><ellipse cx="15" cy="10" rx="9" ry="4.5" fill="none" stroke="currentColor" stroke-width="2"/></svg>Kampvogn<small>120</small><i class="hidden"></i></button>
       <button data-t="plane"><svg viewBox="0 0 30 20"><rect x="1.5" y="1.5" width="27" height="17" rx="2" fill="none" stroke="currentColor" stroke-width="2"/><path d="M15 10C12 4 6 4 6 10S12 16 15 10C18 4 24 4 24 10S18 16 15 10Z" fill="none" stroke="currentColor" stroke-width="2"/></svg>Fly<small>160</small><i class="hidden"></i></button>
       <button id="btnAll">Vælg<br>alle</button>
+      <button id="btnFront">Tegn<br>front</button>
     </div>
     <div id="hint"></div>
   </div>
@@ -203,6 +205,7 @@ details ul{padding-left:18px;margin:8px 0 0}
       <li><b>Tryk på en trop</b> for at vælge den, og tryk på kortet for at sende den dertil. Eller <b>træk en rute</b> med fingeren, startende fra tropen.</li>
       <li>Jorden dine tropper går på, bliver din. Går en trop ud og <b>tilbage til dit land</b> i en løkke, bliver alt indeni dit. Fly maler ikke.</li>
       <li><b>Byer</b> giver guld og kan bygge tropper. Stil en soldat eller kampvogn i en by for at erobre den.</li>
+      <li><b>Fronter</b> som i Hearts of Iron: tryk <b>Tegn front</b> og træk en linje. De valgte tropper (eller alle ledige) fordeler sig langs den og holder den. Tryk <b>Angrib!</b> på fronten, så rykker hele linjen frem sammen. ✕ fjerner fronten.</li>
       <li>Fjendtlige tropper kan <b>ikke gå igennem hinanden</b>, så der opstår fronter, hvor hærene mødes. Land, hvor fjenden har tropper stående, kan du ikke male. Tropper skyder selv. <b>Kampvogne</b> slår soldater, <b>fly</b> slår kampvogne, og <b>soldater</b> kan skyde fly ned. Skov giver dækning. Floder krydses ved broerne.</li>
       <li>Dit land heler dine tropper. Ødelæg de andres <b>HQ</b>, eller ej 70 % af landet, for at vinde.</li>
     </ul></details>
@@ -423,7 +426,7 @@ function newWorld(demo) {
     paintDisc(b.x, b.y, START_R, k);
   }
   sites = [...players.slice(1).map(p => p.base), ...towns];
-  units = []; shots = []; booms = []; selected.clear(); spawnSite = human ? human.base : null;
+  units = []; shots = []; booms = []; fronts = []; frontMode = false; selected.clear(); spawnSite = human ? human.base : null;
   T = 0; uid = 1; dirty = true;
 }
 
@@ -518,7 +521,7 @@ function spawnUnit(p, type, site) {
     const a = rng() * Math.PI * 2, r = 1.2 + rng() * 1.2, X = site.x + Math.cos(a) * r, Y = site.y + Math.sin(a) * r, i = cellOf(X, Y);
     if (i >= 0 && (k.air || gpass(i))) { x = X; y = Y; break; }
   }
-  const u = { id: uid++, p: p.id, type, k, x, y, hp: k.hp, path: null, pi: 0, cool: (rng() * 5) | 0, ax: x, ay: y, dir: -Math.PI / 2, hit: 0, job: null, tgt: null };
+  const u = { id: uid++, p: p.id, type, k, x, y, hp: k.hp, path: null, pi: 0, cool: (rng() * 5) | 0, ax: x, ay: y, dir: -Math.PI / 2, hit: 0, job: null, tgt: null, front: null, slot: 0, adv: 0 };
   units.push(u);
   return u;
 }
@@ -654,6 +657,7 @@ function stepSites() {
 // ---------- Tick ----------
 function step() {
   T++;
+  stepFronts();
   for (const u of units) moveUnit(u);
   separate();
   for (const u of units) if (u.k.paint) paintDisc(u.x, u.y, u.k.paint, u.p);
@@ -736,6 +740,140 @@ function loopOrder(u, p) {
   const out = r0 + rr(3, 7), turn = rr(0.35, 0.7) * (rng() < 0.5 ? -1 : 1), back = Math.max(3, r0 - 2);
   const pt = (a, r) => [b.x + Math.cos(a) * r, b.y + Math.sin(a) * r];
   orderPoints(u, [pt(a0, out), pt(a0 + turn, out), pt(a0 + turn, back)]);
+}
+
+// ---------- Fronts ----------
+// Hearts of Iron style: draw a line, troops spread out along it and hold it, or push it forward together.
+let fronts = [], frontMode = false, fid = 1;
+function makeFront(p, raw) {
+  const pts = [raw[0]];
+  for (const q of raw) { const l = pts[pts.length - 1]; if (Math.hypot(q[0] - l[0], q[1] - l[1]) >= 1) pts.push([q[0], q[1]]); }
+  if (pts.length < 3) return null;
+  const sm = pts.map((q, k) => k === 0 || k === pts.length - 1 ? q : [(pts[k - 1][0] + q[0] * 2 + pts[k + 1][0]) / 4, (pts[k - 1][1] + q[1] * 2 + pts[k + 1][1]) / 4]);
+  const cum = [0];
+  for (let k = 1; k < sm.length; k++) cum.push(cum[k - 1] + Math.hypot(sm[k][0] - sm[k - 1][0], sm[k][1] - sm[k - 1][1]));
+  const nrm = sm.map((q, k) => {
+    const a = sm[Math.max(0, k - 2)], b = sm[Math.min(sm.length - 1, k + 2)], dx = b[0] - a[0], dy = b[1] - a[1], d = Math.hypot(dx, dy) || 1;
+    return [-dy / d, dx / d];
+  });
+  // the front faces the side with less of your own land
+  let score = 0;
+  sm.forEach((q, k) => { for (const r of [2, 4, 6, 9]) {
+    const a = cellOf(q[0] + nrm[k][0] * r, q[1] + nrm[k][1] * r), b = cellOf(q[0] - nrm[k][0] * r, q[1] - nrm[k][1] * r);
+    score += (a >= 0 && own[a] === p.id ? 1 : 0) - (b >= 0 && own[b] === p.id ? 1 : 0);
+  } });
+  // tie-break: away from your HQ
+  let away = 0;
+  sm.forEach((q, k) => { away += nrm[k][0] * (q[0] - p.base.x) + nrm[k][1] * (q[1] - p.base.y); });
+  if (score > 0 || (score === 0 && away < 0)) for (const n of nrm) { n[0] = -n[0]; n[1] = -n[1]; }
+  const f = { id: fid++, p: p.id, pts: sm, nrm, cum, len: cum[cum.length - 1], attack: false, n: 0 };
+  fronts.push(f);
+  return f;
+}
+function frontAt(f, t) {
+  const L = t * f.len; let k = 1;
+  while (k < f.cum.length - 1 && f.cum[k] < L) k++;
+  const a = f.pts[k - 1], b = f.pts[k], s = Math.max(0, Math.min(1, (L - f.cum[k - 1]) / (f.cum[k] - f.cum[k - 1] || 1)));
+  const na = f.nrm[k - 1], nb = f.nrm[k], nx = na[0] + (nb[0] - na[0]) * s, ny = na[1] + (nb[1] - na[1]) * s, d = Math.hypot(nx, ny) || 1;
+  return [a[0] + (b[0] - a[0]) * s, a[1] + (b[1] - a[1]) * s, nx / d, ny / d];
+}
+function respread(f) {
+  const mine = units.filter(u => u.front === f);
+  const along = u => { let best = 0, bd = 1e9; f.pts.forEach((q, k) => { const d = (q[0] - u.x) ** 2 + (q[1] - u.y) ** 2; if (d < bd) { bd = d; best = f.cum[k]; } }); return best; };
+  mine.sort((a, b) => along(a) - along(b));
+  mine.forEach((u, k) => { u.slot = (k + 0.5) / mine.length; });
+  f.n = mine.length;
+}
+function assignFront(f, list) {
+  for (const u of list) { u.front = f; u.adv = 0; u.path = null; }
+  for (const g of fronts) if (g !== f) respread(g);
+  respread(f);
+}
+function stepFronts() {
+  for (const f of fronts) {
+    const mine = units.filter(u => u.front === f);
+    if (!mine.length) { f.dead = true; continue; }
+    if (mine.length !== f.n) respread(f);
+    let minAdv = 1e9;
+    for (const u of mine) minAdv = Math.min(minAdv, u.adv);
+    for (const u of mine) {
+      const [x, y, nx, ny] = frontAt(f, u.slot);
+      let tx = Math.max(0.5, Math.min(W - 0.5, x + nx * u.adv)), ty = Math.max(0.5, Math.min(H - 0.5, y + ny * u.adv));
+      const ci = cellOf(tx, ty), wet = !u.k.air && !gpass(ci);
+      if (wet) { const i = nearestPass(ci); if (i >= 0) { tx = i % W + 0.5; ty = ((i / W) | 0) + 0.5; } }
+      const d = Math.hypot(tx - u.x, ty - u.y);
+      // push forward only when not fighting, not blocked and not running ahead of the rest of the line
+      if (f.attack && !u.tgt && !u.stuck && d < 0.9 && u.adv < minAdv + 3) u.adv = Math.min(60, u.adv + u.k.speed * DT * 0.6);
+      if ((T + u.id) % 5 === 0) {
+        const e = u.path ? u.path[u.path.length - 1] : null;
+        if (d > 0.4 && (!e || Math.hypot(e[0] - tx, e[1] - ty) > 0.8)) orderPoints(u, [[tx, ty]]);
+      }
+    }
+  }
+  if (fronts.some(f => f.dead)) fronts = fronts.filter(f => !f.dead);
+}
+function drawFronts(t) {
+  for (const f of fronts) {
+    if (f.p !== 1 && human && human.alive) continue;
+    const mine = units.filter(u => u.front === f).sort((a, b) => a.slot - b.slot);
+    if (!mine.length) continue;
+    const advAt = s => {
+      if (s <= mine[0].slot) return mine[0].adv;
+      for (let k = 1; k < mine.length; k++) if (s <= mine[k].slot) { const a = mine[k - 1], b = mine[k]; return a.adv + (b.adv - a.adv) * (s - a.slot) / (b.slot - a.slot); }
+      return mine[mine.length - 1].adv;
+    };
+    const line = [];
+    for (let k = 0; k <= 40; k++) { const s = k / 40, [x, y, nx, ny] = frontAt(f, s), a = advAt(s); line.push([sx(x + nx * a), sy(y + ny * a), nx, ny]); }
+    const col = rgb(players[f.p].col);
+    ctx.lineCap = 'round'; ctx.lineJoin = 'round';
+    ctx.beginPath(); line.forEach(([X, Y], k) => k ? ctx.lineTo(X, Y) : ctx.moveTo(X, Y));
+    ctx.strokeStyle = 'rgba(20,14,8,.85)'; ctx.lineWidth = 8; ctx.stroke();
+    ctx.strokeStyle = col; ctx.lineWidth = 4.5; ctx.stroke();
+    // teeth on the enemy side: arrows when attacking, short bars when holding
+    ctx.fillStyle = col; ctx.strokeStyle = 'rgba(20,14,8,.85)'; ctx.lineWidth = 1.5;
+    for (let k = 2; k < line.length - 1; k += 4) {
+      const [X, Y, nx, ny] = line[k];
+      ctx.beginPath();
+      if (f.attack) { const L = 13 + 3 * Math.sin(t * 5 + k); ctx.moveTo(X + nx * L, Y + ny * L); ctx.lineTo(X - ny * 6 + nx * 3, Y + nx * 6 + ny * 3); ctx.lineTo(X + ny * 6 + nx * 3, Y - nx * 6 + ny * 3); }
+      else { ctx.moveTo(X - ny * 5, Y + nx * 5); ctx.lineTo(X - ny * 5 + nx * 7, Y + nx * 5 + ny * 7); ctx.lineTo(X + ny * 5 + nx * 7, Y - nx * 5 + ny * 7); ctx.lineTo(X + ny * 5, Y - nx * 5); }
+      ctx.closePath(); ctx.fill(); ctx.stroke();
+    }
+    if (f.p !== 1) continue;
+    const [MX, MY, nx, ny] = line[20], bx = MX - nx * 38, by = MY - ny * 38;
+    const label = f.attack ? 'Stop angreb' : 'Angrib!';
+    ctx.font = `800 14px ${UI_FONT}`; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+    const w = ctx.measureText(label).width + 20;
+    ctx.fillStyle = f.attack ? 'rgba(30,26,20,.9)' : '#d9532f'; ctx.beginPath(); ctx.roundRect(bx - w / 2, by - 13, w, 26, 13); ctx.fill();
+    ctx.lineWidth = 1.5; ctx.strokeStyle = 'rgba(255,255,255,.85)'; ctx.stroke();
+    ctx.fillStyle = '#fff'; ctx.fillText(label, bx, by + 1);
+    const xx = bx + w / 2 + 16;
+    ctx.fillStyle = 'rgba(30,26,20,.9)'; ctx.beginPath(); ctx.arc(xx, by, 12, 0, 7); ctx.fill(); ctx.stroke();
+    ctx.fillStyle = '#fff'; ctx.fillText('✕', xx, by + 1);
+    f.bx = bx; f.by = by; f.bw = w; f.xx = xx;
+  }
+}
+function frontTap(px, py) {
+  for (const f of fronts) {
+    if (f.p !== 1 || f.bx === undefined) continue;
+    if (Math.abs(px - f.bx) < f.bw / 2 + 4 && Math.abs(py - f.by) < 20) {
+      f.attack = !f.attack; toast(f.attack ? 'Fronten rykker frem' : 'Fronten holder stillingen'); buzz(10); return true;
+    }
+    if ((px - f.xx) ** 2 + (py - f.by) ** 2 < 18 * 18) {
+      for (const u of units) if (u.front === f) u.front = null;
+      f.dead = true; fronts = fronts.filter(g => !g.dead); toast('Fronten er fjernet. Tropperne bliver stående'); return true;
+    }
+  }
+  return false;
+}
+function frontFromRoute(raw) {
+  let list = selected.size ? [...selected] : units.filter(u => u.p === 1 && !u.front && !u.k.air);
+  if (!list.length) list = units.filter(u => u.p === 1 && !u.k.air);
+  if (!list.length) { toast('Du har ingen tropper til fronten endnu'); return; }
+  const f = makeFront(human, raw);
+  if (!f) { toast('Tegn en længere linje'); return; }
+  assignFront(f, list);
+  selected.clear(); frontMode = false;
+  toast(list.length + (list.length === 1 ? ' trop' : ' tropper') + ' går til fronten. Tryk Angrib! for at rykke frem');
 }
 
 // ---------- Game flow ----------
@@ -834,6 +972,7 @@ function render(now) {
   }
   const t = now / 1000;
   drawPaths();
+  drawFronts(t);
   drawSites(t);
   drawUnits(t);
   for (const s of shots) {
@@ -856,7 +995,7 @@ function tokenR() { return Math.max(7, Math.min(15, cam.s * 0.55)); }
 function drawPaths() {
   ctx.lineCap = 'round'; ctx.lineJoin = 'round';
   for (const u of units) {
-    if (!u.path || (u.p !== 1 && !(human === null || !human.alive)) ) continue;
+    if (!u.path || u.front || (u.p !== 1 && !(human === null || !human.alive)) ) continue;
     const mine = u.p === 1 && human;
     ctx.strokeStyle = mine ? (selected.has(u) ? 'rgba(255,236,170,.9)' : 'rgba(255,255,255,.55)') : rgb(players[u.p].col, 0.35);
     ctx.lineWidth = mine ? 2 : 1.2; ctx.setLineDash([5, 5]);
@@ -1107,8 +1246,10 @@ function updateHud() {
   const all = mine.length && mine.every(u => selected.has(u));
   $('btnAll').innerHTML = all ? 'Fravælg' : 'Vælg<br>alle';
   $('btnAll').classList.toggle('on', !!all);
+  $('btnFront').classList.toggle('on', frontMode);
   let hint;
-  if (!human.alive) hint = 'Dit HQ er faldet. Du ser med.';
+  if (frontMode) hint = '<b>Træk en linje</b> med fingeren, hvor fronten skal gå';
+  else if (!human.alive) hint = 'Dit HQ er faldet. Du ser med.';
   else if (!mine.length) hint = n ? 'Din første trop er på vej ud af ' + (spawnSite && spawnSite.town ? 'byen' : 'dit HQ') : 'Hyr en trop. Den bygges i ' + (spawnSite && spawnSite.town ? 'den valgte by' : 'dit HQ');
   else if (!selected.size) hint = 'Tryk på en trop for at vælge den, eller <b>træk en rute</b> fra den';
   else hint = `Tryk på kortet for at sende ${selected.size === 1 ? 'tropen' : selected.size + ' tropper'} dertil, eller træk en rute`;
@@ -1140,12 +1281,15 @@ function sendSelected(wx, wy) {
   let ok = 0;
   list.forEach((u, k) => {
     const n = list.length, a = k / n * Math.PI * 2, r = n > 1 ? 0.6 + 0.15 * n : 0;
+    u.front = null;
     ok += orderPoints(u, [[wx + Math.cos(a) * r, wy + Math.sin(a) * r]]);
   });
   if (!ok) toast('Der kan dine tropper ikke komme hen');
 }
 function tapAt(px, py) {
   if (state !== 'play' || !human.alive) return;
+  if (frontTap(px, py)) return;
+  if (frontMode) { toast('Træk en linje med fingeren, hvor fronten skal gå'); return; }
   const u = unitAt(px, py);
   if (u) {
     if (selected.has(u) && selected.size === 1) selected.clear();
@@ -1164,7 +1308,7 @@ let gesture = null, pinch = null, route = null;
 cv.addEventListener('pointerdown', e => {
   cv.setPointerCapture(e.pointerId);
   ptrs.set(e.pointerId, { x: e.clientX, y: e.clientY });
-  if (ptrs.size === 1) gesture = { tap: true, t: performance.now(), x0: e.clientX, y0: e.clientY, unit: state === 'play' && human && human.alive ? unitAt(e.clientX, e.clientY) : null };
+  if (ptrs.size === 1) gesture = { tap: true, t: performance.now(), x0: e.clientX, y0: e.clientY, unit: state === 'play' && human && human.alive && !frontMode ? unitAt(e.clientX, e.clientY) : null, front: state === 'play' && frontMode };
   else { if (gesture) { gesture.tap = false; gesture.unit = null; } route = null; }
   pinchStart();
 });
@@ -1175,6 +1319,7 @@ cv.addEventListener('pointermove', e => {
   if (gesture && gesture.tap && Math.hypot(e.clientX - gesture.x0, e.clientY - gesture.y0) > 10) {
     gesture.tap = false;
     if (gesture.unit) route = [[gesture.unit.x, gesture.unit.y]];
+    else if (gesture.front) route = [world(gesture.x0, gesture.y0)];
   }
   if (ptrs.size === 1 && gesture && !gesture.tap) {
     if (route) {
@@ -1196,10 +1341,11 @@ function ptrEnd(e) {
   if (!ptrs.has(e.pointerId)) return;
   ptrs.delete(e.pointerId);
   if (ptrs.size === 0) {
-    if (route && gesture && gesture.unit && route.length > 1 && units.includes(gesture.unit)) {
+    if (route && gesture && gesture.front && route.length > 1) frontFromRoute(route);
+    else if (route && gesture && gesture.unit && route.length > 1 && units.includes(gesture.unit)) {
       const u0 = gesture.unit, group = selected.has(u0) ? [...selected] : [u0];
       if (!selected.has(u0)) { selected.clear(); selected.add(u0); }
-      for (const u of group) orderPoints(u, route.slice(1));
+      for (const u of group) { u.front = null; orderPoints(u, route.slice(1)); }
       buzz(10);
     } else if (gesture && gesture.tap && performance.now() - gesture.t < 500) tapAt(e.clientX, e.clientY);
     route = null; gesture = null;
@@ -1226,6 +1372,12 @@ for (const b of document.querySelectorAll('#hire button[data-t]')) b.onclick = (
   else if (r === 'queue') toast('Køen her er fuld. Vælg en anden by');
   else if (r === 'site') toast('Du kan ikke bygge her');
   else buzz(8);
+  updateHud();
+};
+$('btnFront').onclick = () => {
+  if (state !== 'play') return;
+  frontMode = !frontMode;
+  if (frontMode) toast(selected.size ? 'Træk en linje, hvor fronten skal gå. De valgte tropper går til den' : 'Træk en linje, hvor fronten skal gå. Dine ledige tropper går til den');
   updateHud();
 };
 $('btnAll').onclick = () => {
@@ -1286,7 +1438,7 @@ startDemo();
 if ('serviceWorker' in navigator && location.protocol === 'https:') navigator.serviceWorker.register('sw.js').catch(() => {});
 requestAnimationFrame(frame);
 window.TW = { get units() { return units; }, get players() { return players; }, get sites() { return sites; }, get towns() { return towns; }, get state() { return state; }, get T() { return T; },
-  get selected() { return selected; }, get nOwnable() { return nOwnable; }, step, hire, orderPoints, findPath, fill, newGame, tapAt, own: () => own, terr: () => terr, cam, settings, get gl() { return !!gl; } };
+  get selected() { return selected; }, get nOwnable() { return nOwnable; }, step, hire, orderPoints, makeFront, assignFront, get fronts() { return fronts; }, frontFromRoute, frontTap, findPath, fill, newGame, tapAt, own: () => own, terr: () => terr, cam, settings, get gl() { return !!gl; } };
 </script>
 </body>
 </html>
