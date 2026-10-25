@@ -200,7 +200,7 @@ details ul{padding-left:18px;margin:8px 0 0}
     <details><summary>Sådan spiller du</summary><ul>
       <li>Du og 3 computere starter med et <b>hovedkvarter (HQ)</b> i hvert sit hjørne og 100 guld. Ingen tropper.</li>
       <li><b>Hyr</b> soldater, kampvogne og fly med knapperne forneden. De bliver bygget i dit HQ, eller i en by du ejer, hvis du har trykket på den. Højst 10 tropper ad gangen.</li>
-      <li><b>Tryk på en trop</b> for at vælge den, og tryk på kortet for at sende den dertil. Eller <b>træk en rute</b> med fingeren, startende fra tropen.</li>
+      <li><b>Tryk på en trop</b> for at vælge den, og <b>tryk på en provins</b>, så finder den selv vejen dertil. Træk med fingeren for at flytte kortet. <b>Vælg alle</b> sender hele hæren.</li>
       <li>Kortet er delt i <b>provinser</b>, som i Supremacy. Stil en soldat eller kampvogn i en provins uden fjender, så bliver den din efter et par sekunder. Fly kan ikke tage land.</li>
       <li>Hver provins giver guld. Provinser med en <b>by</b> giver mere og kan bygge tropper.</li>
       <li>Fjendtlige tropper kan <b>ikke gå igennem hinanden</b>, så fronten er dér, hvor hærene mødes. En provins med fjendtlige tropper i kan ikke tages. Tropper skyder selv. <b>Kampvogne</b> slår soldater, <b>fly</b> slår kampvogne, og <b>soldater</b> kan skyde fly ned. Skov giver dækning. Floder krydses ved broerne.</li>
@@ -693,6 +693,18 @@ function step() {
   if (state === 'play') checkEnd();
 }
 
+// Bots fight their nearest, weakest neighbour, avoid piling onto someone another bot already attacks,
+// and on Let/Normal leave the human a bit more alone.
+function pickTarget(p, enemies) {
+  let best = null, bs = 1e9;
+  for (const e of enemies) {
+    const piled = players.filter(q => q && q.alive && q !== p && q.mode === 1 && q.target === e).length;
+    const sc = Math.hypot(e.base.x - p.base.x, e.base.y - p.base.y) / 40 + e.base.hp / BASE_HP * 0.5 + e.count / nOwnable
+      + piled * 0.9 + (e.human ? [0.8, 0.45, 0.1][settings.diff] : 0) + rng() * 0.6;
+    if (sc < bs) { bs = sc; best = e; }
+  }
+  return best;
+}
 function income(p) {
   let n = INC_BASE;
   for (const pr of provs) if (pr.owner === p.id) n += INC_PROV + (pr.town ? INC_TOWN : 0);
@@ -717,7 +729,7 @@ function botThink(p) {
   let threat = null;
   for (const v of units) if (v.p !== p.id) for (const s of mySites) if ((v.x - s.x) ** 2 + (v.y - s.y) ** 2 < 80) { threat = v; break; }
   const enemies = players.filter(q => q && q.alive && q !== p);
-  if (T > DIFFS[settings.diff].atk && mine.length >= 4 && p.mode === 0 && rng() < 0.3) { p.mode = 1; p.target = enemies.sort((a, b) => a.base.hp / BASE_HP + a.count / 900 - b.base.hp / BASE_HP - b.count / 900)[0]; }
+  if (T > DIFFS[settings.diff].atk && mine.length >= 4 && p.mode === 0 && rng() < 0.3) { p.mode = 1; p.target = pickTarget(p, enemies); }
   if (p.mode === 1 && (mine.length < 2 || !p.target || !p.target.alive)) p.mode = 0;
   for (const u of mine) {
     if (u.tgt) continue;
@@ -868,10 +880,6 @@ function render(now) {
     const f = b.t / (b.huge ? 1.6 : 0.7), r = (b.huge ? 5 : b.big ? 1.6 : 1.1) * cam.s * (0.3 + f);
     ctx.fillStyle = `rgba(255,${150 + 80 * (1 - f) | 0},60,${0.75 * (1 - f)})`;
     ctx.beginPath(); ctx.arc(sx(b.x), sy(b.y), r, 0, 7); ctx.fill();
-  }
-  if (route && route.length > 1) {
-    ctx.strokeStyle = 'rgba(255,255,255,.9)'; ctx.lineWidth = 3; ctx.setLineDash([8, 6]); ctx.lineCap = 'round';
-    ctx.beginPath(); route.forEach(([x, y], k) => k ? ctx.lineTo(sx(x), sy(y)) : ctx.moveTo(sx(x), sy(y))); ctx.stroke(); ctx.setLineDash([]);
   }
 }
 function tokenR() { return Math.max(7, Math.min(15, cam.s * 0.55)); }
@@ -1130,8 +1138,8 @@ function updateHud() {
   let hint;
   if (!human.alive) hint = 'Dit HQ er faldet. Du ser med.';
   else if (!mine.length) hint = n ? 'Din første trop er på vej ud af ' + (spawnSite && spawnSite.town ? 'byen' : 'dit HQ') : 'Hyr en trop. Den bygges i ' + (spawnSite && spawnSite.town ? 'den valgte by' : 'dit HQ');
-  else if (!selected.size) hint = 'Tryk på en trop for at vælge den, eller <b>træk en rute</b> fra den';
-  else hint = `Tryk på kortet for at sende ${selected.size === 1 ? 'tropen' : selected.size + ' tropper'} dertil, eller træk en rute`;
+  else if (!selected.size) hint = 'Tryk på en trop for at vælge den';
+  else hint = `<b>Tryk på en provins</b> for at sende ${selected.size === 1 ? 'tropen' : selected.size + ' tropper'} dertil`;
   $('hint').innerHTML = hint;
 }
 function esc(s) { return s.replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c])); }
@@ -1155,14 +1163,22 @@ function siteAt(px, py) {
   const r = Math.max(20, cam.s * 1.6);
   return sites.find(s => (sx(s.x) - px) ** 2 + (sy(s.y) - py) ** 2 < r * r) || null;
 }
-function sendSelected(wx, wy) {
-  const list = [...selected];
+// Orders go to a province: tap it and the troops find their own way to its middle.
+function provAtWorld(wx, wy) { const i = cellOf(wx, wy); return i >= 0 && prov[i] >= 0 ? provs[prov[i]] : null; }
+function sendTo(list, pr) {
   let ok = 0;
   list.forEach((u, k) => {
-    const n = list.length, a = k / n * Math.PI * 2, r = n > 1 ? 0.6 + 0.15 * n : 0;
-    ok += orderPoints(u, [[wx + Math.cos(a) * r, wy + Math.sin(a) * r]]);
+    const n = list.length, a = k / n * Math.PI * 2, r = n > 1 ? 0.7 + 0.15 * n : 0;
+    ok += orderPoints(u, [[pr.cx + Math.cos(a) * r, pr.cy + Math.sin(a) * r]]);
   });
-  if (!ok) toast('Der kan dine tropper ikke komme hen');
+  if (!ok) { toast('Der kan dine tropper ikke komme hen'); return; }
+  for (const i of pr.cells) flash[i] = Math.max(flash[i], 150);
+  dirty = true;
+}
+function sendSelected(wx, wy) {
+  const pr = provAtWorld(wx, wy);
+  if (!pr) { toast('Tryk på en provins på land'); return; }
+  sendTo([...selected], pr);
 }
 function tapAt(px, py) {
   if (state !== 'play' || !human.alive) return;
@@ -1180,12 +1196,12 @@ function tapAt(px, py) {
   if (s && s.base && s.owner !== 1) { toast(players[s.owner].name + 's HQ. Ødelæg det for at slå dem ud'); return; }
 }
 const ptrs = new Map();
-let gesture = null, pinch = null, route = null;
+let gesture = null, pinch = null;
 cv.addEventListener('pointerdown', e => {
   cv.setPointerCapture(e.pointerId);
   ptrs.set(e.pointerId, { x: e.clientX, y: e.clientY });
-  if (ptrs.size === 1) gesture = { tap: true, t: performance.now(), x0: e.clientX, y0: e.clientY, unit: state === 'play' && human && human.alive ? unitAt(e.clientX, e.clientY) : null };
-  else { if (gesture) { gesture.tap = false; gesture.unit = null; } route = null; }
+  if (ptrs.size === 1) gesture = { tap: true, t: performance.now(), x0: e.clientX, y0: e.clientY };
+  else if (gesture) gesture.tap = false;
   pinchStart();
 });
 cv.addEventListener('pointermove', e => {
@@ -1194,13 +1210,9 @@ cv.addEventListener('pointermove', e => {
   ptrs.set(e.pointerId, { x: e.clientX, y: e.clientY });
   if (gesture && gesture.tap && Math.hypot(e.clientX - gesture.x0, e.clientY - gesture.y0) > 10) {
     gesture.tap = false;
-    if (gesture.unit) route = [[gesture.unit.x, gesture.unit.y]];
   }
   if (ptrs.size === 1 && gesture && !gesture.tap) {
-    if (route) {
-      const [wx, wy] = world(e.clientX, e.clientY), l = route[route.length - 1];
-      if (Math.hypot(wx - l[0], wy - l[1]) > 0.6) route.push([wx, wy]);
-    } else { cam.x += e.clientX - prev.x; cam.y += e.clientY - prev.y; clampCam(); }
+    cam.x += e.clientX - prev.x; cam.y += e.clientY - prev.y; clampCam();
   } else if (ptrs.size === 2 && pinch) {
     const [a, b] = [...ptrs.values()];
     const d = Math.hypot(a.x - b.x, a.y - b.y), mx = (a.x + b.x) / 2, my = (a.y + b.y) / 2;
@@ -1216,18 +1228,13 @@ function ptrEnd(e) {
   if (!ptrs.has(e.pointerId)) return;
   ptrs.delete(e.pointerId);
   if (ptrs.size === 0) {
-    if (route && gesture && gesture.unit && route.length > 1 && units.includes(gesture.unit)) {
-      const u0 = gesture.unit, group = selected.has(u0) ? [...selected] : [u0];
-      if (!selected.has(u0)) { selected.clear(); selected.add(u0); }
-      for (const u of group) orderPoints(u, route.slice(1));
-      buzz(10);
-    } else if (gesture && gesture.tap && performance.now() - gesture.t < 500) tapAt(e.clientX, e.clientY);
-    route = null; gesture = null;
+    if (gesture && gesture.tap && performance.now() - gesture.t < 500) tapAt(e.clientX, e.clientY);
+    gesture = null;
   }
   pinchStart();
 }
 cv.addEventListener('pointerup', ptrEnd);
-cv.addEventListener('pointercancel', e => { if (gesture) gesture.tap = false; route = null; ptrEnd(e); });
+cv.addEventListener('pointercancel', e => { if (gesture) gesture.tap = false; ptrEnd(e); });
 cv.addEventListener('contextmenu', e => e.preventDefault());
 cv.addEventListener('wheel', e => {
   e.preventDefault();
