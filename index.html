@@ -69,6 +69,8 @@ button:disabled{opacity:.4;cursor:default}
 #ratioRow{display:flex;align-items:center;gap:10px}
 #ratioRow label{font-size:13px;color:var(--muted);white-space:nowrap}
 #ratioVal{font-weight:800;color:var(--accent);min-width:40px;text-align:right;font-variant-numeric:tabular-nums}
+#btnAuto{flex:none;height:42px;padding:0 10px;border-radius:12px;font-size:15px;font-weight:800;background:rgba(0,0,0,.3);color:var(--muted);border:2px solid rgba(242,207,99,.35)}
+#btnAuto.on{background:var(--accent);color:var(--ink);border-color:var(--accent)}
 #btnBuild,#btnArmy{flex:none;height:42px;padding:0 13px;border-radius:12px;font-size:16px !important;background:var(--brass);color:var(--ink);font-weight:800;font-size:15px;box-shadow:0 3px 0 var(--brass-edge)}
 input[type=range]{-webkit-appearance:none;appearance:none;flex:1;min-width:60px;height:34px;background:transparent;margin:0}
 input[type=range]::-webkit-slider-runnable-track{height:8px;border-radius:4px;background:linear-gradient(90deg,var(--accent2),var(--accent))}
@@ -159,9 +161,10 @@ details ul{padding-left:18px;margin:8px 0 0}
     </div>
     <div id="capbar"><div></div></div>
     <div id="ratioRow">
-      <label for="ratio">Front</label>
-      <input id="ratio" type="range" min="10" max="90" step="5" value="50">
-      <span id="ratioVal">50%</span>
+      <label for="ratio">Enhed</label>
+      <input id="ratio" type="range" min="5" max="100" step="5" value="30">
+      <span id="ratioVal">30%</span>
+      <button id="btnAuto" aria-pressed="false">Auto</button>
       <button id="btnArmy">Hær</button>
       <button id="btnBuild">Byg</button>
     </div>
@@ -220,11 +223,12 @@ details ul{padding-left:18px;margin:8px 0 0}
     <button class="big" id="btnPlay">SPIL</button>
     <details><summary>Sådan spiller du</summary><ul>
       <li>Vælg et startsted. De første 30 sekunder er der <b>fredstid</b>: alle kan kun tage frit land.</li>
-      <li>Dit <b>infanteri</b> rykker selv ud. Små grupper går til grænsen, holder den og slås med fjender der kommer for tæt på. Skyderen <b>Front</b> bestemmer hvor stor en del af dine tropper der står ude.</li>
-      <li>Vil du angribe, så <b>træk</b> en gruppe derhen (eller tryk på den og så på målet). Alle grupper i ringen rykker frem side om side og tager landet på vejen.</li>
+      <li>Du starter uden hær. Tryk <b>Hær</b> for at hyre <b>infanteri</b>. Skyderen <b>Enhed</b> bestemmer hvor mange af dine reservetropper der kommer med.</li>
+      <li><b>Træk</b> en enhed derhen hvor den skal gå (eller tryk på den og så på målet). Den tager landet på vejen og slås med fjender den møder.</li>
+      <li>Slå <b>Auto</b> til, så går dine tropper selv til grænsen, holder den og slår igen mod fjender der kommer tæt på. En enhed du selv flytter, stopper med auto (mærket A forsvinder).</li>
       <li><b>Omringning</b>: skær en del af fjenden af, så overgiver lommen sig. Du får land, guld og fanger. Afskårne tropper uden forsyning bliver svagere, og tropper der angribes fra flere sider tager mere skade.</li>
       <li><b>Skov</b> og <b>bjerge</b> sinker angreb og giver forsvareren en bonus. <b>Fog of war</b>: du ser kun lidt ud over dine grænser og omkring dine tropper.</li>
-      <li>Under <b>Hær</b> kan du købe <b>kampvogne</b> (hurtige, hårde i angreb) og <b>fly</b> (flyver over vand og bomber) for guld.</li>
+      <li>Under <b>Hær</b> kan du også hyre <b>kampvogne</b> (hurtige, hårde i angreb) og <b>fly</b> (flyver over vand og bomber) for guld.</li>
       <li>Land giver <b>guld</b> til <b>byer</b> (flere tropper), <b>forter</b>, <b>havne</b> (træk tropper over vandet, så sejler de) og <b>raketsiloer</b> med atombomber.</li>
       <li>Hold fingeren på et andet land for at se det, foreslå alliance eller sende både.</li>
       <li>Første nation med 70% af landet vinder.</li>
@@ -534,7 +538,7 @@ function landBoat(B) {
   if (!A.alive) return;
   // The army goes ashore as a unit and fights its way inland.
   const [x, y] = xy(B.land);
-  const u = { id: ++uidSeq, a: B.a, type: B.type === 'air' ? 'inf' : B.type, str: B.troops, max: B.troops, x, y, px: x, py: y, path: [B.land], pi: 0, prog: 0, mode: 'idle', tx: x, ty: y, t: 0, fight: 0, order: true, post: -1, postFoe: 0 };
+  const u = { id: ++uidSeq, a: B.a, type: B.type === 'air' ? 'inf' : B.type, str: B.troops, max: B.troops, x, y, px: x, py: y, path: [B.land], pi: 0, prog: 0, mode: 'idle', tx: x, ty: y, t: 0, fight: 0, order: true, post: -1, postFoe: 0, auto: !A.isHuman || autoOn };
   units.push(u);
   unitSiege(u);
   let goal = B.goal;
@@ -620,13 +624,13 @@ function explode(N) {
 // Armies are counters you move around the map, like in Supremacy. Ground units take the land they march
 // through and guard the land they stand on; planes fly over water and bomb what they find.
 const UNITS = {
-  inf: { name: 'Infanteri', speed: 0.45, atk: 1, def: 1.4, gold: 0, desc: 'Billig og sej. Holder fronten' },
-  arm: { name: 'Kampvogne', speed: 0.75, atk: 2.2, def: 1, gold: 0.4, desc: 'Hurtige og hårde i angreb' },
-  air: { name: 'Fly', speed: 1.4, atk: 2.4, def: 0.7, gold: 0.8, air: true, desc: 'Flyver over vand og bomber fjenden' },
+  inf: { name: 'Infanteri', speed: 0.22, atk: 1, def: 1.4, gold: 0, desc: 'Billig og sej. Holder fronten' },
+  arm: { name: 'Kampvogne', speed: 0.38, atk: 2.2, def: 1, gold: 0.4, desc: 'Hurtige og hårde i angreb' },
+  air: { name: 'Fly', speed: 0.8, atk: 2.4, def: 0.7, gold: 0.8, air: true, desc: 'Flyver over vand og bomber fjenden' },
 };
 const UNIT_KEYS = ['inf', 'arm', 'air'];
-const SIEGE_CAP = 12, MAX_UNITS = 6, MAX_SQUADS = 30, GROUP_R = 10, DEPLOY_TICKS = 12, POST_GAP = 4, UNIT_CAPTURE_R = 1, UNIT_RANGE = 2.6, GUARD_R = 4, GUARD_MULT = 1.6, STRIKE_TICKS = 50;
-let units = [], selected = null, guard = null, uidSeq = 0;
+const SIEGE_CAP = 4, MAX_UNITS = 6, MAX_SQUADS = 30, DEPLOY_TICKS = 25, POST_GAP = 4, UNIT_CAPTURE_R = 1, UNIT_RANGE = 2.6, GUARD_R = 4, GUARD_MULT = 1.6, STRIKE_TICKS = 50;
+let units = [], selected = null, guard = null, uidSeq = 0, autoOn = false;
 
 function unitCount(a) { let n = 0; for (const u of units) if (u.a === a && u.type !== 'inf') n++; return n; }
 function squadCount(a) { let n = 0; for (const u of units) if (u.a === a && u.type === 'inf') n++; return n; }
@@ -636,7 +640,7 @@ const squadSize = p => Math.max(40, Math.min(900, (p.troops + fieldStr(p.id)) * 
 const cellOf = u => Math.round(u.y) * W + Math.round(u.x);
 // Infantry musters by itself: whenever less than your front share of the army is in the field, a new squad marches out.
 function deploy(p) {
-  const share = p.isHuman ? ratio() : p.front || 0.5, field = fieldStr(p.id), sq = squadSize(p);
+  const share = p.front || 0.5, field = fieldStr(p.id), sq = squadSize(p);
   if (field >= (field + p.troops) * share || p.troops < sq) return;
   const weak = units.filter(u => u.a === p.id && u.type === 'inf' && !u.order && own[cellOf(u)] === p.id).sort((a, b) => a.str - b.str)[0];
   if (weak && (weak.str < sq * 0.3 || squadCount(p.id) >= squadCap(p))) { reinforce(p, weak, sq); return; }   // top up worn squads first
@@ -660,13 +664,14 @@ function recruit(p, type, soldiers, near = -1) {
   soldiers = Math.floor(Math.min(soldiers, p.troops));
   if (soldiers < 30) return 'Ikke nok tropper';
   if (type !== 'inf' && unitCount(p.id) >= MAX_UNITS) return 'Du har allerede ' + MAX_UNITS + ' kampvogne og fly';
+  if (type === 'inf' && squadCount(p.id) >= MAX_SQUADS) return 'Du har allerede ' + MAX_SQUADS + ' grupper infanteri';
   const g = recruitCost(p, type, soldiers);
   if (p.gold < g) return 'Ikke nok guld';
   const at = homeCell(p, near);
   if (at < 0) return 'Ingen plads';
   p.troops -= soldiers; p.gold -= g;
   const [x, y] = xy(at);
-  const u = { id: ++uidSeq, a: p.id, type, str: soldiers, max: soldiers, x, y, px: x, py: y, path: null, pi: 0, prog: 0, mode: 'idle', tx: x, ty: y, t: 0, fight: 0, order: false, post: -1, postFoe: 0 };
+  const u = { id: ++uidSeq, a: p.id, type, str: soldiers, max: soldiers, x, y, px: x, py: y, path: null, pi: 0, prog: 0, mode: 'idle', tx: x, ty: y, t: 0, fight: 0, order: false, post: -1, postFoe: 0, auto: type !== 'air' && (!p.isHuman || autoOn) };
   units.push(u);
   return u;
 }
@@ -770,13 +775,11 @@ function duty(u) {
 function settle(u) {
   const cx = Math.round(u.x), cy = Math.round(u.y), R = 4;
   let n = 0;
-  for (let y = cy - R; y <= cy + R && n < 5; y++) for (let x = cx - R; x <= cx + R && n < 5; x++) {
+  for (let y = cy - R; y <= cy + R && n < 2; y++) for (let x = cx - R; x <= cx + R && n < 2; x++) {
     if (x < 1 || y < 1 || x >= W - 1 || y >= H - 1 || (x - cx) ** 2 + (y - cy) ** 2 > R * R) continue;
     const j = y * W + x;
     if (own[j] !== 0 || !(own[j - 1] === u.a || own[j + 1] === u.a || own[j - W] === u.a || own[j + W] === u.a)) continue;
-    const cost = cellCost(0, j) * 0.35;
-    if (u.str < cost + 20) return;
-    u.str -= cost; capture(j, u.a); n++;
+    capture(j, u.a); n++;
   }
 }
 // Which neighbour a border cell faces: an enemy id, 0 for free land, -1 if it is not on a border.
@@ -806,7 +809,7 @@ function unitSiege(u) {
     // Land is defended mostly by armies standing on it (guard) and forts; the reserve only adds a little.
     const j = list[k] % NC, o = own[j], jx = j % W, jy = (j / W) | 0;
     if (own[j] === u.a || !((jx > 0 && own[j - 1] === u.a) || (jx < W - 1 && own[j + 1] === u.a) || (jy > 0 && own[j - W] === u.a) || (jy < H - 1 && own[j + W] === u.a) || (jx === cx && jy === cy))) continue;
-    const cost = o === 0 ? cellCost(0, j) * 0.35 : cellCost(o, j) / (ENEMY_BASE + density(players[o]) * ENEMY_MULT) * (2 + density(players[o]) * 0.4);
+    const cost = o === 0 ? 0 : cellCost(o, j) / (ENEMY_BASE + density(players[o]) * ENEMY_MULT) * (2 + density(players[o]) * 0.4);
     if (u.str < cost + 10) { u.mode = 'idle'; return taken; }
     u.str -= cost;
     if (o > 0) { const D = players[o]; D.troops = Math.max(0, D.troops - density(D) * 0.5); D.hitBy[u.a] = T; }
@@ -864,8 +867,8 @@ function stepUnits() {
       }
       continue;
     }
-    if (u.type === 'inf' && !u.order && (T + u.id) % 8 === 0) duty(u);
-    if (u.type === 'inf' && !u.order && u.mode === 'idle' && u.postFoe === 0 && (T + u.id) % 3 === 0) settle(u);
+    if (u.auto && !u.order && (T + u.id) % 8 === 0) duty(u);
+    if (u.auto && !u.order && u.mode === 'idle' && u.postFoe === 0 && (T + u.id) % 4 === 0) settle(u);
     if (u.mode !== 'move' || !u.path) continue;
     // An army on the move pushes the whole front around it and only steps forward once that ground is taken,
     // so it advances as a wide, round bulge rather than a thin line.
@@ -906,8 +909,8 @@ function stepUnits() {
       const aa = (x, y) => (UNITS[y.type].air && !UNITS[x.type].air ? 0.5 : 1); // ground fire is weak against planes
       // Hit from two sides or more (flanked), or cut off from supply: they take more.
       const weak = (w, n) => (n >= 2 ? 1.35 : 1) * (w.cut ? 1.5 : 1);
-      dmg[j] += u.str * Uu.atk * 0.02 * aa(u, v) * weak(v, foes[j]) / (Uv.def * home(v));
-      dmg[i] += v.str * Uv.atk * 0.02 * aa(v, u) * weak(u, foes[i]) / (Uu.def * home(u));
+      dmg[j] += u.str * Uu.atk * 0.011 * aa(u, v) * weak(v, foes[j]) / (Uv.def * home(v));
+      dmg[i] += v.str * Uv.atk * 0.011 * aa(v, u) * weak(u, foes[i]) / (Uu.def * home(u));
       u.fight = v.fight = 4;
       players[u.a].hitBy[v.a] = players[v.a].hitBy[u.a] = T;
     }
@@ -916,7 +919,7 @@ function stepUnits() {
   for (const u of units) if (u.cut) u.str *= 0.997;   // no supply: the unit slowly melts away
   for (let k = units.length - 1; k >= 0; k--) {
     const u = units[k];
-    if (u.mode === 'idle' && u.str < 12 && players[u.a].alive) { players[u.a].troops += u.str; u.str = 0; }   // worn-out units rejoin the reserve
+    if (u.mode === 'idle' && u.str < 12 && !players[u.a].isHuman && players[u.a].alive) { players[u.a].troops += u.str; u.str = 0; }   // worn-out units rejoin the reserve
     if (u.str < 5 || !players[u.a].alive) { if (selected === u) selected = null; units.splice(k, 1); }
   }
 }
@@ -1112,6 +1115,11 @@ function enclose() {
     let p = -1;
     if (a > 0 && a !== o && ((a === b) + (a === c) + (a === d)) >= 2) p = a;
     else if (b > 0 && b !== o && ((b === c) + (b === d)) >= 2) p = b;
+    else {
+      // Corner notches: five or more of the eight cells around belong to one other country.
+      const ring = [a, b, c, d, own[i - W - 1], own[i - W + 1], own[i + W - 1], own[i + W + 1]];
+      for (const q of [a, b, c, d]) if (q > 0 && q !== o && ring.filter(r => r === q).length >= 5) { p = q; break; }
+    }
     if (p < 0 || (o > 0 && (allied(o, p) || peace()))) continue;
     flips.push(i * 64 + p);
   }
@@ -1187,7 +1195,7 @@ function step() {
     const cx = sumX[k] / p.count, cy = sumY[k] / p.count, ci = Math.round(cy) * W + Math.round(cx);
     if (own[ci] === k) { p.lx = cx; p.ly = cy; }
     else if (bestI[k] >= 0) { p.lx += ((bestI[k] % W) - p.lx) * 0.5; p.ly += (((bestI[k] / W) | 0) - p.ly) * 0.5; }
-    if ((T + k) % DEPLOY_TICKS === 0 && (state === 'play' || state === 'demo')) deploy(p);
+    if (!p.isHuman && (T + k) % DEPLOY_TICKS === 0 && (state === 'play' || state === 'demo')) deploy(p);
     if (!p.isHuman && T >= p.next) botThink(p);
   }
   checkEnd(alive);
@@ -1278,12 +1286,11 @@ function startPlay() {
   if (state !== 'spawn') return;
   if (!human.alive) randomSpawn(human);
   state = 'play';
-  for (let k = 1; k <= P; k++) if (players[k].alive) for (let n = 0; n < 3; n++) recruit(players[k], 'inf', players[k].troops * 0.3);
-  selected = units.find(u => u.a === 1) || null;
+  selected = null;
   show('spawnBar', false); show('top', true); show('bottom', true);
   $('speed').textContent = '1×';
   computeVision();
-  toast('Træk din hær ud i det frie land for at erobre det');
+  toast('Tryk Hær og hyr dine første tropper');
 }
 function checkEnd(alive) {
   if (state !== 'play') return;
@@ -1493,35 +1500,36 @@ vec4 cellAt(vec2 c){ c = clamp(c, vec2(0.0), uSize - 1.0); return texture2D(uMap
 void main(){
   vec2 sp = vec2(gl_FragCoord.x, uView.y - gl_FragCoord.y);
   vec2 p = (sp - uCam.xy) / uCam.z;
-  vec2 c = floor(p); vec2 t = p - c - 0.5;
-  vec3 wx = vec3(0.5*(0.5-t.x)*(0.5-t.x), 0.75 - t.x*t.x, 0.5*(0.5+t.x)*(0.5+t.x));
-  vec3 wy = vec3(0.5*(0.5-t.y)*(0.5-t.y), 0.75 - t.y*t.y, 0.5*(0.5+t.y)*(0.5+t.y));
-  float id[9]; float w[9]; float g[9]; float fl[9]; float mt[9]; float ft[9]; float fo[9]; float vi[9];
-  for (int j = 0; j < 3; j++) for (int i = 0; i < 3; i++) {
+  // Cubic B-spline over a 4x4 block of cells: wide enough that stair steps melt into round curves.
+  vec2 q0 = p - 0.5, c = floor(q0), f = q0 - c, f2 = f * f, f3 = f2 * f;
+  vec4 wx = vec4((1.0 - f.x) * (1.0 - f.x) * (1.0 - f.x), 3.0 * f3.x - 6.0 * f2.x + 4.0, -3.0 * f3.x + 3.0 * f2.x + 3.0 * f.x + 1.0, f3.x) / 6.0;
+  vec4 wy = vec4((1.0 - f.y) * (1.0 - f.y) * (1.0 - f.y), 3.0 * f3.y - 6.0 * f2.y + 4.0, -3.0 * f3.y + 3.0 * f2.y + 3.0 * f.y + 1.0, f3.y) / 6.0;
+  float id[16]; float w[16]; float g[16]; float fl[16]; float mt[16]; float ft[16]; float fo[16]; float vi[16];
+  for (int j = 0; j < 4; j++) for (int i = 0; i < 4; i++) {
     vec4 m = cellAt(c + vec2(float(i - 1), float(j - 1)));
-    id[j * 3 + i] = floor(m.r * 255.0 + 0.5);
-    w[j * 3 + i] = wx[i] * wy[j];
-    g[j * 3 + i] = m.g;
+    id[j * 4 + i] = floor(m.r * 255.0 + 0.5);
+    w[j * 4 + i] = wx[i] * wy[j];
+    g[j * 4 + i] = m.g;
     float bb = floor(m.b * 255.0 + 0.5);
-    vi[j * 3 + i] = bb >= 127.5 ? 1.0 : 0.0;
-    fl[j * 3 + i] = (bb - vi[j * 3 + i] * 128.0) / 127.0;
+    vi[j * 4 + i] = bb >= 127.5 ? 1.0 : 0.0;
+    fl[j * 4 + i] = (bb - vi[j * 4 + i] * 128.0) / 127.0;
     float a = floor(m.a * 255.0 + 0.5), tt = floor((a + 0.5) / 60.0);
-    mt[j * 3 + i] = tt == 2.0 ? 1.0 : 0.0;
-    fo[j * 3 + i] = tt == 3.0 ? 1.0 : 0.0;
-    ft[j * 3 + i] = mod(a, 60.0) >= 29.0 ? 1.0 : 0.0;
+    mt[j * 4 + i] = tt == 2.0 ? 1.0 : 0.0;
+    fo[j * 4 + i] = tt == 3.0 ? 1.0 : 0.0;
+    ft[j * 4 + i] = mod(a, 60.0) >= 29.0 ? 1.0 : 0.0;
   }
   float best = 0.0, bw = -1.0;
-  float sum[9];
-  for (int k = 0; k < 9; k++) {
+  float sum[16];
+  for (int k = 0; k < 16; k++) {
     float a = 0.0;
-    for (int l = 0; l < 9; l++) if (id[l] == id[k]) a += w[l];
+    for (int l = 0; l < 16; l++) if (id[l] == id[k]) a += w[l];
     sum[k] = a;
     if (a > bw) { bw = a; best = id[k]; }
   }
   float sw = 0.0, sec = best;
-  for (int k = 0; k < 9; k++) if (id[k] != best && sum[k] > sw) { sw = sum[k]; sec = id[k]; }
+  for (int k = 0; k < 16; k++) if (id[k] != best && sum[k] > sw) { sw = sum[k]; sec = id[k]; }
   float shd = 0.0, fla = 0.0, mnt = 0.0, frt = 0.0, fst = 0.0, vis = 0.0;
-  for (int k = 0; k < 9; k++) {
+  for (int k = 0; k < 16; k++) {
     shd += w[k] * g[k]; vis += w[k] * vi[k];
     if (id[k] == best) { fla += w[k] * fl[k]; mnt += w[k] * mt[k]; frt += w[k] * ft[k]; fst += w[k] * fo[k]; }
   }
@@ -1649,11 +1657,7 @@ function drawUnits(frac, now) {
   }
   if (selected) {
     const u = selected, X = sx(u.x), Y = sy(u.y);
-    if (!UNITS[u.type].air) {
-      // The group that moves with it.
-      ctx.fillStyle = 'rgba(242,207,99,.08)'; ctx.strokeStyle = 'rgba(242,207,99,.5)'; ctx.lineWidth = 1.5;
-      ctx.beginPath(); ctx.arc(X, Y, GROUP_R * cam.s, 0, 7); ctx.fill(); ctx.stroke();
-    }
+
     ctx.save(); ctx.setLineDash([6, 6]); ctx.lineDashOffset = -now / 40; ctx.lineWidth = 2.5; ctx.strokeStyle = 'rgba(242,207,99,.9)';
     ctx.beginPath(); ctx.moveTo(X, Y);
     if (UNITS[u.type].air && (u.mode === 'strike' || u.mode === 'bomb')) ctx.lineTo(sx(u.tx), sy(u.ty));
@@ -1680,7 +1684,7 @@ function drawUnits(frac, now) {
         ctx.beginPath(); ctx.arc(X - dx * (w * 0.45 + ph * w * 0.6) + Math.sin(k * 2.4 + u.id) * 4, Y0 + h * 0.3 - dy * ph * w * 0.4, r, 0, 7); ctx.fill();
       }
     }
-    const inSel = selected && !UNITS[selected.type].air && u.a === selected.a && !air && Math.hypot(u.x - selected.x, u.y - selected.y) <= GROUP_R;
+    const inSel = u === selected;
     if (sq) {
       // A squad: a round token with a helmet.
       const r = w * 0.42;
@@ -1694,6 +1698,7 @@ function drawUnits(frac, now) {
         ctx.font = `700 ${Math.round(w * 0.42)}px ${UI_FONT}`; ctx.lineWidth = 3; ctx.strokeStyle = 'rgba(20,16,8,.75)';
         const txt = fmt(u.str); ctx.strokeText(txt, X, Y + r + w * 0.28); ctx.fillStyle = '#fffaf0'; ctx.fillText(txt, X, Y + r + w * 0.28);
       }
+      if (u.a === 1 && u.auto && w >= 14) { ctx.fillStyle = '#f2cf63'; ctx.beginPath(); ctx.arc(X + r * 0.85, Y - r * 0.85, r * 0.42, 0, 7); ctx.fill(); ctx.fillStyle = '#1b1608'; ctx.font = `800 ${Math.round(r * 0.6)}px ${UI_FONT}`; ctx.fillText('A', X + r * 0.85, Y - r * 0.8); }
       if (u.cut) { ctx.strokeStyle = 'rgba(240,90,70,.9)'; ctx.lineWidth = 2; ctx.setLineDash([3, 3]); ctx.beginPath(); ctx.arc(X, Y, r + 3, 0, 7); ctx.stroke(); ctx.setLineDash([]); }
       if (u.fight) for (let k = 0; k < 2; k++) {
         const a = now / 70 + k * 3.1 + u.id, rr2 = r * 1.2;
@@ -1746,9 +1751,10 @@ function updateHud() {
   const pc = peace();
   $('clock').textContent = pc ? '🕊 Fredstid ' + fmtTime(PEACE_TICKS - T) : fmtTime(T);
   $('clock').classList.toggle('peace', pc);
-  $('hint').innerHTML = selected ? '<b>' + UNITS[selected.type].name + '</b> valgt: tryk på kortet for at sende gruppen · tryk igen for at slippe'
+  $('hint').innerHTML = selected ? '<b>' + UNITS[selected.type].name + '</b> valgt: tryk på kortet for at sende den · tryk igen for at slippe'
+    : !units.some(u => u.a === 1) ? 'Tryk <b>Hær</b> for at hyre tropper'
     : pc ? 'Træk dine tropper ud i frit land. Lande kan angribes om <b>' + Math.ceil((PEACE_TICKS - T) * DT) + ' s</b>'
-    : 'Tropperne holder selv grænsen · træk en gruppe for at angribe · omring fjenden for bonus';
+    : 'Træk en enhed for at sende den · <b>Auto</b> lader tropperne holde grænsen selv';
   const list = players.slice(1).filter(q => q.alive).sort((a, b) => b.count - a.count);
   let html = '', shown = 0;
   list.forEach((q, i) => {
@@ -1831,29 +1837,28 @@ function closeSheets() {
 $('btnBuild').onclick = () => openBuild(-1);
 $('btnArmy').onclick = () => { closeSheets(); $('armyGrid').dataset.key = ''; fillArmy(); show('armySheet', true); show('bottom', false); };
 $('armyClose').onclick = closeSheets;
-const specialSize = () => Math.floor(Math.min(human.troops, squadSize(human) * 1.5));
 function fillArmy() {
-  const p = human, sold = specialSize(), n = unitCount(1);
-  $('armySub').textContent = `Infanteriet rykker selv ud til grænsen. Skyderen Front styrer hvor stor en del af dine tropper der står ude (${squadCount(1)} grupper nu). Kampvogne og fly koster guld · ${n}/${MAX_UNITS}`;
-  const cost = k => fmt(sold) + ' tropper · 🪙 ' + fmt(recruitCost(p, k, sold));
-  const cant = k => sold < 30 || p.gold < recruitCost(p, k, sold) || n >= MAX_UNITS;
+  const p = human, sold = Math.floor(p.troops * ratio()), n = unitCount(1), q = squadCount(1);
+  $('armySub').textContent = `Bruger ${Math.round(ratio() * 100)}% af dine tropper (${fmt(sold)} soldater) · infanteri ${q}/${MAX_SQUADS} · kampvogne og fly ${n}/${MAX_UNITS}`;
+  const cost = k => { const g = recruitCost(p, k, sold); return fmt(sold) + ' tropper' + (g ? ' · 🪙 ' + fmt(g) : ''); };
+  const cant = k => sold < 30 || p.gold < recruitCost(p, k, sold) || (k === 'inf' ? q >= MAX_SQUADS : n >= MAX_UNITS);
   // Rebuild only when a button turns on or off; otherwise just update the numbers, so taps never miss.
-  const keys = ['arm', 'air'], key = keys.map(cant).join();
+  const key = UNIT_KEYS.map(cant).join();
   if ($('armyGrid').dataset.key !== key) {
     $('armyGrid').dataset.key = key;
-    $('armyGrid').innerHTML = keys.map(k => {
-      const U = UNITS[k], ic = k === 'arm' ? '🛡️' : '✈️';
+    $('armyGrid').innerHTML = UNIT_KEYS.map(k => {
+      const U = UNITS[k], ic = k === 'inf' ? '⚔️' : k === 'arm' ? '🛡️' : '✈️';
       return `<button class="bitem${cant(k) ? ' cant' : ''}" data-k="${k}" ${cant(k) ? 'disabled' : ''}><span class="ic">${ic}</span><b>${U.name}</b><small>${U.desc}</small><span class="cost">${cost(k)}</span></button>`;
     }).join('');
   } else $('armyGrid').querySelectorAll('.bitem').forEach(el => { el.querySelector('.cost').textContent = cost(el.dataset.k); });
 }
 $('armyGrid').addEventListener('click', e => {
   const el = e.target.closest('.bitem'); if (!el || el.disabled) return;
-  const r = recruit(human, el.dataset.k, specialSize(), cellAt(CW / 2, CH / 2));
+  const r = recruit(human, el.dataset.k, human.troops * ratio(), cellAt(CW / 2, CH / 2));
   closeSheets();
   if (typeof r === 'string') { toast(r); return; }
   selected = r; buzz(15);
-  toast(UNITS[r.type].name + ' er klar. Træk dem derhen hvor de skal angribe');
+  toast(UNITS[r.type].name + ' er hyret. Træk dem derhen hvor de skal hen' + (r.auto ? ' (eller lad Auto styre dem)' : ''));
 });
 $('buildClose').onclick = $('nsClose').onclick = $('placeCancel').onclick = closeSheets;
 
@@ -1944,24 +1949,16 @@ function tap(px, py) {
 }
 // Send a unit somewhere. Ground troops that can't walk there board a ship if you have a port.
 function command(u, i) {
-  // Infantry goes as a group: every squad near the one you dragged moves out side by side, keeping its place in the line.
-  const group = UNITS[u.type].air ? [u] : groupOf(u), [tx, ty] = xy(i);
-  let ok = 0, err = '';
-  for (const v of group) {
-    let c = i;
-    if (v !== u) { const x = Math.round(tx + v.x - u.x), y = Math.round(ty + v.y - u.y), j = y * W + x; if (x >= 0 && y >= 0 && x < W && y < H && terr[j]) c = j; }
-    const e = orderUnit(v, c);
-    if (!e) ok++; else if (v === u) err = e;
-  }
-  if (ok) { buzz(15); toast(ok > 1 ? ok + ' enheder rykker frem' : UNITS[u.type].name + ' er på vej'); selected = null; return; }
+  // A unit you move yourself stops running on auto until you turn Auto on again.
+  const err = orderUnit(u, i);
+  if (!err) { u.auto = false; buzz(15); toast(UNITS[u.type].name + ' er på vej'); selected = null; return; }
   const t = own[i];
   if (!UNITS[u.type].air && terr[i] && t !== 1 && human.nb.port) {
     if (t > 0 && blocked(t)) return;
-    if (sendBoat(1, t, 0, i, u)) { buzz(15); toast('⛵ ' + UNITS[u.type].name + ' går om bord og sejler derhen'); return; }
+    if (sendBoat(1, t, 0, i, u)) { u.auto = false; buzz(15); toast('⛵ ' + UNITS[u.type].name + ' går om bord og sejler derhen'); return; }
   }
   toast(err + (!UNITS[u.type].air && terr[i] && !human.nb.port ? '. Byg en havn' : ''));
 }
-const groupOf = u => units.filter(v => v.a === u.a && v.type !== 'air' && Math.hypot(v.x - u.x, v.y - u.y) <= GROUP_R);
 function unitAt(px, py) {
   let best = null, bd = 26 * 26;
   for (const u of units) {
@@ -2015,8 +2012,14 @@ $('name').addEventListener('input', () => { settings.name = $('name').value; sav
 $('bots').value = settings.bots; $('botsVal').textContent = settings.bots;
 $('bots').addEventListener('input', () => { settings.bots = +$('bots').value; $('botsVal').textContent = settings.bots; saveSettings(); });
 $('ratio').addEventListener('input', () => { $('ratioVal').textContent = $('ratio').value + '%'; });
-try { const r = localStorage.getItem('tw.ratio'); if (r) { $('ratio').value = r; $('ratioVal').textContent = r + '%'; } } catch (e) {}
-$('ratio').addEventListener('change', () => { try { localStorage.setItem('tw.ratio', $('ratio').value); } catch (e) {} });
+$('btnAuto').onclick = () => {
+  autoOn = !autoOn;
+  $('btnAuto').classList.toggle('on', autoOn); $('btnAuto').setAttribute('aria-pressed', autoOn);
+  for (const u of units) if (u.a === 1 && !UNITS[u.type].air) { u.auto = autoOn; if (!autoOn && !u.order && u.mode === 'move') u.mode = 'idle'; }
+  buzz(10); toast(autoOn ? 'Auto til: dine tropper går selv til grænsen og forsvarer den' : 'Auto fra: dine tropper bliver hvor de er');
+};
+try { const r = localStorage.getItem('tw.ratio2'); if (r) { $('ratio').value = r; $('ratioVal').textContent = r + '%'; } } catch (e) {}
+$('ratio').addEventListener('change', () => { try { localStorage.setItem('tw.ratio2', $('ratio').value); } catch (e) {} });
 
 $('btnPlay').onclick = () => { $('name').blur(); newGame(); };
 $('btnStart').onclick = startPlay;
@@ -2057,7 +2060,7 @@ resize();
 function demoMap() {
   genMap(); fitCamera(); makePlayers(); attacks = []; buildings = []; boats = []; nukes = []; booms = []; units = []; selected = null; T = 0; vis = null;
   players[1].isHuman = false; players[1].name = 'Askeland';
-  for (let k = 1; k <= P; k++) { randomSpawn(players[k]); for (let n = 0; n < 3; n++) recruit(players[k], 'inf', players[k].troops * 0.3); }
+  for (let k = 1; k <= P; k++) { randomSpawn(players[k]); }
   dirty = true;
 }
 function startDemo() {
