@@ -69,12 +69,17 @@ button:disabled{opacity:.4;cursor:default}
 #ratioRow{display:flex;align-items:center;gap:10px}
 #ratioRow label{font-size:13px;color:var(--muted);white-space:nowrap}
 #ratioVal{font-weight:800;color:var(--accent);min-width:40px;text-align:right;font-variant-numeric:tabular-nums}
-#btnBuild,#btnArmy{flex:none;height:42px;padding:0 13px;border-radius:12px;font-size:16px !important;background:var(--brass);color:var(--ink);font-weight:800;font-size:15px;box-shadow:0 3px 0 var(--brass-edge)}
+#btnBuild{flex:none;height:42px;padding:0 13px;border-radius:12px;font-size:16px !important;background:var(--brass);color:var(--ink);font-weight:800;font-size:15px;box-shadow:0 3px 0 var(--brass-edge)}
 input[type=range]{-webkit-appearance:none;appearance:none;flex:1;min-width:60px;height:34px;background:transparent;margin:0}
 input[type=range]::-webkit-slider-runnable-track{height:8px;border-radius:4px;background:linear-gradient(90deg,var(--accent2),var(--accent))}
 input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:28px;height:28px;border-radius:50%;background:#fff;margin-top:-10px;box-shadow:0 2px 6px rgba(0,0,0,.4)}
 input[type=range]::-moz-range-track{height:8px;border-radius:4px;background:linear-gradient(90deg,var(--accent2),var(--accent))}
 input[type=range]::-moz-range-thumb{width:28px;height:28px;border-radius:50%;background:#fff;border:0}
+#provActs{display:flex;gap:6px;margin-top:8px}
+#provActs button{flex:1;padding:8px 2px 6px;border-radius:11px;font-size:13px;font-weight:800;background:rgba(255,255,255,.1);color:#fffaf0;line-height:1.15}
+#provActs button small{display:block;font-size:11px;font-weight:600;opacity:.75}
+#provActs button.cant{opacity:.38}
+#provActs button.on{background:var(--accent);color:#1b1608}
 #hint{text-align:center;font-size:12px;color:var(--muted);margin-top:4px;min-height:15px}
 #hint b{color:var(--good)}
 
@@ -162,9 +167,9 @@ details ul{padding-left:18px;margin:8px 0 0}
       <label for="ratio">Send</label>
       <input id="ratio" type="range" min="10" max="100" step="10" value="70">
       <span id="ratioVal">70%</span>
-      <button id="btnArmy">Hær</button>
       <button id="btnBuild">Byg</button>
     </div>
+    <div id="provActs" class="hidden"></div>
     <div id="hint"></div>
   </div>
 </div>
@@ -174,11 +179,6 @@ details ul{padding-left:18px;margin:8px 0 0}
   <div class="grid" id="buildGrid"></div>
 </div></div>
 
-<div class="sheet hidden" id="armySheet"><div class="in">
-  <h3>Rekrutter <button class="x" id="armyClose" aria-label="Luk">✕</button></h3>
-  <p class="sheetSub" id="armySub"></p>
-  <div class="grid" id="armyGrid"></div>
-</div></div>
 
 <div class="sheet hidden" id="nationSheet"><div class="in">
   <h3><i id="nsColor"></i><span id="nsName"></span><button class="x" id="nsClose" aria-label="Luk">✕</button></h3>
@@ -223,7 +223,8 @@ details ul{padding-left:18px;margin:8px 0 0}
       <li><b>Træk</b> fra en af dine provinser til en anden provins for at sende tropper (eller tryk på din provins og så på målet). Skyderen <b>Send</b> bestemmer hvor stor en del der går med.</li>
       <li>Når hæren når en provins der ikke er din, starter en <b>kamp</b> i realtid. Begge sider mister folk, til den ene er væk. Bjerge, skov, byer og <b>forter</b> hjælper forsvareren. Du kan sende flere tropper ind i en kamp, der er i gang.</li>
       <li>De første 60 sekunder er der <b>fredstid</b>: alle kan kun tage fri provinser.</li>
-      <li>Under <b>Hær</b> køber du <b>kampvogne</b> (tæller som 8 soldater i angreb og går hurtigere) og <b>fly</b> (bomber en provins på afstand og flyver hjem) til den valgte provins for guld.</li>
+      <li><b>Tryk på din provins</b> for at få knapper: køb <b>kampvogne</b> (tæller som 8 soldater i angreb, går hurtigere og følger med når du sender tropper), køb <b>fly</b>, eller tryk <b>Bomb</b> og så på et mål inden for ringen.</li>
+      <li><b>Styr dine hære</b>: tryk på en hær der er på vej (eller træk i den) og vælg et nyt mål. Tryk på provinsen bag den for at kalde den tilbage.</li>
       <li>Stiplede <b>søveje</b> forbinder øer og kyster. Hære sejler over dem.</li>
       <li><b>Omringning</b>: skærer du en del af et land af, så overgiver den sig, og du får fangerne. <b>Fog of war</b>: du ser kun tæt på dine egne grænser og hære.</li>
       <li>Hold fingeren på dit land for at bygge <b>byer</b>, <b>forter</b> og <b>raketsiloer</b> med atombomber. Hold på et andet land for at foreslå alliance.</li>
@@ -328,7 +329,7 @@ let prov = null, provs = [], provDirty = true;   // provinces: cell → province
 const PROV_CELLS = 300, TOWN_GOLD = 1.5;
 // Troops live in provinces and grow there (per second); cities and capitals grow faster and hold more.
 const GROW = 0.3, GROW_CITY = 0.9, GROW_CAP = 1.5, GROW_BUILT = 1, HOLD = 50, HOLD_CITY = 150, HOLD_CAP = 250, HOLD_BUILT = 150;
-const START_GARRISON = 60, MARCH_SPEED = 0.12, BATTLE_RATE = 0.008, SEA_LINK = 14;
+const START_GARRISON = 60, MARCH_SPEED = 0.132, BATTLE_RATE = 0.0088, PACE = 1.1, SEA_LINK = 14;
 
 function genMap() {
   const ar = innerHeight / innerWidth, isles = state !== 'demo' && settings.mapType === 1;
@@ -656,7 +657,7 @@ function explode(N) {
 // a march walks town to town, and when it reaches a province that is not yours a battle starts and runs in
 // real time until one side is gone. Tanks hit hard in attack; planes fly out and bomb a province from afar.
 const TANK_ATK = 8, TANK_DEF = 4, TANK_GOLD = 60, PLANE_GOLD = 150, PLANE_RANGE = 70, PLANE_SPEED = 0.7, BOMB_TICKS = 60, BOMB_HIT = 0.05;
-let marches = [], flights = [], selProv = -1, uidSeq = 0;
+let marches = [], flights = [], selProv = -1, selMarch = null, uidSeq = 0;
 
 function provAt(i) { return i >= 0 && prov ? prov[i] : -1; }
 function defMult(Pv) {
@@ -709,6 +710,18 @@ function sendTroops(a, from, to, share) {
 }
 function townXY(pi) { return xy(provs[pi].town); }
 function hopLen(m) { const [x0, y0] = townXY(m.path[m.seg]), [x1, y1] = townXY(m.path[m.seg + 1]); return Math.max(1, Math.hypot(x1 - x0, y1 - y0)); }
+const marchSpeed = m => m.k * TANK_ATK > m.n ? MARCH_SPEED * 1.5 : MARCH_SPEED;   // tank columns are faster
+// Give a marching army new orders. It finishes the hop it is on (or turns straight back), then follows the new road.
+function redirect(m, to) {
+  const err = canHit(m.a, provs[to]); if (err) return err;
+  const prev = m.path[m.seg], next = m.path[m.seg + 1];
+  if (to === prev) { m.path = [next, prev]; m.seg = 0; m.t = m.pt = Math.max(0, hopLen({ path: [next, prev], seg: 0 }) - m.t); return ''; }
+  if (to === next) { m.path = m.path.slice(0, m.seg + 2); return ''; }
+  const r = route(m.a, next, to);
+  if (!r) return 'Der er ingen vej derhen';
+  m.path = m.path.slice(0, m.seg + 1).concat(r);
+  return '';
+}
 function marchPos(m, extra = 0) {
   const [x0, y0] = townXY(m.path[m.seg]), [x1, y1] = townXY(m.path[Math.min(m.path.length - 1, m.seg + 1)]);
   const f = Math.min(1, (m.t + extra) / hopLen(m));
@@ -724,7 +737,7 @@ function stepMarches() {
     const m = marches[i];
     if (!players[m.a].alive) { marches.splice(i, 1); continue; }
     m.pt = m.t;
-    m.t += m.k * TANK_ATK > m.n ? MARCH_SPEED * 1.5 : MARCH_SPEED;
+    m.t += marchSpeed(m);
     if (m.t < hopLen(m)) continue;
     m.seg++; m.t = 0; m.pt = 0;
     const pi = m.path[m.seg], Pv = provs[pi], last = m.seg >= m.path.length - 1;
@@ -821,7 +834,7 @@ function growProvinces() {
     const o = Pv.owner;
     if (o <= 0) continue;
     const p = players[o], hold = holdOf(Pv);
-    if (Pv.troops < hold) Pv.troops = Math.min(hold, Pv.troops + growOf(Pv) * (p.isHuman ? 1 : DIFFS[settings.diff].inc) * DT);
+    if (Pv.troops < hold) Pv.troops = Math.min(hold, Pv.troops + growOf(Pv) * PACE * (p.isHuman ? 1 : DIFFS[settings.diff].inc) * DT);
     else Pv.troops -= (Pv.troops - hold) * 0.002;
   }
 }
@@ -830,7 +843,7 @@ function tallyTroops() {
   for (const Pv of provs) {
     if (Pv.owner <= 0) continue;
     const p = players[Pv.owner];
-    p.troops += Pv.troops; p.hold += holdOf(Pv); p.grow += Pv.troops < holdOf(Pv) ? growOf(Pv) : 0; p.tanks += Pv.tanks; p.planes += Pv.planes;
+    p.troops += Pv.troops; p.hold += holdOf(Pv); p.grow += Pv.troops < holdOf(Pv) ? growOf(Pv) * PACE : 0; p.tanks += Pv.tanks; p.planes += Pv.planes;
   }
   for (const m of marches) { players[m.a].troops += m.n; players[m.a].tanks += m.k; }
   for (const f of flights) players[f.a].planes += f.n;
@@ -1098,7 +1111,7 @@ function newGame() {
   state = 'new';
   seed = (Date.now() ^ (Math.random() * 1e9)) | 0;
   genMap(); makePlayers();
-  attacks = []; buildings = []; boats = []; nukes = []; booms = []; marches = []; flights = []; selProv = -1; T = 0; speed = 1; watching = false; fortsDirty = true; vis = null;
+  attacks = []; buildings = []; boats = []; nukes = []; booms = []; marches = []; flights = []; selProv = -1; selMarch = null; T = 0; speed = 1; watching = false; fortsDirty = true; vis = null;
   for (let k = 2; k <= P; k++) randomSpawn(players[k]);
   state = 'spawn'; spawnTimer = 15;
   fitCamera(); closeSheets();
@@ -1544,7 +1557,7 @@ function drawTowns(now) {
 function drawMarches(frac, now) {
   const fs = badgeSize();
   if (drag) {
-    const [x0, y0] = xy(provs[drag.from].town), X = sx(x0), Y = sy(y0), a = Math.atan2(drag.y - Y, drag.x - X);
+    const [x0, y0] = drag.m ? marchPos(drag.m) : xy(provs[drag.from].town), X = sx(x0), Y = sy(y0), a = Math.atan2(drag.y - Y, drag.x - X);
     ctx.strokeStyle = 'rgba(242,207,99,.95)'; ctx.fillStyle = 'rgba(242,207,99,.95)'; ctx.lineWidth = 4; ctx.lineCap = 'round';
     ctx.beginPath(); ctx.moveTo(X, Y); ctx.lineTo(drag.x, drag.y); ctx.stroke();
     ctx.beginPath(); ctx.moveTo(drag.x + Math.cos(a) * 6, drag.y + Math.sin(a) * 6);
@@ -1553,8 +1566,14 @@ function drawMarches(frac, now) {
     const t = provAt(cellAt(drag.x, drag.y));
     if (t >= 0 && t !== drag.from) { const [tx, ty] = xy(provs[t].town); ctx.strokeStyle = '#f2cf63'; ctx.lineWidth = 2.5; ctx.beginPath(); ctx.arc(sx(tx), sy(ty), fs * 1.4, 0, 7); ctx.stroke(); }
   }
+  if (placing === 'air' && selProv >= 0) {
+    const [x, y] = xy(provs[selProv].town);
+    ctx.save(); ctx.setLineDash([8, 6]); ctx.strokeStyle = 'rgba(255,120,80,.85)'; ctx.lineWidth = 2;
+    ctx.beginPath(); ctx.arc(sx(x), sy(y), PLANE_RANGE * cam.s, 0, 7); ctx.stroke(); ctx.restore();
+  }
+  if (selMarch && !marches.includes(selMarch)) selMarch = null;
   for (const m of marches) {
-    const [x, y] = marchPos(m, (m.k * TANK_ATK > m.n ? MARCH_SPEED * 1.5 : MARCH_SPEED) * frac);
+    const [x, y] = marchPos(m, marchSpeed(m) * frac);
     if (!friend(m.a) && !seenXY(x, y)) continue;
     const X = sx(x), Y = sy(y), sea = m.seg < m.path.length - 1 && isSea(m.path[m.seg], m.path[m.seg + 1]);
     if (m.a === 1) {
@@ -1572,7 +1591,8 @@ function drawMarches(frac, now) {
         ctx.fillStyle = `rgba(214,196,160,${0.45 * (1 - ph)})`; ctx.beginPath(); ctx.arc(X - 6 - ph * 10 + Math.sin(k * 2 + m.id) * 3, Y + 4, 2 + ph * 4, 0, 7); ctx.fill();
       }
     }
-    pill((m.k >= 0.5 ? '▰' : '') + fmt(m.n + m.k * TANK_ATK), X, Y + bob, players[m.a].css, fs * 0.85);
+    if (m === selMarch) { ctx.strokeStyle = '#f2cf63'; ctx.lineWidth = 3; ctx.beginPath(); ctx.arc(X, Y + bob, fs * 1.5 + Math.sin(now / 150) * 2, 0, 7); ctx.stroke(); }
+    pill((m.k >= 0.5 ? '▰' + Math.round(m.k) + ' ' : '') + fmt(m.n), X, Y + bob, players[m.a].css, fs * 0.85);
   }
   for (const f of flights) {
     const x = f.px + (f.x - f.px) * frac, y = f.py + (f.y - f.py) * frac;
@@ -1601,8 +1621,10 @@ function updateHud() {
   const pc = peace();
   $('clock').textContent = pc ? '🕊 Fredstid ' + fmtTime(PEACE_TICKS - T) : fmtTime(T);
   $('clock').classList.toggle('peace', pc);
+  const sp = selProv >= 0 ? provs[selProv] : null;
   $('hint').innerHTML = placing === 'air' ? 'Tryk på den provins flyene skal bombe'
-    : selProv >= 0 ? 'Provins valgt: tryk hvor tropperne skal hen · <b>Hær</b> køber kampvogne og fly her'
+    : selMarch ? 'Hær valgt: tryk på en provins for at sende den derhen i stedet'
+    : sp ? '<b>' + fmt(sp.troops) + '</b> tropper' + (sp.tanks >= 0.5 ? ', <b>' + Math.round(sp.tanks) + '</b> kampvogne' : '') + ' · tryk på et mål for at sende ' + Math.round(ratio() * 100) + '%'
     : pc ? 'Træk fra en provins til en anden for at sende tropper. Lande kan angribes om <b>' + Math.ceil((PEACE_TICKS - T) * DT) + ' s</b>'
     : 'Træk fra en provins for at sende tropper · skyderen styrer hvor mange';
   const list = players.slice(1).filter(q => q.alive).sort((a, b) => b.count - a.count);
@@ -1616,7 +1638,7 @@ function updateHud() {
   html += `<div class="r" style="color:var(--muted);justify-content:center">${list.length} lande tilbage</div>`;
   $('lb').innerHTML = html;
   if (!$('buildSheet').classList.contains('hidden')) fillBuild();
-  if (!$('armySheet').classList.contains('hidden')) fillArmy();
+  fillProv();
   if (!$('nationSheet').classList.contains('hidden')) fillNation();
 }
 function esc(s) { return s.replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c])); }
@@ -1677,35 +1699,37 @@ $('nsActs').addEventListener('click', e => {
   closeSheets();
 });
 function closeSheets() {
-  ['buildSheet', 'armySheet', 'nationSheet', 'placeBar'].forEach(id => show(id, false));
+  ['buildSheet', 'nationSheet', 'placeBar'].forEach(id => show(id, false));
   placing = null; buildAt = -1;
   if (state === 'play' || state === 'over') show('bottom', true);
 }
 $('btnBuild').onclick = () => openBuild(-1);
-$('btnArmy').onclick = () => { closeSheets(); $('armyGrid').dataset.key = ''; fillArmy(); show('armySheet', true); show('bottom', false); };
-$('armyClose').onclick = closeSheets;
-function armyProv() { return selProv >= 0 && provs[selProv].owner === 1 ? selProv : provs.findIndex(Pv => Pv.capOf === 1 && Pv.owner === 1); }
-function fillArmy() {
-  const p = human, pi = armyProv(), Pv = provs[pi];
-  $('armySub').textContent = Pv ? `Køber til ${Pv.capOf === 1 ? 'din hovedstad' : 'den valgte provins'} · ${fmt(Pv.troops)} tropper, ${Math.round(Pv.tanks)} kampvogne, ${Pv.planes} fly` : 'Vælg en af dine provinser';
-  const items = [
-    { k: 'tank', ic: '▰', name: 'Kampvogn', desc: `Tæller som ${TANK_ATK} soldater i angreb og gør hæren hurtigere`, cost: TANK_GOLD, ok: Pv && p.gold >= TANK_GOLD },
-    { k: 'plane', ic: '✈️', name: 'Fly', desc: `Bomber en provins op til ${PLANE_RANGE} felter væk og flyver hjem igen`, cost: PLANE_GOLD, ok: Pv && p.gold >= PLANE_GOLD },
-    { k: 'air', ic: '🎯', name: 'Luftangreb', desc: 'Send provinsens fly mod et mål', cost: 0, ok: Pv && Pv.planes > 0 },
+// The action row under the slider for the province you tapped: buy tanks and planes there, send its planes, or build.
+function fillProv() {
+  const el = $('provActs'), Pv = selProv >= 0 ? provs[selProv] : null, on = !!Pv && Pv.owner === 1 && state === 'play';
+  el.classList.toggle('hidden', !on);
+  if (!on) { el.dataset.key = ''; return; }
+  const g = human.gold, items = [
+    ['tank', '▰ Kampvogn', '🪙 ' + TANK_GOLD, g >= TANK_GOLD],
+    ['plane', '✈️ Fly', '🪙 ' + PLANE_GOLD, g >= PLANE_GOLD],
+    ['air', '🎯 Bomb', Pv.planes ? Pv.planes + ' fly klar' : 'ingen fly', Pv.planes > 0],
+    ['build', '🏗 Byg', 'her', true],
   ];
-  const key = items.map(i => i.ok).join() + pi;
-  if ($('armyGrid').dataset.key !== key) {
-    $('armyGrid').dataset.key = key;
-    $('armyGrid').innerHTML = items.map(i => `<button class="bitem${i.ok ? '' : ' cant'}" data-k="${i.k}" ${i.ok ? '' : 'disabled'}><span class="ic">${i.ic}</span><b>${i.name}</b><small>${i.desc}</small><span class="cost">${i.cost ? '🪙 ' + i.cost : (Pv ? Pv.planes + ' fly klar' : '')}</span></button>`).join('');
-  }
+  const key = items.map(i => i[3]).join() + selProv + Pv.planes + (placing === 'air');
+  if (el.dataset.key === key) return;
+  el.dataset.key = key;
+  el.innerHTML = items.map(i => `<button data-a="${i[0]}" class="${i[3] ? '' : 'cant'}${i[0] === 'air' && placing === 'air' ? ' on' : ''}">${i[1]}<small>${i[2]}</small></button>`).join('');
 }
-$('armyGrid').addEventListener('click', e => {
-  const el = e.target.closest('.bitem'); if (!el || el.disabled) return;
-  const pi = armyProv(), k = el.dataset.k;
-  if (k === 'air') { closeSheets(); selProv = pi; placing = 'air'; show('placeBar', true); show('bottom', false); $('placeText').textContent = 'Tryk på den provins flyene skal bombe'; return; }
-  const err = buyUnit(human, pi, k);
-  toast(err || (k === 'tank' ? 'Kampvogn købt' : 'Fly købt')); if (!err) buzz(15);
-  $('armyGrid').dataset.key = ''; fillArmy();
+$('provActs').addEventListener('click', e => {
+  const b = e.target.closest('button'); if (!b || selProv < 0) return;
+  const a = b.dataset.a, pi = selProv;
+  if (a === 'tank' || a === 'plane') { const err = buyUnit(human, pi, a); toast(err || (a === 'tank' ? '▰ Kampvogn købt. Den følger med, når du sender tropper herfra' : '✈️ Fly købt. Tryk Bomb for at sende det')); if (!err) buzz(15); }
+  else if (a === 'air') {
+    if (!provs[pi].planes) { toast('Køb et fly først'); return; }
+    placing = placing === 'air' ? null : 'air';
+    if (placing) toast('Tryk på den provins flyene skal bombe (inden for ringen)');
+  } else if (a === 'build') { const t = provs[pi].town; selProv = -1; openBuild(t); }
+  fillProv();
 });
 $('buildClose').onclick = $('nsClose').onclick = $('placeCancel').onclick = closeSheets;
 
@@ -1717,7 +1741,7 @@ cv.addEventListener('pointerdown', e => {
   ptrs.set(e.pointerId, { x: e.clientX, y: e.clientY });
   clearTimeout(pressTimer);
   if (ptrs.size === 1) {
-    gesture = { tap: true, t: performance.now(), x0: e.clientX, y0: e.clientY, unit: state === 'play' && !placing && human.alive ? myProvAt(e.clientX, e.clientY) : -1 };
+    gesture = { tap: true, t: performance.now(), x0: e.clientX, y0: e.clientY, unit: state === 'play' && !placing && human.alive ? myProvAt(e.clientX, e.clientY) : -1, march: state === 'play' && !placing ? marchAt(e.clientX, e.clientY) : null };
     pressTimer = setTimeout(() => { if (gesture && gesture.tap && ptrs.size === 1) { gesture.tap = false; longPress(gesture.x0, gesture.y0); } }, 450);
   } else if (gesture) { gesture.tap = false; gesture.unit = -1; drag = null; }
   pinchStart();
@@ -1728,7 +1752,7 @@ cv.addEventListener('pointermove', e => {
   ptrs.set(e.pointerId, { x: e.clientX, y: e.clientY });
   if (gesture && Math.hypot(e.clientX - gesture.x0, e.clientY - gesture.y0) > 10) { gesture.tap = false; clearTimeout(pressTimer); }
   if (ptrs.size === 1) {
-    if (gesture && gesture.unit >= 0 && !gesture.tap) drag = { from: gesture.unit, x: e.clientX, y: e.clientY };
+    if (gesture && (gesture.march || gesture.unit >= 0) && !gesture.tap) drag = { from: gesture.march ? -1 : gesture.unit, m: gesture.march, x: e.clientX, y: e.clientY };
     else if (gesture && !gesture.tap) { cam.x += e.clientX - prev.x; cam.y += e.clientY - prev.y; clampCam(); }
   } else if (ptrs.size === 2 && pinch) {
     const [a, b] = [...ptrs.values()];
@@ -1748,7 +1772,7 @@ function ptrEnd(e) {
   if (!ptrs.has(e.pointerId)) return;
   ptrs.delete(e.pointerId);
   clearTimeout(pressTimer);
-  if (ptrs.size === 0 && drag) { const t = provAt(cellAt(e.clientX, e.clientY)); if (t >= 0 && t !== drag.from) command(drag.from, t); }
+  if (ptrs.size === 0 && drag) { const t = provAt(cellAt(e.clientX, e.clientY)); if (t >= 0 && drag.m) reorder(drag.m, t); else if (t >= 0 && t !== drag.from) command(drag.from, t); }
   else if (ptrs.size === 0 && gesture && gesture.tap && performance.now() - gesture.t < 450) tap(e.clientX, e.clientY);
   drag = null;
   if (ptrs.size === 0) gesture = null;
@@ -1782,7 +1806,10 @@ function tap(px, py) {
   }
   if (state !== 'play' || !human.alive) return;
   const pi = provAt(i);
-  if (placing === 'air') { if (pi >= 0) { const err = airStrike(1, selProv, pi); toast(err || '✈️ Flyene er på vej'); if (!err) buzz(15); } closeSheets(); selProv = -1; return; }
+  if (placing === 'air') { if (pi >= 0 && pi !== selProv) { const err = airStrike(1, selProv, pi); toast(err || '✈️ Flyene er på vej'); if (!err) buzz(15); } placing = null; selProv = -1; return; }
+  const mh = marchAt(px, py);
+  if (mh) { selMarch = selMarch === mh ? null : mh; selProv = -1; buzz(10); if (selMarch) toast('Hær valgt. Tryk hvor den skal hen'); return; }
+  if (selMarch) { if (pi >= 0) reorder(selMarch, pi); selMarch = null; return; }
   if (placing) {
     const err = build(human, placing, i);
     if (err) { toast(err); return; }
@@ -1803,6 +1830,21 @@ function command(from, to) {
   const m = marches[marches.length - 1], B = provs[to];
   toast('Sender ' + fmt(m.n) + (m.k >= 1 ? ' + ' + m.k + ' kampvogne' : '') + (B.owner === 1 ? ' til provinsen' : B.owner === 0 ? ' ud i frit land' : ' mod ' + players[B.owner].name));
   buzz(15);
+}
+function reorder(m, to) {
+  if (!marches.includes(m)) { toast('Hæren er allerede fremme'); return; }
+  const err = redirect(m, to); selMarch = null;
+  toast(err || 'Hæren skifter kurs'); if (!err) buzz(15);
+}
+// Your marching army under a finger.
+function marchAt(px, py) {
+  let best = null, bd = 24 * 24;
+  for (const m of marches) {
+    if (m.a !== 1) continue;
+    const [x, y] = marchPos(m), d = (sx(x) - px) ** 2 + (sy(y) - py) ** 2;
+    if (d < bd) { bd = d; best = m; }
+  }
+  return best;
 }
 // The province under a finger, if it is yours.
 function myProvAt(px, py) { const pi = provAt(cellAt(px, py)); return pi >= 0 && provs[pi].owner === 1 ? pi : -1; }

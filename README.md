@@ -12,7 +12,8 @@ A real-time Risk with a bit of Supremacy on top. There is no click-to-attack: yo
 - **Drag** from one of your provinces to another to send troops (or tap yours, then the target). The **Send** slider sets the share that goes. Armies march town to town.
 - When an army reaches a province that is not yours, a **battle** runs in real time until one side is gone. Mountains, forest, towns and **forts** help the defender. You can feed more troops into a running battle.
 - The first 60 seconds are a **truce**: everyone can only take free provinces.
-- Under **Army** (Hær) you buy **tanks** (count as 8 soldiers in attack and march faster) and **planes** (bomb a province from afar and fly home) for gold.
+- **Tap your province** for its action row: buy **tanks** (count as 8 soldiers in attack, march faster and go along when you send troops), buy **planes**, or tap **Bomb** and then a target inside the range ring.
+- **Command your armies**: tap (or drag) an army on the march and pick a new target; tap the province behind it to call it back.
 - Dotted **sea lanes** join islands and coasts; armies sail across them.
 - **Encirclement**: cut off part of a country and it surrenders, and its garrison joins you. **Fog of war**: you only see near your own borders and armies.
 - Hold your finger on your land to build **cities**, **forts** and **missile silos** with nukes. Hold on another country to propose an **alliance**.
