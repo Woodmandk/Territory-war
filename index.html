@@ -624,12 +624,12 @@ function explode(N) {
 // Armies are counters you move around the map, like in Supremacy. Ground units take the land they march
 // through and guard the land they stand on; planes fly over water and bomb what they find.
 const UNITS = {
-  inf: { name: 'Infanteri', speed: 0.22, atk: 1, def: 1.4, gold: 0, desc: 'Billig og sej. Holder fronten' },
-  arm: { name: 'Kampvogne', speed: 0.38, atk: 2.2, def: 1, gold: 0.4, desc: 'Hurtige og hårde i angreb' },
-  air: { name: 'Fly', speed: 0.8, atk: 2.4, def: 0.7, gold: 0.8, air: true, desc: 'Flyver over vand og bomber fjenden' },
+  inf: { name: 'Infanteri', speed: 0.17, atk: 1, def: 1.4, gold: 0, desc: 'Billig og sej. Holder fronten' },
+  arm: { name: 'Kampvogne', speed: 0.29, atk: 2.2, def: 1, gold: 0.4, desc: 'Hurtige og hårde i angreb' },
+  air: { name: 'Fly', speed: 0.6, atk: 2.4, def: 0.7, gold: 0.8, air: true, desc: 'Flyver over vand og bomber fjenden' },
 };
 const UNIT_KEYS = ['inf', 'arm', 'air'];
-const SIEGE_CAP = 4, MAX_UNITS = 6, MAX_SQUADS = 30, DEPLOY_TICKS = 25, POST_GAP = 4, UNIT_CAPTURE_R = 1, UNIT_RANGE = 2.6, GUARD_R = 4, GUARD_MULT = 1.6, STRIKE_TICKS = 50;
+const SIEGE_CAP = 4, MAX_UNITS = 6, MAX_SQUADS = 30, DEPLOY_TICKS = 35, POST_GAP = 4, UNIT_CAPTURE_R = 1, UNIT_RANGE = 2.6, GUARD_R = 4, GUARD_MULT = 1.6, STRIKE_TICKS = 50;
 let units = [], selected = null, guard = null, uidSeq = 0, autoOn = false;
 
 function unitCount(a) { let n = 0; for (const u of units) if (u.a === a && u.type !== 'inf') n++; return n; }
@@ -909,8 +909,8 @@ function stepUnits() {
       const aa = (x, y) => (UNITS[y.type].air && !UNITS[x.type].air ? 0.5 : 1); // ground fire is weak against planes
       // Hit from two sides or more (flanked), or cut off from supply: they take more.
       const weak = (w, n) => (n >= 2 ? 1.35 : 1) * (w.cut ? 1.5 : 1);
-      dmg[j] += u.str * Uu.atk * 0.011 * aa(u, v) * weak(v, foes[j]) / (Uv.def * home(v));
-      dmg[i] += v.str * Uv.atk * 0.011 * aa(v, u) * weak(u, foes[i]) / (Uu.def * home(u));
+      dmg[j] += u.str * Uu.atk * 0.008 * aa(u, v) * weak(v, foes[j]) / (Uv.def * home(v));
+      dmg[i] += v.str * Uv.atk * 0.008 * aa(v, u) * weak(u, foes[i]) / (Uu.def * home(u));
       u.fight = v.fight = 4;
       players[u.a].hitBy[v.a] = players[v.a].hitBy[u.a] = T;
     }
