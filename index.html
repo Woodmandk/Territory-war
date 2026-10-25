@@ -199,11 +199,11 @@ details ul{padding-left:18px;margin:8px 0 0}
     <button class="big" id="btnPlay">SPIL</button>
     <details><summary>Sådan spiller du</summary><ul>
       <li>Du og 3 computere starter med et <b>hovedkvarter (HQ)</b> i hvert sit hjørne og 100 guld. Ingen tropper.</li>
-      <li><b>Hyr</b> soldater, kampvogne og fly med knapperne forneden. De bliver bygget i dit HQ, eller i en by du ejer, hvis du har trykket på den. Højst 6 tropper ad gangen.</li>
+      <li><b>Hyr</b> soldater, kampvogne og fly med knapperne forneden. De bliver bygget i dit HQ, eller i en by du ejer, hvis du har trykket på den. Højst 10 tropper ad gangen.</li>
       <li><b>Tryk på en trop</b> for at vælge den, og tryk på kortet for at sende den dertil. Eller <b>træk en rute</b> med fingeren, startende fra tropen.</li>
       <li>Jorden dine tropper går på, bliver din. Går en trop ud og <b>tilbage til dit land</b> i en løkke, bliver alt indeni dit. Fly maler ikke.</li>
       <li><b>Byer</b> giver guld og kan bygge tropper. Stil en soldat eller kampvogn i en by for at erobre den.</li>
-      <li>Tropper skyder selv. <b>Kampvogne</b> slår soldater, <b>fly</b> slår kampvogne, og <b>soldater</b> kan skyde fly ned. Skov giver dækning. Floder krydses ved broerne.</li>
+      <li>Fjendtlige tropper kan <b>ikke gå igennem hinanden</b>, så der opstår fronter, hvor hærene mødes. Land, hvor fjenden har tropper stående, kan du ikke male. Tropper skyder selv. <b>Kampvogne</b> slår soldater, <b>fly</b> slår kampvogne, og <b>soldater</b> kan skyde fly ned. Skov giver dækning. Floder krydses ved broerne.</li>
       <li>Dit land heler dine tropper. Ødelæg de andres <b>HQ</b>, eller ej 70 % af landet, for at vinde.</li>
     </ul></details>
   </div>
@@ -257,7 +257,9 @@ const UKEYS = ['inf', 'tank', 'plane'];
 // damage multiplier, attacker -> target: tanks beat soldiers, planes beat tanks, soldiers shoot planes down
 const VS = { inf: { inf: 1, tank: 0.5, plane: 0.7 }, tank: { inf: 1.6, tank: 1, plane: 0 }, plane: { inf: 0.8, tank: 1.8, plane: 1 } };
 const VS_BASE = { inf: 1, tank: 1.5, plane: 1.2 };
-const MAX_UNITS = 6, QUEUE = 3;
+const MAX_UNITS = 10, QUEUE = 3;
+// fronts: enemy ground troops can't pass through each other, and land an enemy troop stands near can't be painted
+const BLOCK = 1.0, ZOC = 3;
 const BASE_HP = 1200, BASE_DPS = 16, BASE_RANGE = 4.5, BASE_REGEN = 4, START_R = 6, CORE_R = 3.5;
 const TOWN_R = 1.6, TOWN_DPS = 6, TOWN_RANGE = 3.2, TOWN_PAINT = 3, CAP_NEUTRAL = 30, CAP_ENEMY = 60;
 const START_GOLD = 100, INC_BASE = 1.8, INC_TOWN = 1.2, INC_CELL = 0.003;
@@ -363,7 +365,23 @@ function canPaint(i, p) {
   if (o < 0 || o === p) return false;
   if (prot[i] && prot[i] !== p) return false;
   const tc = townCell[i];
-  return !(tc >= 0 && towns[tc].owner > 0 && towns[tc].owner !== p);
+  if (tc >= 0 && towns[tc].owner > 0 && towns[tc].owner !== p) return false;
+  return !(o > 0 && held(i, o));
+}
+function held(i, o) {
+  const x = i % W + 0.5, y = ((i / W) | 0) + 0.5;
+  for (const v of units) if (v.p === o && !v.k.air && (v.x - x) ** 2 + (v.y - y) ** 2 < ZOC * ZOC) return true;
+  return false;
+}
+// a ground troop may not step closer into an enemy ground troop
+function blockedAt(u, X, Y) {
+  if (u.k.air) return false;
+  for (const v of units) {
+    if (v.p === u.p || v.k.air) continue;
+    const dn = (v.x - X) ** 2 + (v.y - Y) ** 2;
+    if (dn < BLOCK * BLOCK && dn < (v.x - u.x) ** 2 + (v.y - u.y) ** 2) return true;
+  }
+  return false;
 }
 function paintDisc(x, y, r, p) {
   for (let cy = Math.max(0, Math.floor(y - r)); cy <= Math.min(H - 1, Math.floor(y + r)); cy++)
@@ -520,6 +538,9 @@ function moveUnit(u) {
   if (u.path) {
     const pt = u.path[u.pi], dx = pt[0] - u.x, dy = pt[1] - u.y, d = Math.hypot(dx, dy);
     if (d > 1e-6) u.dir = Math.atan2(dy, dx);
+    const f = Math.min(1, sp / Math.max(d, 1e-6));
+    if (blockedAt(u, u.x + dx * f, u.y + dy * f)) { u.stuck = true; return; }
+    u.stuck = false;
     if (d <= sp) { u.x = pt[0]; u.y = pt[1]; if (++u.pi >= u.path.length) { u.path = null; u.ax = u.x; u.ay = u.y; } }
     else { u.x += dx / d * sp; u.y += dy / d * sp; }
     return;
@@ -528,19 +549,19 @@ function moveUnit(u) {
   const e = enemyNear(u, u.k.range + 3);
   if (e && Math.hypot(e.x - u.x, e.y - u.y) > u.k.range * 0.85) {
     const dx = e.x - u.x, dy = e.y - u.y, d = Math.hypot(dx, dy), X = u.x + dx / d * sp, Y = u.y + dy / d * sp, i = cellOf(X, Y);
-    if (i >= 0 && (u.k.air || gpass(i)) && Math.hypot(X - u.ax, Y - u.ay) < 5) { u.x = X; u.y = Y; u.dir = Math.atan2(dy, dx); }
+    if (i >= 0 && (u.k.air || gpass(i)) && Math.hypot(X - u.ax, Y - u.ay) < 5 && !blockedAt(u, X, Y)) { u.x = X; u.y = Y; u.dir = Math.atan2(dy, dx); }
   } else if (!e && Math.hypot(u.x - u.ax, u.y - u.ay) > 0.5) {
     const dx = u.ax - u.x, dy = u.ay - u.y, d = Math.hypot(dx, dy), X = u.x + dx / d * sp, Y = u.y + dy / d * sp, i = cellOf(X, Y);
-    if (i >= 0 && (u.k.air || gpass(i))) { u.x = X; u.y = Y; }
+    if (i >= 0 && (u.k.air || gpass(i)) && !blockedAt(u, X, Y)) { u.x = X; u.y = Y; }
   }
 }
 function separate() {
   for (let a = 0; a < units.length; a++) for (let b = a + 1; b < units.length; b++) {
     const A = units[a], B = units[b];
     if (!!A.k.air !== !!B.k.air) continue;
-    const dx = B.x - A.x, dy = B.y - A.y, d = Math.hypot(dx, dy);
-    if (d >= 0.75 || d < 1e-4) continue;
-    const f = (0.75 - d) * 0.25, nx = dx / d * f, ny = dy / d * f;
+    const dx = B.x - A.x, dy = B.y - A.y, d = Math.hypot(dx, dy), m = A.p === B.p || A.k.air ? 0.75 : BLOCK;
+    if (d >= m || d < 1e-4) continue;
+    const f = (m - d) * 0.25, nx = dx / d * f, ny = dy / d * f;
     const ia = cellOf(A.x - nx, A.y - ny), ib = cellOf(B.x + nx, B.y + ny);
     if (ia >= 0 && (A.k.air || gpass(ia))) { A.x -= nx; A.y -= ny; }
     if (ib >= 0 && (B.k.air || gpass(ib))) { B.x += nx; B.y += ny; }
@@ -989,7 +1010,12 @@ void main(){
     float inner = smoothstep(1.4, 2.6, e) * (1.0 - smoothstep(3.0, 7.0, e));
     col = mix(col, min(vec3(1.0), bc * 1.25 + 0.08), inner * 0.45);
   }
-  if (bid > 0.5 || sid > 0.5) {
+  if (bid > 0.5 && sid > 0.5) {
+    // a front between two armies: a thick dark line with a thin bright seam
+    float fr = 1.0 - smoothstep(1.6, 3.2, e);
+    col = mix(col, mix(bc, sc, 0.5) * 0.28, fr);
+    col = mix(col, vec3(0.95, 0.88, 0.70), (1.0 - smoothstep(0.2, 0.8, e)) * 0.55);
+  } else if (bid > 0.5 || sid > 0.5) {
     vec3 ink = bid > 0.5 ? bc * 0.45 : sc * 0.45;
     col = mix(col, ink, 1.0 - smoothstep(0.6, 1.8, e));
   }
