@@ -1,0 +1,16 @@
+{
+  "name": "Territory War",
+  "short_name": "Territory War",
+  "description": "Erobr kortet i realtid. Angrib over grænsen og bliv den sidste nation tilbage.",
+  "start_url": "./",
+  "scope": "./",
+  "display": "fullscreen",
+  "orientation": "any",
+  "background_color": "#0d2a45",
+  "theme_color": "#0d2a45",
+  "lang": "da",
+  "icons": [
+    { "src": "icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any maskable" },
+    { "src": "icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any maskable" }
+  ]
+}
