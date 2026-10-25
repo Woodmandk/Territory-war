@@ -159,9 +159,9 @@ details ul{padding-left:18px;margin:8px 0 0}
     </div>
     <div id="capbar"><div></div></div>
     <div id="ratioRow">
-      <label for="ratio">Enhed</label>
-      <input id="ratio" type="range" min="5" max="100" step="5" value="40">
-      <span id="ratioVal">40%</span>
+      <label for="ratio">Front</label>
+      <input id="ratio" type="range" min="10" max="90" step="5" value="50">
+      <span id="ratioVal">50%</span>
       <button id="btnArmy">Hær</button>
       <button id="btnBuild">Byg</button>
     </div>
@@ -215,16 +215,19 @@ details ul{padding-left:18px;margin:8px 0 0}
       <div class="seg" id="mapType"><button data-v="0" class="on">Kontinent</button><button data-v="1">Øhav</button></div></div>
     <div class="field"><label>Kortstørrelse</label>
       <div class="seg" id="size"><button data-v="0">Lille</button><button data-v="1" class="on">Mellem</button><button data-v="2">Stor</button></div></div>
+    <div class="field"><label>Fog of war</label>
+      <div class="seg" id="fog"><button data-v="1" class="on">Til</button><button data-v="0">Fra</button></div></div>
     <button class="big" id="btnPlay">SPIL</button>
     <details><summary>Sådan spiller du</summary><ul>
-      <li>Vælg et startsted. Du begynder med en enhed infanteri. De første 30 sekunder er der <b>fredstid</b>: alle kan kun tage frit land.</li>
-      <li>Kun dine <b>tropper</b> kan erobre land. <b>Træk</b> en enhed derhen, hvor den skal gå (eller tryk på den og så på målet). Den tager alt land omkring sig på vejen.</li>
-      <li>Dine reservetropper vokser hele tiden. Tryk <b>Hær</b> for at gøre dem til <b>infanteri</b>, <b>kampvogne</b> eller <b>fly</b>. Skyderen bestemmer hvor stor den nye enhed bliver.</li>
-      <li>Enheder der mødes, kæmper. Infanteri er sejt i forsvar, kampvogne er hurtige og hårde i angreb, fly flyver over vand og bomber fjenden. Enheder på dit eget land gør det svært at tage.</li>
-      <li>Fjendens land koster flere soldater, jo flere tropper de har. Bjerge og forter koster ekstra.</li>
-      <li>Land giver <b>guld</b> til <b>byer</b> (flere tropper, og enheder samles der), <b>forter</b>, <b>havne</b> (træk en enhed over vandet, så sejler den) og <b>raketsiloer</b> med atombomber.</li>
-      <li>Hold fingeren på et land for at foreslå en <b>alliance</b> eller sende en hær med båd. Hold på dit eget land for at bygge præcis der.</li>
-      <li>Du vinder, når du ejer 70% af landet eller er den sidste tilbage. Knib for at zoome, træk i kortet for at flytte det.</li>
+      <li>Vælg et startsted. De første 30 sekunder er der <b>fredstid</b>: alle kan kun tage frit land.</li>
+      <li>Dit <b>infanteri</b> rykker selv ud. Små grupper går til grænsen, holder den og slås med fjender der kommer for tæt på. Skyderen <b>Front</b> bestemmer hvor stor en del af dine tropper der står ude.</li>
+      <li>Vil du angribe, så <b>træk</b> en gruppe derhen (eller tryk på den og så på målet). Alle grupper i ringen rykker frem side om side og tager landet på vejen.</li>
+      <li><b>Omringning</b>: skær en del af fjenden af, så overgiver lommen sig. Du får land, guld og fanger. Afskårne tropper uden forsyning bliver svagere, og tropper der angribes fra flere sider tager mere skade.</li>
+      <li><b>Skov</b> og <b>bjerge</b> sinker angreb og giver forsvareren en bonus. <b>Fog of war</b>: du ser kun lidt ud over dine grænser og omkring dine tropper.</li>
+      <li>Under <b>Hær</b> kan du købe <b>kampvogne</b> (hurtige, hårde i angreb) og <b>fly</b> (flyver over vand og bomber) for guld.</li>
+      <li>Land giver <b>guld</b> til <b>byer</b> (flere tropper), <b>forter</b>, <b>havne</b> (træk tropper over vandet, så sejler de) og <b>raketsiloer</b> med atombomber.</li>
+      <li>Hold fingeren på et andet land for at se det, foreslå alliance eller sende både.</li>
+      <li>Første nation med 70% af landet vinder.</li>
     </ul></details>
   </div>
 </div>
@@ -260,7 +263,7 @@ const $ = id => document.getElementById(id);
 const cv = $('c'), ctx = cv.getContext('2d');
 
 // ---------- Settings ----------
-const settings = { name: '', bots: 12, diff: 1, size: 1, mapType: 0 };
+const settings = { name: '', bots: 12, diff: 1, size: 1, mapType: 0, fog: 1 };
 try { Object.assign(settings, JSON.parse(localStorage.getItem('tw.settings') || '{}')); } catch (e) {}
 function saveSettings() { try { localStorage.setItem('tw.settings', JSON.stringify(settings)); } catch (e) {} }
 
@@ -272,7 +275,7 @@ const INC_PER_CELL = 0.1;                 // troops per cell per second
 const INTEREST = 0.04;                    // growth per second on balance, fades towards the cap
 const NEUTRAL_COST = 1.5;                 // troops per free cell
 const ENEMY_BASE = 3, ENEMY_MULT = 1.5;   // cost per enemy cell = ENEMY_BASE + density * ENEMY_MULT
-const MOUNTAIN = 2;                       // cost multiplier on mountains
+const MOUNTAIN = 2, FOREST = 1.4;         // cost multipliers on mountains and forests
 const WIN_SHARE = 0.7;
 const PEACE_TICKS = 300;                  // no attacks on countries for the first 30 s
 const GOLD_BASE = 2, GOLD_PER_CELL = 0.015;
@@ -320,6 +323,8 @@ let players = [], attacks = [], buildings = [], boats = [], nukes = [], booms = 
 let adj, atkIdx, sumX, sumY, bestD, bestI, allyUntil;
 let T = 0, state = 'menu', speed = 1, human = null, spawnTimer = 0, watching = false, fortsDirty = true;
 let off, offCtx, img;
+let vis = null, visD = null, visQ = null;   // fog of war: what the player can see right now
+const VIS_LAND = 7, VIS_UNIT = 10, VIS_AIR = 14;
 
 function genMap() {
   const ar = innerHeight / innerWidth, isles = state !== 'demo' && settings.mapType === 1;
@@ -344,6 +349,7 @@ function genMap() {
   for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) {
     const i = y * W + x;
     if (terr[i] && h[i] > thr + 0.05 && fbm(x / (sc * 0.55), y / (sc * 0.55), s + 7, 4) > 0.64) terr[i] = 2;
+    else if (terr[i] && fbm(x / (sc * 0.45), y / (sc * 0.45), s + 13, 4) > 0.6) terr[i] = 3;   // forest
   }
   // Label landmasses. A continent keeps only the biggest one; an archipelago keeps every island worth living on.
   const comp = island.fill(-1), stack = new Int32Array(NC), sizes = [];
@@ -448,7 +454,7 @@ function density(p) { return p.count ? p.troops / p.count : 0; }
 const allied = (a, b) => a > 0 && b > 0 && allyUntil[a * S + b] > T;
 const peace = () => T < PEACE_TICKS;
 function cellCost(t, i) {
-  let m = terr[i] === 2 ? MOUNTAIN : 1;
+  let m = terr[i] === 2 ? MOUNTAIN : terr[i] === 3 ? FOREST : 1;
   if (t > 0 && fortCover[i] === t) m *= FORT_MULT;
   if (t > 0 && guard && guard[i] === t) m *= GUARD_MULT;
   return t === 0 ? NEUTRAL_COST * m : (ENEMY_BASE + density(players[t]) * ENEMY_MULT) * m;
@@ -528,7 +534,7 @@ function landBoat(B) {
   if (!A.alive) return;
   // The army goes ashore as a unit and fights its way inland.
   const [x, y] = xy(B.land);
-  const u = { id: ++uidSeq, a: B.a, type: B.type === 'air' ? 'inf' : B.type, str: B.troops, max: B.troops, x, y, px: x, py: y, path: [B.land], pi: 0, prog: 0, mode: 'idle', tx: x, ty: y, t: 0, fight: 0 };
+  const u = { id: ++uidSeq, a: B.a, type: B.type === 'air' ? 'inf' : B.type, str: B.troops, max: B.troops, x, y, px: x, py: y, path: [B.land], pi: 0, prog: 0, mode: 'idle', tx: x, ty: y, t: 0, fight: 0, order: true, post: -1, postFoe: 0 };
   units.push(u);
   unitSiege(u);
   let goal = B.goal;
@@ -619,10 +625,23 @@ const UNITS = {
   air: { name: 'Fly', speed: 1.4, atk: 2.4, def: 0.7, gold: 0.8, air: true, desc: 'Flyver over vand og bomber fjenden' },
 };
 const UNIT_KEYS = ['inf', 'arm', 'air'];
-const SIEGE_CAP = 30, MAX_UNITS = 10, UNIT_CAPTURE_R = 1, UNIT_RANGE = 2.6, GUARD_R = 4, GUARD_MULT = 1.6, STRIKE_TICKS = 50;
+const SIEGE_CAP = 12, MAX_UNITS = 6, MAX_SQUADS = 30, GROUP_R = 10, DEPLOY_TICKS = 12, POST_GAP = 4, UNIT_CAPTURE_R = 1, UNIT_RANGE = 2.6, GUARD_R = 4, GUARD_MULT = 1.6, STRIKE_TICKS = 50;
 let units = [], selected = null, guard = null, uidSeq = 0;
 
-function unitCount(a) { let n = 0; for (const u of units) if (u.a === a) n++; return n; }
+function unitCount(a) { let n = 0; for (const u of units) if (u.a === a && u.type !== 'inf') n++; return n; }
+function squadCount(a) { let n = 0; for (const u of units) if (u.a === a && u.type === 'inf') n++; return n; }
+function fieldStr(a) { let n = 0; for (const u of units) if (u.a === a) n += u.str; return n; }
+const squadCap = p => Math.max(3, Math.min(MAX_SQUADS, Math.round(3 + p.count / 250)));
+const squadSize = p => Math.max(40, Math.min(900, (p.troops + fieldStr(p.id)) * 0.07));
+const cellOf = u => Math.round(u.y) * W + Math.round(u.x);
+// Infantry musters by itself: whenever less than your front share of the army is in the field, a new squad marches out.
+function deploy(p) {
+  const share = p.isHuman ? ratio() : p.front || 0.5, field = fieldStr(p.id), sq = squadSize(p);
+  if (field >= (field + p.troops) * share || p.troops < sq) return;
+  const weak = units.filter(u => u.a === p.id && u.type === 'inf' && !u.order && own[cellOf(u)] === p.id).sort((a, b) => a.str - b.str)[0];
+  if (weak && (weak.str < sq * 0.3 || squadCount(p.id) >= squadCap(p))) { reinforce(p, weak, sq); return; }   // top up worn squads first
+  recruit(p, 'inf', sq);
+}
 function homeCell(p, near) {
   // Units muster at the city closest to where you want them, or in the heart of your country.
   let best = -1, bd = 1e18;
@@ -639,15 +658,15 @@ function homeCell(p, near) {
 function recruitCost(p, type, soldiers) { return Math.round(soldiers * UNITS[type].gold); }
 function recruit(p, type, soldiers, near = -1) {
   soldiers = Math.floor(Math.min(soldiers, p.troops));
-  if (soldiers < 50) return 'Du skal have mindst 50 tropper';
-  if (unitCount(p.id) >= MAX_UNITS) return 'Du har allerede ' + MAX_UNITS + ' enheder';
+  if (soldiers < 30) return 'Ikke nok tropper';
+  if (type !== 'inf' && unitCount(p.id) >= MAX_UNITS) return 'Du har allerede ' + MAX_UNITS + ' kampvogne og fly';
   const g = recruitCost(p, type, soldiers);
   if (p.gold < g) return 'Ikke nok guld';
   const at = homeCell(p, near);
   if (at < 0) return 'Ingen plads';
   p.troops -= soldiers; p.gold -= g;
   const [x, y] = xy(at);
-  const u = { id: ++uidSeq, a: p.id, type, str: soldiers, max: soldiers, x, y, px: x, py: y, path: null, pi: 0, prog: 0, mode: 'idle', tx: x, ty: y, t: 0, fight: 0 };
+  const u = { id: ++uidSeq, a: p.id, type, str: soldiers, max: soldiers, x, y, px: x, py: y, path: null, pi: 0, prog: 0, mode: 'idle', tx: x, ty: y, t: 0, fight: 0, order: false, post: -1, postFoe: 0 };
   units.push(u);
   return u;
 }
@@ -686,6 +705,7 @@ function landPath(from, to) {
 }
 function orderUnit(u, cell) {
   const [x, y] = xy(cell);
+  u.order = true; u.post = -1;
   if (UNITS[u.type].air) { u.mode = 'strike'; u.tx = x; u.ty = y; u.t = 0; return ''; }
   const from = Math.round(u.y) * W + Math.round(u.x);
   const path = landPath(terr[from] ? from : cell, cell);
@@ -693,9 +713,87 @@ function orderUnit(u, cell) {
   u.path = path; u.pi = 0; u.prog = 0; u.mode = 'move';
   return '';
 }
+// Front duty for infantry nobody has given orders: go for enemy troops on or near your land,
+// otherwise take up a post on the nearest border that faces an enemy (free land if there is none) and hold it.
+let dPrev = null, dQ = null;
+function initDuty() { dPrev = new Int32Array(NC).fill(-1); dQ = new Int32Array(NC); }
+function duty(u) {
+  const p = players[u.a], here = cellOf(u);
+  if (!peace()) {
+    let foe = null, fd = 14 * 14;
+    for (const v of units) {
+      if (v.a === u.a || allied(u.a, v.a) || UNITS[v.type].air) continue;
+      const d = (v.x - u.x) ** 2 + (v.y - u.y) ** 2;
+      if (d < fd && (own[cellOf(v)] === u.a || d < 36)) { fd = d; foe = v; }
+    }
+    if (foe) { orderUnit(u, cellOf(foe)); return; }
+  }
+  if (u.mode !== 'idle') return;
+  if (u.post === here && own[here] === u.a && borderFoe(u.a, here) >= (peace() ? 0 : u.postFoe > 0 ? 1 : 0)) return;
+  if (!dPrev || dPrev.length !== NC) initDuty();
+  const posts = [];
+  for (const v of units) if (v !== u && v.a === u.a && v.post >= 0) posts.push(v.post);
+  const free = c => { const cx = c % W, cy = (c / W) | 0; for (const q of posts) if (Math.abs(q % W - cx) <= POST_GAP && Math.abs(((q / W) | 0) - cy) <= POST_GAP) return false; return true; };
+  let qh = 0, qt = 0, foeAt = -1, freeAt = -1, foeId = 0;
+  dQ[qt++] = here; dPrev[here] = here;
+  const seenSet = [here];
+  while (qh < qt && qt < 25000) {
+    const c = dQ[qh++];
+    if (own[c] === u.a) {
+      const f = borderFoe(u.a, c);
+      if (f > 0 && free(c)) { foeAt = c; foeId = f; break; }
+      if (f === 0 && freeAt < 0 && free(c)) freeAt = c;
+    }
+    const x = c % W, y = (c / W) | 0;
+    for (let dy = -1; dy <= 1; dy++) for (let dx = -1; dx <= 1; dx++) {
+      const X = x + dx, Y = y + dy;
+      if ((!dx && !dy) || X < 0 || Y < 0 || X >= W || Y >= H) continue;
+      const j = Y * W + X;
+      if (own[j] !== u.a || dPrev[j] >= 0) continue;
+      dPrev[j] = c; dQ[qt++] = j; seenSet.push(j);
+    }
+  }
+  let post = foeAt >= 0 ? foeAt : freeAt;
+  if (post < 0 || (foeAt < 0 && !p.isHuman && landCells - countOwned() > landCells * 0.02)) {
+    // Bots with nobody to face go and grab free land.
+    if (!p.isHuman) { const c = freeTarget(u); if (c >= 0 && !orderUnit(u, c)) { for (const j of seenSet) dPrev[j] = -1; return; } }
+  }
+  if (post >= 0) {
+    const path = [post];
+    for (let c = post; c !== here; c = dPrev[c]) path.push(dPrev[c]);
+    path.reverse();
+    u.path = path; u.pi = 0; u.prog = 0; u.mode = path.length > 1 ? 'move' : 'idle'; u.order = false; u.post = post; u.postFoe = foeId;
+  }
+  for (const j of seenSet) dPrev[j] = -1;
+}
+// Squads holding a border with free land slowly settle it, so the country grows around its troops.
+function settle(u) {
+  const cx = Math.round(u.x), cy = Math.round(u.y), R = 4;
+  let n = 0;
+  for (let y = cy - R; y <= cy + R && n < 5; y++) for (let x = cx - R; x <= cx + R && n < 5; x++) {
+    if (x < 1 || y < 1 || x >= W - 1 || y >= H - 1 || (x - cx) ** 2 + (y - cy) ** 2 > R * R) continue;
+    const j = y * W + x;
+    if (own[j] !== 0 || !(own[j - 1] === u.a || own[j + 1] === u.a || own[j - W] === u.a || own[j + W] === u.a)) continue;
+    const cost = cellCost(0, j) * 0.35;
+    if (u.str < cost + 20) return;
+    u.str -= cost; capture(j, u.a); n++;
+  }
+}
+// Which neighbour a border cell faces: an enemy id, 0 for free land, -1 if it is not on a border.
+function borderFoe(a, c) {
+  const x = c % W, y = (c / W) | 0;
+  let r = -1;
+  for (let d = 0; d < 4; d++) {
+    if ((d === 0 && x === 0) || (d === 1 && x === W - 1) || (d === 2 && y === 0) || (d === 3 && y === H - 1)) continue;
+    const o = own[d === 0 ? c - 1 : d === 1 ? c + 1 : d === 2 ? c - W : c + W];
+    if (o > 0 && o !== a && !allied(a, o)) return o;
+    if (o === 0) r = 0;
+  }
+  return r;
+}
 function unitSiege(u) {
   // Bigger armies hold a wider front. Only land touching your own territory can be taken, so countries stay in one piece.
-  const cx = Math.round(u.x), cy = Math.round(u.y), R = Math.max(5, Math.min(14, Math.round(Math.sqrt(u.str) / 3))), list = [];
+  const cx = Math.round(u.x), cy = Math.round(u.y), R = Math.max(3, Math.min(9, Math.round(Math.sqrt(u.str) / 2.5))), list = [];
   for (let y = cy - R; y <= cy + R; y++) for (let x = cx - R; x <= cx + R; x++) {
     if (x < 0 || y < 0 || x >= W || y >= H) continue;
     const d = (x - cx) ** 2 + (y - cy) ** 2, j = y * W + x, o = own[j];
@@ -766,43 +864,59 @@ function stepUnits() {
       }
       continue;
     }
+    if (u.type === 'inf' && !u.order && (T + u.id) % 8 === 0) duty(u);
+    if (u.type === 'inf' && !u.order && u.mode === 'idle' && u.postFoe === 0 && (T + u.id) % 3 === 0) settle(u);
     if (u.mode !== 'move' || !u.path) continue;
     // An army on the move pushes the whole front around it and only steps forward once that ground is taken,
     // so it advances as a wide, round bulge rather than a thin line.
-    const took = unitSiege(u), here = u.path[u.pi], ho = own[here];
+    const took = u.order ? unitSiege(u) : 0, here = u.path[u.pi], ho = own[here];
     if (u.mode === 'move' && took < SIEGE_CAP) {
-      u.prog = Math.min(1.5, u.prog + U.speed * (ho === u.a || allied(u.a, ho) ? 1.5 : 0.6) * (terr[here] === 2 ? 0.6 : 1));
+      u.prog = Math.min(1.5, u.prog + U.speed * (ho === u.a || allied(u.a, ho) ? 1.5 : 0.6) * (terr[here] === 2 ? 0.6 : terr[here] === 3 ? 0.75 : 1));
       while (u.prog >= 1) {
         if (u.pi >= u.path.length - 1) { u.mode = 'idle'; break; }
         const no = own[u.path[u.pi + 1]];
-        if (no !== u.a && !(no > 0 && allied(u.a, no))) { if (no > 0 && peace()) u.mode = 'idle'; break; }
+        if (no !== u.a && !(no > 0 && allied(u.a, no))) { if (!u.order || (no > 0 && peace())) u.mode = 'idle'; break; }
         u.prog -= 1; u.pi++;
       }
     }
     if (u.mode === 'move' && u.pi >= u.path.length - 1) u.mode = 'idle';
+    if (u.mode === 'idle') u.order = false;
     const a = u.path[u.pi], b = u.path[Math.min(u.path.length - 1, u.pi + 1)], [ax, ay] = xy(a), [bx, by] = xy(b), f = u.mode === 'move' ? Math.min(1, u.prog) : 0;
     u.x = ax + (bx - ax) * f; u.y = ay + (by - ay) * f;
   }
   // Combat: units in range of an enemy trade losses every tick.
   if (!peace()) {
-    const dmg = new Float32Array(units.length);
+    const dmg = new Float32Array(units.length), foes = new Uint8Array(units.length);
+    for (const u of units) {
+      // Cut off: a ground unit in a pocket of its own land that is not linked to the homeland is out of supply.
+      const c = Math.round(u.y) * W + Math.round(u.x);
+      u.cut = !UNITS[u.type].air && own[c] === u.a && compId && compId.length === NC && compId[c] >= 0 && mainComp[u.a] >= 0 && compId[c] !== mainComp[u.a];
+    }
+    for (let i = 0; i < units.length; i++) for (let j = i + 1; j < units.length; j++) {
+      const u = units[i], v = units[j];
+      if (u.a === v.a || allied(u.a, v.a) || Math.hypot(u.x - v.x, u.y - v.y) > UNIT_RANGE + 1) continue;
+      foes[i]++; foes[j]++;
+    }
     for (let i = 0; i < units.length; i++) for (let j = i + 1; j < units.length; j++) {
       const u = units[i], v = units[j];
       if (u.a === v.a || allied(u.a, v.a)) continue;
       const Uu = UNITS[u.type], Uv = UNITS[v.type];
       if (Math.hypot(u.x - v.x, u.y - v.y) > UNIT_RANGE + (Uu.air || Uv.air ? 1 : 0)) continue;
-      const home = w => own[Math.round(w.y) * W + Math.round(w.x)] === w.a && !UNITS[w.type].air ? 1.25 : 1;
+      const home = w => { if (UNITS[w.type].air) return 1; const c = Math.round(w.y) * W + Math.round(w.x); return (own[c] === w.a ? 1.25 : 1) * (terr[c] === 3 ? 1.3 : terr[c] === 2 ? 1.2 : 1); };
       const aa = (x, y) => (UNITS[y.type].air && !UNITS[x.type].air ? 0.5 : 1); // ground fire is weak against planes
-      dmg[j] += u.str * Uu.atk * 0.02 * aa(u, v) / (Uv.def * home(v));
-      dmg[i] += v.str * Uv.atk * 0.02 * aa(v, u) / (Uu.def * home(u));
+      // Hit from two sides or more (flanked), or cut off from supply: they take more.
+      const weak = (w, n) => (n >= 2 ? 1.35 : 1) * (w.cut ? 1.5 : 1);
+      dmg[j] += u.str * Uu.atk * 0.02 * aa(u, v) * weak(v, foes[j]) / (Uv.def * home(v));
+      dmg[i] += v.str * Uv.atk * 0.02 * aa(v, u) * weak(u, foes[i]) / (Uu.def * home(u));
       u.fight = v.fight = 4;
       players[u.a].hitBy[v.a] = players[v.a].hitBy[u.a] = T;
     }
     for (let i = 0; i < units.length; i++) units[i].str -= dmg[i];
   }
+  for (const u of units) if (u.cut) u.str *= 0.997;   // no supply: the unit slowly melts away
   for (let k = units.length - 1; k >= 0; k--) {
     const u = units[k];
-    if (u.mode === 'idle' && u.str < 30 && players[u.a].alive) { players[u.a].troops += u.str; u.str = 0; }   // worn-out units rejoin the reserve
+    if (u.mode === 'idle' && u.str < 12 && players[u.a].alive) { players[u.a].troops += u.str; u.str = 0; }   // worn-out units rejoin the reserve
     if (u.str < 5 || !players[u.a].alive) { if (selected === u) selected = null; units.splice(k, 1); }
   }
 }
@@ -831,19 +945,13 @@ function freeTarget(u) {
   return best;
 }
 function botUnits(p, D) {
-  const mine = units.filter(u => u.a === p.id && u.str > 0);
-  const cap = [3, 4, 6][settings.diff] || 4;
-  const fill = p.troops / maxTroops(p);
-  if (mine.length < cap && p.troops > 150 && (fill > 0.25 || mine.length === 0) && rng() < 0.5) {
-    const r = rng(), sold = p.troops * rr(0.5, 0.8);
-    const type = peace() ? 'inf' : r < 0.2 && p.gold >= recruitCost(p, 'air', sold) ? 'air' : r < 0.6 && p.gold >= recruitCost(p, 'arm', sold) ? 'arm' : 'inf';
-    const u = recruit(p, type, sold);
-    if (typeof u === 'object') mine.push(u);
-  } else if (mine.length >= cap && fill > 0.5 && rng() < 0.5) {
-    // Army at full size: send fresh troops to the weakest unit at home instead.
-    const home = mine.filter(u => !UNITS[u.type].air && own[Math.round(u.y) * W + Math.round(u.x)] === p.id).sort((a, b) => a.str - b.str)[0];
-    if (home) reinforce(p, home, p.troops * 0.6);
+  p.front = [0.45, 0.55, 0.65][settings.diff] || 0.55;
+  // Now and then a tank column or an air wing, paid for in gold.
+  if (!peace() && rng() < 0.2 && unitCount(p.id) < [1, 2, 4][settings.diff]) {
+    const sold = squadSize(p) * 1.5, type = rng() < 0.4 ? 'air' : 'arm';
+    if (p.gold >= recruitCost(p, type, sold)) recruit(p, type, sold);
   }
+  const mine = units.filter(u => u.a === p.id && u.str > 0);
   // The enemy to push against: a neighbour, ideally a weak one.
   let tgt = null, ts = 1e9;
   if (!peace()) for (let k = 1; k <= P; k++) {
@@ -852,20 +960,22 @@ function botUnits(p, D) {
     const score = (adj[p.id * S + k] ? 0 : 3) + density(q) / Math.max(0.5, density(p)) + (q.isHuman ? D.humanBias : 0) + (T - p.hitBy[k] < 100 ? -0.5 : 0) + rng();
     if (score < ts) { ts = score; tgt = q; }
   }
-  const freeLeft = landCells - countOwned() > landCells * 0.02;
-  for (const u of mine) {
-    if (u.mode !== 'idle' || rng() < 0.25) continue;
-    let cell = -1;
-    if (UNITS[u.type].air) {
-      // Planes go after enemy armies in the homeland first, then the target's heartland.
-      const foe = units.find(v => v.a !== p.id && !allied(p.id, v.a) && own[Math.round(v.y) * W + Math.round(v.x)] === p.id);
-      if (foe) cell = Math.round(foe.y) * W + Math.round(foe.x);
-      else if (tgt) cell = Math.round(tgt.ly) * W + Math.round(tgt.lx);
-    } else {
-      if (freeLeft && (!tgt || rng() < 0.6)) cell = freeTarget(u);
-      if (cell < 0 && tgt) cell = frontTarget(u, tgt);
+  if (tgt && rng() < 0.55) {
+    // The squads holding the border with the target go over the top together.
+    let grp = mine.filter(u => u.type !== 'air' && !u.order && u.postFoe === tgt.id);
+    if (!grp.length && rng() < 0.3) grp = mine.filter(u => u.type !== 'air' && !u.order).slice(0, 3);
+    for (const u of grp) {
+      const cell = frontTarget(u, tgt);
+      if (cell < 0) continue;
+      if (orderUnit(u, cell) && p.nb.port) sendBoat(p.id, tgt.id, 0, cell, u);
     }
-    if (cell >= 0 && orderUnit(u, cell) && !UNITS[u.type].air && p.nb.port && own[cell] > 0 && !peace()) sendBoat(p.id, own[cell], 0, cell, u);
+  }
+  for (const u of mine) {
+    if (!UNITS[u.type].air || u.mode !== 'idle') continue;
+    // Planes go after enemy armies in the homeland first, then the target's heartland.
+    const foe = units.find(v => v.a !== p.id && !allied(p.id, v.a) && own[cellOf(v)] === p.id);
+    const cell = foe ? cellOf(foe) : tgt ? Math.round(tgt.ly) * W + Math.round(tgt.lx) : -1;
+    if (cell >= 0) orderUnit(u, cell);
   }
 }
 
@@ -907,13 +1017,48 @@ function scan() {
   }
 }
 
+// ---------- Fog of war ----------
+// You see a band around your own (and allied) land and a circle around each of your units. The rest is mist.
+const friend = k => k === 1 || (k > 0 && allied(1, k));
+const seen = i => !vis || i < 0 || i >= NC || vis[i] === 1;
+const seenXY = (x, y) => seen(Math.round(y) * W + Math.round(x));
+function computeVision() {
+  if (!settings.fog || state !== 'play' || !human || !human.alive || watching) { vis = null; return; }
+  if (!vis || vis.length !== NC) { vis = new Uint8Array(NC); visD = new Uint8Array(NC); visQ = new Int32Array(NC); }
+  visD.fill(255);
+  let qh = 0, qt = 0;
+  for (let i = 0; i < NC; i++) if (own[i] > 0 && friend(own[i])) { visD[i] = 0; visQ[qt++] = i; }
+  while (qh < qt) {
+    const c = visQ[qh++], d = visD[c] + 1;
+    if (d > VIS_LAND) continue;
+    const x = c % W, y = (c / W) | 0;
+    for (let dy = -1; dy <= 1; dy++) for (let dx = -1; dx <= 1; dx++) {
+      const X = x + dx, Y = y + dy;
+      if (X < 0 || Y < 0 || X >= W || Y >= H) continue;
+      const j = Y * W + X;
+      if (visD[j] > d) { visD[j] = d; visQ[qt++] = j; }
+    }
+  }
+  for (let i = 0; i < NC; i++) vis[i] = visD[i] <= VIS_LAND ? 1 : 0;
+  const disc = (cx, cy, R) => {
+    cx = Math.round(cx); cy = Math.round(cy);
+    for (let y = Math.max(0, cy - R); y <= Math.min(H - 1, cy + R); y++) for (let x = Math.max(0, cx - R); x <= Math.min(W - 1, cx + R); x++)
+      if ((x - cx) ** 2 + (y - cy) ** 2 <= R * R) vis[y * W + x] = 1;
+  };
+  for (const u of units) if (friend(u.a)) disc(u.x, u.y, UNITS[u.type].air ? VIS_AIR : VIS_UNIT);
+  for (const B of boats) if (friend(B.a)) { const [x, y] = xy(B.path[Math.min(B.path.length - 1, Math.floor(B.pos))]); disc(x, y, 8); }
+  dirty = true;
+}
+
 // Encirclement: free land that only one country touches becomes theirs, and a cut-off pocket of a
 // country that is surrounded by a single enemy surrenders to it.
-let compId = null, compQ = null;
+let compId = null, compQ = null, mainComp = new Int32Array(0);
 function enclose() {
   if (!compId || compId.length !== NC) { compId = new Int32Array(NC); compQ = new Int32Array(NC); }
   compId.fill(-1);
   const comps = [], biggest = new Int32Array(S);
+  if (mainComp.length !== S) mainComp = new Int32Array(S);
+  mainComp.fill(-1);
   for (let i = 0; i < NC; i++) {
     const o = own[i];
     if (o < 0 || compId[i] >= 0) continue;
@@ -931,16 +1076,32 @@ function enclose() {
       }
     }
     comps.push({ o, size: qt, nb: many ? -1 : nb, start: i });
-    if (o > 0 && qt > biggest[o]) biggest[o] = qt;
+    if (o > 0 && qt > biggest[o]) { biggest[o] = qt; mainComp[o] = id; }
   }
   for (let id = 0; id < comps.length; id++) {
     const c = comps[id];
     if (c.nb <= 0 || (c.o > 0 && allied(c.o, c.nb))) continue;
     if (c.o === 0 ? c.size > landCells * 0.08 : c.size >= biggest[c.o] || peace()) continue;
-    const a = c.nb;
+    const a = c.nb, A = players[a];
     for (let i = c.start; i < NC; i++) if (compId[i] === id) capture(i, a);
-    if (c.o > 0) players[c.o].hitBy[a] = T;
-    if (state === 'play' && a === 1 && c.size > 40) toast(c.o === 0 ? 'Omringet land er nu dit' : 'En omringet lomme af ' + players[c.o].name + ' har overgivet sig');
+    // Encirclement bonus: the pocket's troops surrender and join you, and you loot gold.
+    let pris = 0;
+    if (c.o > 0) {
+      players[c.o].hitBy[a] = T;
+      for (const u of units) {
+        if (u.a !== c.o || UNITS[u.type].air) continue;
+        const ci = Math.round(u.y) * W + Math.round(u.x);
+        if (compId[ci] === id) { pris += u.str; u.str = 0; booms.push({ x: u.x, y: u.y, t: 12, small: 1 }); }
+      }
+      const D = players[c.o], share = Math.min(D.troops * 0.5, D.troops * c.size / Math.max(1, D.count + c.size));
+      D.troops -= share; pris += share;
+    }
+    const gold = Math.round(c.size * (c.o > 0 ? 2 : 0.6)), men = Math.round(pris * 0.6 + (c.o > 0 ? c.size * 2 : 0));
+    A.gold += gold; A.troops += men;
+    if (state === 'play' && a === 1 && c.size > 20) {
+      toast((c.o === 0 ? 'Omringet land er nu dit' : '🎯 Omringning! ' + players[c.o].name + ' overgav sig') + ' · +' + fmt(gold) + ' guld' + (men >= 1 ? ', +' + fmt(men) + ' tropper' : ''));
+      buzz([20, 30, 20]);
+    } else if (state === 'play' && c.o === 1 && c.size > 20) toast('⚠ En omringet lomme af dit land har overgivet sig til ' + A.name);
   }
   // Straighten the lines: a cell hemmed in on three sides by one country goes over to it.
   const flips = [];
@@ -1008,6 +1169,7 @@ function step() {
   for (let k = booms.length - 1; k >= 0; k--) if (++booms[k].t > 25) booms.splice(k, 1);
   stepUnits();
   if (T % 10 === 0) enclose();
+  if (T % 3 === 0) computeVision();
   refreshBuildings();
 
   // Economy, deaths, labels.
@@ -1025,6 +1187,7 @@ function step() {
     const cx = sumX[k] / p.count, cy = sumY[k] / p.count, ci = Math.round(cy) * W + Math.round(cx);
     if (own[ci] === k) { p.lx = cx; p.ly = cy; }
     else if (bestI[k] >= 0) { p.lx += ((bestI[k] % W) - p.lx) * 0.5; p.ly += (((bestI[k] / W) | 0) - p.ly) * 0.5; }
+    if ((T + k) % DEPLOY_TICKS === 0 && (state === 'play' || state === 'demo')) deploy(p);
     if (!p.isHuman && T >= p.next) botThink(p);
   }
   checkEnd(alive);
@@ -1046,13 +1209,15 @@ function kill(p) {
 }
 
 // ---------- Bots ----------
+// No enemy to reach over land: only the sea is left.
+function landLocked(p) { for (let k = 1; k <= P; k++) if (k !== p.id && players[k].alive && !allied(p.id, k) && adj[p.id * S + k]) return false; return true; }
 function botThink(p) {
   const D = DIFFS[settings.diff];
   p.next = T + Math.round(rr(D.think[0], D.think[1]));
   botSpend(p, D);
   botUnits(p, D);
   // Nobody to reach over land, or now and then anyway: ship an army across.
-  if (p.nb.port && !peace() && rng() < 0.12 && !boats.some(b => b.a === p.id) && p.troops > 300) {
+  if (p.nb.port && !peace() && rng() < (landLocked(p) ? 0.4 : 0.12) && !boats.some(b => b.a === p.id) && p.troops > 300) {
     const targets = [];
     if (landCells - countOwned() > landCells * 0.03) targets.push(0);
     for (let k = 1; k <= P; k++) if (k !== p.id && players[k].alive && !allied(p.id, k)) targets.push(k);
@@ -1100,7 +1265,7 @@ function newGame() {
   state = 'new';
   seed = (Date.now() ^ (Math.random() * 1e9)) | 0;
   genMap(); makePlayers();
-  attacks = []; buildings = []; boats = []; nukes = []; booms = []; units = []; selected = null; T = 0; speed = 1; watching = false; fortsDirty = true;
+  attacks = []; buildings = []; boats = []; nukes = []; booms = []; units = []; selected = null; T = 0; speed = 1; watching = false; fortsDirty = true; vis = null;
   for (let k = 2; k <= P; k++) randomSpawn(players[k]);
   state = 'spawn'; spawnTimer = 15;
   fitCamera(); closeSheets();
@@ -1113,10 +1278,11 @@ function startPlay() {
   if (state !== 'spawn') return;
   if (!human.alive) randomSpawn(human);
   state = 'play';
-  for (let k = 1; k <= P; k++) if (players[k].alive) recruit(players[k], 'inf', players[k].troops * 0.8);
+  for (let k = 1; k <= P; k++) if (players[k].alive) for (let n = 0; n < 3; n++) recruit(players[k], 'inf', players[k].troops * 0.3);
   selected = units.find(u => u.a === 1) || null;
   show('spawnBar', false); show('top', true); show('bottom', true);
   $('speed').textContent = '1×';
+  computeVision();
   toast('Træk din hær ud i det frie land for at erobre det');
 }
 function checkEnd(alive) {
@@ -1163,14 +1329,16 @@ function buildImage() {
       const edge = (x > 0 && own[i - 1] !== o) || (x < W - 1 && own[i + 1] !== o) || (y > 0 && own[i - W] !== o) || (y < H - 1 && own[i + W] !== o);
       if (o === 0) {
         if (terr[i] === 2) { r = MOUNT[0]; g = MOUNT[1]; b = MOUNT[2]; }
+        else if (terr[i] === 3) { r = 120; g = 150; b = 96; }
         else { r = GRASS_LO[0] + (GRASS_HI[0] - GRASS_LO[0]) * sh; g = GRASS_LO[1] + (GRASS_HI[1] - GRASS_LO[1]) * sh; b = GRASS_LO[2] + (GRASS_HI[2] - GRASS_LO[2]) * sh; }
         const tex = 0.96 + 0.04 * hash(x, y, 3); r *= tex; g *= tex; b *= tex;
       } else {
         const p2 = players[o], c = edge ? p2.dark : p2.col;
-        let m = terr[i] === 2 ? 0.78 : 1 - sh * 0.08;
+        let m = terr[i] === 2 ? 0.78 : terr[i] === 3 ? 0.85 : 1 - sh * 0.08;
         if (!edge && fortCover[i] === o && ((x + y) & 3) === 0) m *= 0.86; // hatching inside fort rings
         r = c[0] * m; g = c[1] * m; b = c[2] * m;
       }
+      if (vis && !vis[i]) { const gr = (r + g + b) / 3; r = gr * 0.45 + r * 0.2 + 40; g = gr * 0.45 + g * 0.2 + 44; b = gr * 0.45 + b * 0.2 + 50; }
       const f = flash[i];
       if (f) { const k = f / 255 * 0.55; r += (255 - r) * k; g += (255 - g) * k; b += (255 - b) * k; flash[i] = f > 45 ? f - 45 : 0; }
     }
@@ -1233,7 +1401,7 @@ function render(now) {
   ctx.font = `${bs}px system-ui,sans-serif`;
   for (const b of buildings) {
     const [x, y] = xy(b.i), X = sx(x), Y = sy(y);
-    if (X < -30 || Y < -30 || X > CW + 30 || Y > CH + 30) continue;
+    if (X < -30 || Y < -30 || X > CW + 30 || Y > CH + 30 || (!friend(b.owner) && !seen(b.i))) continue;
     ctx.fillStyle = players[b.owner].css; ctx.beginPath(); ctx.arc(X, Y, bs * 0.72, 0, 7); ctx.fill();
     ctx.lineWidth = 2; ctx.strokeStyle = '#fff'; ctx.stroke();
     ctx.fillText(BUILDS[b.type].ic, X, Y + 1);
@@ -1254,14 +1422,14 @@ function render(now) {
     const label = (allied(1, k) && state !== 'demo' ? '🤝 ' : '') + p.name.toUpperCase();
     ctx.strokeText(label, X, Y - size * 0.55); ctx.fillStyle = p.isHuman && state !== 'demo' ? '#f2cf63' : '#fffaf0'; ctx.fillText(label, X, Y - size * 0.55);
     ctx.font = `${size * 0.86}px ${DISPLAY_FONT}`;
-    const t = fmt(p.troops);
+    const t = friend(k) || seenXY(p.lx, p.ly) ? fmt(p.troops) : '?';
     ctx.strokeText(t, X, Y + size * 0.5); ctx.fillStyle = '#fffaf0'; ctx.fillText(t, X, Y + size * 0.5);
   }
 
   // Armies on the march: a badge on every front.
   const ps = Math.max(10, Math.min(15, cam.s * 2.2));
   for (const A of attacks) {
-    if (!A.cand.length || A.troops < 1) continue;
+    if (!A.cand.length || A.troops < 1 || (!friend(A.a) && !seenXY(A.fx, A.fy))) continue;
     const X = sx(A.fx), Y = sy(A.fy);
     if (X < -40 || Y < -20 || X > CW + 40 || Y > CH + 20) continue;
     pill('⚔ ' + fmt(A.troops), X, Y, players[A.a].css, ps);
@@ -1270,6 +1438,7 @@ function render(now) {
   for (const B of boats) {
     const f = Math.min(B.path.length - 1, B.pos + BOAT_SPEED * frac), k = Math.floor(f), t = f - k;
     const [x0, y0] = xy(B.path[k]), [x1, y1] = xy(B.path[Math.min(B.path.length - 1, k + 1)]);
+    if (!friend(B.a) && !seenXY(x0, y0)) continue;
     const X = sx(x0 + (x1 - x0) * t), Y = sy(y0 + (y1 - y0) * t);
     // wake
     ctx.strokeStyle = 'rgba(255,255,255,.35)'; ctx.lineWidth = 2; ctx.beginPath();
@@ -1289,7 +1458,7 @@ function render(now) {
     ctx.fillStyle = 'rgba(255,170,60,.7)'; ctx.beginPath(); ctx.arc(X, Y, 7 + pulse * 3, 0, 7); ctx.fill();
   }
   for (const B of booms) {
-    const f = (B.t + frac) / 25, r = NUKE_R * cam.s * (0.4 + f * 1.2);
+    const f = (B.t + frac) / 25, r = NUKE_R * cam.s * (0.4 + f * 1.2) * (B.small ? 0.3 : 1);
     const g = ctx.createRadialGradient(sx(B.x), sy(B.y), 0, sx(B.x), sy(B.y), r);
     g.addColorStop(0, `rgba(255,255,220,${1 - f})`); g.addColorStop(0.5, `rgba(255,140,40,${0.8 * (1 - f)})`); g.addColorStop(1, 'rgba(255,60,0,0)');
     ctx.fillStyle = g; ctx.beginPath(); ctx.arc(sx(B.x), sy(B.y), r, 0, 7); ctx.fill();
@@ -1317,6 +1486,9 @@ const GL_FS = `#extension GL_OES_standard_derivatives : enable
 precision highp float;
 uniform sampler2D uMap; uniform sampler2D uPal;
 uniform vec2 uSize; uniform vec3 uCam; uniform vec2 uView; uniform float uTime;
+float hsh(vec2 q){ return fract(sin(dot(q, vec2(127.1, 311.7))) * 43758.5453); }
+float vn(vec2 q){ vec2 i = floor(q), f = fract(q); f = f * f * (3.0 - 2.0 * f);
+  return mix(mix(hsh(i), hsh(i + vec2(1.0, 0.0)), f.x), mix(hsh(i + vec2(0.0, 1.0)), hsh(i + vec2(1.0, 1.0)), f.x), f.y); }
 vec4 cellAt(vec2 c){ c = clamp(c, vec2(0.0), uSize - 1.0); return texture2D(uMap, (c + 0.5) / uSize); }
 void main(){
   vec2 sp = vec2(gl_FragCoord.x, uView.y - gl_FragCoord.y);
@@ -1324,16 +1496,19 @@ void main(){
   vec2 c = floor(p); vec2 t = p - c - 0.5;
   vec3 wx = vec3(0.5*(0.5-t.x)*(0.5-t.x), 0.75 - t.x*t.x, 0.5*(0.5+t.x)*(0.5+t.x));
   vec3 wy = vec3(0.5*(0.5-t.y)*(0.5-t.y), 0.75 - t.y*t.y, 0.5*(0.5+t.y)*(0.5+t.y));
-  float id[9]; float w[9]; float g[9]; float fl[9]; float mt[9]; float ft[9];
+  float id[9]; float w[9]; float g[9]; float fl[9]; float mt[9]; float ft[9]; float fo[9]; float vi[9];
   for (int j = 0; j < 3; j++) for (int i = 0; i < 3; i++) {
     vec4 m = cellAt(c + vec2(float(i - 1), float(j - 1)));
     id[j * 3 + i] = floor(m.r * 255.0 + 0.5);
     w[j * 3 + i] = wx[i] * wy[j];
     g[j * 3 + i] = m.g;
-    fl[j * 3 + i] = m.b;
-    float a = floor(m.a * 255.0 + 0.5);
-    mt[j * 3 + i] = a >= 199.0 ? 1.0 : 0.0;
-    ft[j * 3 + i] = mod(a, 100.0) >= 49.0 ? 1.0 : 0.0;
+    float bb = floor(m.b * 255.0 + 0.5);
+    vi[j * 3 + i] = bb >= 127.5 ? 1.0 : 0.0;
+    fl[j * 3 + i] = (bb - vi[j * 3 + i] * 128.0) / 127.0;
+    float a = floor(m.a * 255.0 + 0.5), tt = floor((a + 0.5) / 60.0);
+    mt[j * 3 + i] = tt == 2.0 ? 1.0 : 0.0;
+    fo[j * 3 + i] = tt == 3.0 ? 1.0 : 0.0;
+    ft[j * 3 + i] = mod(a, 60.0) >= 29.0 ? 1.0 : 0.0;
   }
   float best = 0.0, bw = -1.0;
   float sum[9];
@@ -1345,12 +1520,12 @@ void main(){
   }
   float sw = 0.0, sec = best;
   for (int k = 0; k < 9; k++) if (id[k] != best && sum[k] > sw) { sw = sum[k]; sec = id[k]; }
-  float shd = 0.0, fla = 0.0, mnt = 0.0, frt = 0.0;
+  float shd = 0.0, fla = 0.0, mnt = 0.0, frt = 0.0, fst = 0.0, vis = 0.0;
   for (int k = 0; k < 9; k++) {
-    shd += w[k] * g[k];
-    if (id[k] == best) { fla += w[k] * fl[k]; mnt += w[k] * mt[k]; frt += w[k] * ft[k]; }
+    shd += w[k] * g[k]; vis += w[k] * vi[k];
+    if (id[k] == best) { fla += w[k] * fl[k]; mnt += w[k] * mt[k]; frt += w[k] * ft[k]; fst += w[k] * fo[k]; }
   }
-  mnt /= bw; frt /= bw; fla /= bw;
+  mnt /= bw; frt /= bw; fla /= bw; fst /= bw;
   float d = bw - sw;
   float e = d / max(fwidth(d), 1e-4);   // roughly: pixels to the nearest border
   vec3 col;
@@ -1372,6 +1547,19 @@ void main(){
       float ridge = smoothstep(0.82, 1.0, sin((p.x * 0.55 - p.y * 0.9) * 3.0) * 0.5 + 0.5);
       base = mix(base, rock * (1.0 - 0.07 * ridge), smoothstep(0.25, 0.65, mnt));
     }
+    if (fst > 0.05) {
+      // forest: undergrowth tint plus little swaying tree crowns once you zoom in
+      float fa = smoothstep(0.25, 0.7, fst);
+      base = mix(base, best < 1.5 ? vec3(0.60, 0.69, 0.47) : base * 0.9, fa);
+      vec2 q = p * 1.15, ci = floor(q);
+      float h1 = hsh(ci), h2 = hsh(ci + 7.3);
+      vec2 r = fract(q) - 0.5 - (vec2(h1, h2) - 0.5) * 0.35;
+      r.x += sin(uTime * 1.6 + h1 * 6.28) * 0.035;
+      float tree = smoothstep(0.37, 0.27, length(r)) * step(0.2, h1) * smoothstep(1.4, 3.0, uCam.z) * fa;
+      float hl = smoothstep(0.28, 0.0, length(r + vec2(0.09, 0.11)));
+      vec3 canopy = best < 1.5 ? vec3(0.30, 0.47, 0.27) : base * 0.68;
+      base = mix(base, canopy * (0.88 + 0.3 * hl), tree);
+    }
     if (frt > 0.5) base *= 0.9 + 0.1 * step(0.5, fract((p.x + p.y) * 0.5));
     col = base;
     if (best > 1.5) {
@@ -1383,6 +1571,16 @@ void main(){
     if (sec < 0.5) ink = vec3(0.10, 0.17, 0.16);
     if (best > 1.5 || sec < 0.5) col = mix(col, ink, line);
     col = mix(col, vec3(1.0), fla * 0.6);
+  }
+  // drifting cloud shadows
+  float cl = vn(p * 0.035 + vec2(uTime * 0.025, uTime * 0.01)) * 0.6 + vn(p * 0.08 - vec2(uTime * 0.018, -uTime * 0.012)) * 0.4;
+  col *= 1.0 - smoothstep(0.58, 0.85, cl) * 0.16;
+  // fog of war: what your borders and armies can't see is greyed out under a slow mist
+  float fog = 1.0 - smoothstep(0.15, 0.85, vis);
+  if (fog > 0.0) {
+    float mist = vn(p * 0.07 + vec2(uTime * 0.04, uTime * 0.02));
+    vec3 grey = vec3(dot(col, vec3(0.3, 0.55, 0.15))) * vec3(0.62, 0.68, 0.72) + mist * 0.07;
+    col = mix(col, grey, fog * 0.62);
   }
   gl_FragColor = vec4(col, 1.0);
 }`;
@@ -1413,8 +1611,8 @@ function uploadMap() {
   if (!mapBytes || mapBytes.length !== NC * 4) mapBytes = new Uint8Array(NC * 4);
   for (let i = 0, q = 0; i < NC; i++, q += 4) {
     const o = own[i], f = flash[i];
-    mapBytes[q] = o + 1; mapBytes[q + 1] = shade[i] * 255; mapBytes[q + 2] = f;
-    mapBytes[q + 3] = terr[i] * 100 + (o > 0 && fortCover[i] === o ? 50 : 0);
+    mapBytes[q] = o + 1; mapBytes[q + 1] = shade[i] * 255; mapBytes[q + 2] = (f >> 1) | (!vis || vis[i] ? 128 : 0);
+    mapBytes[q + 3] = terr[i] * 60 + (o > 0 && fortCover[i] === o ? 30 : 0);
     if (f) flash[i] = f > 40 ? f - 40 : 0;
   }
   gl.activeTexture(gl.TEXTURE0); gl.bindTexture(gl.TEXTURE_2D, glMap);
@@ -1437,9 +1635,10 @@ initGL();
 
 
 const unitW = () => Math.max(15, Math.min(40, cam.s * 6));
+const squadW = () => Math.max(11, Math.min(26, cam.s * 3.6));
 // Army counters in the style of military map symbols: a box for infantry, an oval for armour, wings for aircraft.
 function drawUnits(frac, now) {
-  const w = unitW(), h = w * 0.68;
+  let w = unitW(), h = w * 0.68;
   if (drag) {
     const X = sx(drag.u.x), Y = sy(drag.u.y), a = Math.atan2(drag.y - Y, drag.x - X);
     ctx.strokeStyle = 'rgba(242,207,99,.95)'; ctx.fillStyle = 'rgba(242,207,99,.95)'; ctx.lineWidth = 4; ctx.lineCap = 'round';
@@ -1450,6 +1649,11 @@ function drawUnits(frac, now) {
   }
   if (selected) {
     const u = selected, X = sx(u.x), Y = sy(u.y);
+    if (!UNITS[u.type].air) {
+      // The group that moves with it.
+      ctx.fillStyle = 'rgba(242,207,99,.08)'; ctx.strokeStyle = 'rgba(242,207,99,.5)'; ctx.lineWidth = 1.5;
+      ctx.beginPath(); ctx.arc(X, Y, GROUP_R * cam.s, 0, 7); ctx.fill(); ctx.stroke();
+    }
     ctx.save(); ctx.setLineDash([6, 6]); ctx.lineDashOffset = -now / 40; ctx.lineWidth = 2.5; ctx.strokeStyle = 'rgba(242,207,99,.9)';
     ctx.beginPath(); ctx.moveTo(X, Y);
     if (UNITS[u.type].air && (u.mode === 'strike' || u.mode === 'bomb')) ctx.lineTo(sx(u.tx), sy(u.ty));
@@ -1459,10 +1663,46 @@ function drawUnits(frac, now) {
   // Planes last, so they fly over the ground units.
   const list = units.slice().sort((a, b) => !!UNITS[a.type].air - !!UNITS[b.type].air);
   for (const u of list) {
-    const air = UNITS[u.type].air, gx = u.px + (u.x - u.px) * frac, gy = u.py + (u.y - u.py) * frac;
-    const X = sx(gx), Y0 = sy(gy), Y = Y0 - (air ? h * 0.7 : 0);
+    const air = UNITS[u.type].air, sq = u.type === 'inf', gx = u.px + (u.x - u.px) * frac, gy = u.py + (u.y - u.py) * frac;
+    w = sq ? squadW() : unitW(); h = w * 0.68;
+    if (!friend(u.a) && !seenXY(gx, gy)) continue;
+    const mvx = u.x - u.px, mvy = u.y - u.py, moving = Math.abs(mvx) + Math.abs(mvy) > 0.01;
+    // Marching units bob and kick up dust; planes sway on the wind.
+    const bob = air ? Math.sin(now / 260 + u.id) * 2.5 : moving ? -Math.abs(Math.sin(now / 110 + u.id)) * 2.2 : 0;
+    const X = sx(gx), Y0 = sy(gy), Y = Y0 - (air ? h * 0.7 : 0) + bob;
     if (X < -w || Y < -w || X > CW + w || Y > CH + w) continue;
     const p = players[u.a];
+    if (moving && !air) {
+      const m = Math.hypot(mvx, mvy), dx = mvx / m, dy = mvy / m;
+      for (let k = 0; k < 4; k++) {
+        const ph = ((now / 600 + k / 4 + u.id * 0.37) % 1), r = 2 + ph * 5;
+        ctx.fillStyle = `rgba(214,196,160,${0.4 * (1 - ph)})`;
+        ctx.beginPath(); ctx.arc(X - dx * (w * 0.45 + ph * w * 0.6) + Math.sin(k * 2.4 + u.id) * 4, Y0 + h * 0.3 - dy * ph * w * 0.4, r, 0, 7); ctx.fill();
+      }
+    }
+    const inSel = selected && !UNITS[selected.type].air && u.a === selected.a && !air && Math.hypot(u.x - selected.x, u.y - selected.y) <= GROUP_R;
+    if (sq) {
+      // A squad: a round token with a helmet.
+      const r = w * 0.42;
+      ctx.fillStyle = 'rgba(0,0,0,.35)'; ctx.beginPath(); ctx.ellipse(X + 1.5, Y0 + r * 0.55, r, r * 0.45, 0, 0, 7); ctx.fill();
+      ctx.fillStyle = p.css; ctx.beginPath(); ctx.arc(X, Y, r, 0, 7); ctx.fill();
+      ctx.lineWidth = inSel ? 2.5 : 1.6; ctx.strokeStyle = inSel ? '#f2cf63' : '#fffaf0'; ctx.stroke();
+      ctx.fillStyle = 'rgba(255,250,240,.95)';
+      ctx.beginPath(); ctx.arc(X, Y + r * 0.2, r * 0.5, Math.PI, 0); ctx.fill();
+      ctx.fillRect(X - r * 0.72, Y + r * 0.16, r * 1.44, r * 0.2);
+      if (w >= 16) {
+        ctx.font = `700 ${Math.round(w * 0.42)}px ${UI_FONT}`; ctx.lineWidth = 3; ctx.strokeStyle = 'rgba(20,16,8,.75)';
+        const txt = fmt(u.str); ctx.strokeText(txt, X, Y + r + w * 0.28); ctx.fillStyle = '#fffaf0'; ctx.fillText(txt, X, Y + r + w * 0.28);
+      }
+      if (u.cut) { ctx.strokeStyle = 'rgba(240,90,70,.9)'; ctx.lineWidth = 2; ctx.setLineDash([3, 3]); ctx.beginPath(); ctx.arc(X, Y, r + 3, 0, 7); ctx.stroke(); ctx.setLineDash([]); }
+      if (u.fight) for (let k = 0; k < 2; k++) {
+        const a = now / 70 + k * 3.1 + u.id, rr2 = r * 1.2;
+        ctx.fillStyle = k ? 'rgba(255,200,80,.9)' : 'rgba(255,120,40,.9)';
+        ctx.beginPath(); ctx.arc(X + Math.cos(a) * rr2, Y + Math.sin(a * 1.3) * rr2 * 0.6, 1.8, 0, 7); ctx.fill();
+      }
+      continue;
+    }
+    if (u.cut) { ctx.save(); ctx.setLineDash([4, 4]); ctx.lineDashOffset = now / 50; ctx.strokeStyle = 'rgba(240,90,70,.9)'; ctx.lineWidth = 2; ctx.beginPath(); ctx.arc(X, Y, w * 0.75, 0, 7); ctx.stroke(); ctx.restore(); }
     if (air) { ctx.fillStyle = 'rgba(0,0,0,.28)'; ctx.beginPath(); ctx.ellipse(X + 5, Y0 + 3, w * 0.42, h * 0.3, 0, 0, 7); ctx.fill(); }
     ctx.fillStyle = 'rgba(0,0,0,.35)'; ctx.beginPath(); ctx.roundRect(X - w / 2 + 2, Y - h / 2 + 3, w, h, 4); ctx.fill();
     ctx.fillStyle = p.css; ctx.beginPath(); ctx.roundRect(X - w / 2, Y - h / 2, w, h, 4); ctx.fill();
@@ -1506,9 +1746,9 @@ function updateHud() {
   const pc = peace();
   $('clock').textContent = pc ? '🕊 Fredstid ' + fmtTime(PEACE_TICKS - T) : fmtTime(T);
   $('clock').classList.toggle('peace', pc);
-  $('hint').innerHTML = selected ? '<b>' + UNITS[selected.type].name + '</b> valgt: tryk på kortet for at sende dem · tryk på enheden igen for at slippe'
-    : pc ? 'Træk dine enheder ud i frit land. Lande kan angribes om <b>' + Math.ceil((PEACE_TICKS - T) * DT) + ' s</b>'
-    : 'Træk en enhed for at sende den · Hær giver flere enheder';
+  $('hint').innerHTML = selected ? '<b>' + UNITS[selected.type].name + '</b> valgt: tryk på kortet for at sende gruppen · tryk igen for at slippe'
+    : pc ? 'Træk dine tropper ud i frit land. Lande kan angribes om <b>' + Math.ceil((PEACE_TICKS - T) * DT) + ' s</b>'
+    : 'Tropperne holder selv grænsen · træk en gruppe for at angribe · omring fjenden for bonus';
   const list = players.slice(1).filter(q => q.alive).sort((a, b) => b.count - a.count);
   let html = '', shown = 0;
   list.forEach((q, i) => {
@@ -1591,32 +1831,29 @@ function closeSheets() {
 $('btnBuild').onclick = () => openBuild(-1);
 $('btnArmy').onclick = () => { closeSheets(); $('armyGrid').dataset.key = ''; fillArmy(); show('armySheet', true); show('bottom', false); };
 $('armyClose').onclick = closeSheets;
-const reinforceable = () => selected && selected.a === 1 && !UNITS[selected.type].air && own[Math.round(selected.y) * W + Math.round(selected.x)] === 1;
+const specialSize = () => Math.floor(Math.min(human.troops, squadSize(human) * 1.5));
 function fillArmy() {
-  const p = human, sold = Math.floor(p.troops * ratio()), n = unitCount(1);
-  $('armySub').textContent = `Bruger ${Math.round(ratio() * 100)}% af dine tropper (${fmt(sold)} soldater) · ${n}/${MAX_UNITS} enheder`;
-  const cost = k => { const g = recruitCost(p, k, sold); return fmt(sold) + ' tropper' + (g ? ' · 🪙 ' + fmt(g) : ''); };
-  const cant = k => k === 'rf' ? !reinforceable() || sold < 1 || p.gold < recruitCost(p, selected.type, sold) : sold < 50 || p.gold < recruitCost(p, k, sold) || n >= MAX_UNITS;
+  const p = human, sold = specialSize(), n = unitCount(1);
+  $('armySub').textContent = `Infanteriet rykker selv ud til grænsen. Skyderen Front styrer hvor stor en del af dine tropper der står ude (${squadCount(1)} grupper nu). Kampvogne og fly koster guld · ${n}/${MAX_UNITS}`;
+  const cost = k => fmt(sold) + ' tropper · 🪙 ' + fmt(recruitCost(p, k, sold));
+  const cant = k => sold < 30 || p.gold < recruitCost(p, k, sold) || n >= MAX_UNITS;
   // Rebuild only when a button turns on or off; otherwise just update the numbers, so taps never miss.
-  const keys = selected && !UNITS[selected.type].air ? ['rf', ...UNIT_KEYS] : UNIT_KEYS;
-  const key = keys.map(cant).join() + keys.length;
+  const keys = ['arm', 'air'], key = keys.map(cant).join();
   if ($('armyGrid').dataset.key !== key) {
     $('armyGrid').dataset.key = key;
     $('armyGrid').innerHTML = keys.map(k => {
-      if (k === 'rf') return `<button class="bitem${cant(k) ? ' cant' : ''}" data-k="rf" ${cant(k) ? 'disabled' : ''}><span class="ic">➕</span><b>Forstærk</b><small>${reinforceable() ? 'Send soldater til den valgte ' + UNITS[selected.type].name.toLowerCase() : 'Den valgte enhed skal stå på dit land'}</small><span class="cost">${cost(selected.type)}</span></button>`;
-      const U = UNITS[k], ic = k === 'inf' ? '⚔️' : k === 'arm' ? '🛡️' : '✈️';
+      const U = UNITS[k], ic = k === 'arm' ? '🛡️' : '✈️';
       return `<button class="bitem${cant(k) ? ' cant' : ''}" data-k="${k}" ${cant(k) ? 'disabled' : ''}><span class="ic">${ic}</span><b>${U.name}</b><small>${U.desc}</small><span class="cost">${cost(k)}</span></button>`;
     }).join('');
-  } else $('armyGrid').querySelectorAll('.bitem').forEach(el => { el.querySelector('.cost').textContent = cost(el.dataset.k === 'rf' ? selected.type : el.dataset.k); });
+  } else $('armyGrid').querySelectorAll('.bitem').forEach(el => { el.querySelector('.cost').textContent = cost(el.dataset.k); });
 }
 $('armyGrid').addEventListener('click', e => {
   const el = e.target.closest('.bitem'); if (!el || el.disabled) return;
-  if (el.dataset.k === 'rf') { const err = reinforce(human, selected, human.troops * ratio()); closeSheets(); toast(err || UNITS[selected.type].name + ' er forstærket'); return; }
-  const r = recruit(human, el.dataset.k, human.troops * ratio(), cellAt(CW / 2, CH / 2));
+  const r = recruit(human, el.dataset.k, specialSize(), cellAt(CW / 2, CH / 2));
   closeSheets();
   if (typeof r === 'string') { toast(r); return; }
   selected = r; buzz(15);
-  toast(UNITS[r.type].name + ' er klar. Tryk hvor de skal hen');
+  toast(UNITS[r.type].name + ' er klar. Træk dem derhen hvor de skal angribe');
 });
 $('buildClose').onclick = $('nsClose').onclick = $('placeCancel').onclick = closeSheets;
 
@@ -1707,8 +1944,16 @@ function tap(px, py) {
 }
 // Send a unit somewhere. Ground troops that can't walk there board a ship if you have a port.
 function command(u, i) {
-  const err = orderUnit(u, i);
-  if (!err) { buzz(15); toast(UNITS[u.type].name + ' er på vej'); selected = null; return; }
+  // Infantry goes as a group: every squad near the one you dragged moves out side by side, keeping its place in the line.
+  const group = UNITS[u.type].air ? [u] : groupOf(u), [tx, ty] = xy(i);
+  let ok = 0, err = '';
+  for (const v of group) {
+    let c = i;
+    if (v !== u) { const x = Math.round(tx + v.x - u.x), y = Math.round(ty + v.y - u.y), j = y * W + x; if (x >= 0 && y >= 0 && x < W && y < H && terr[j]) c = j; }
+    const e = orderUnit(v, c);
+    if (!e) ok++; else if (v === u) err = e;
+  }
+  if (ok) { buzz(15); toast(ok > 1 ? ok + ' enheder rykker frem' : UNITS[u.type].name + ' er på vej'); selected = null; return; }
   const t = own[i];
   if (!UNITS[u.type].air && terr[i] && t !== 1 && human.nb.port) {
     if (t > 0 && blocked(t)) return;
@@ -1716,6 +1961,7 @@ function command(u, i) {
   }
   toast(err + (!UNITS[u.type].air && terr[i] && !human.nb.port ? '. Byg en havn' : ''));
 }
+const groupOf = u => units.filter(v => v.a === u.a && v.type !== 'air' && Math.hypot(v.x - u.x, v.y - u.y) <= GROUP_R);
 function unitAt(px, py) {
   let best = null, bd = 26 * 26;
   for (const u of units) {
@@ -1763,7 +2009,7 @@ function bindSeg(id, key) {
   el.addEventListener('click', e => { const b = e.target.closest('button'); if (!b) return; settings[key] = +b.dataset.v; sync(); saveSettings(); });
   sync();
 }
-bindSeg('diff', 'diff'); bindSeg('size', 'size'); bindSeg('mapType', 'mapType');
+bindSeg('diff', 'diff'); bindSeg('size', 'size'); bindSeg('mapType', 'mapType'); bindSeg('fog', 'fog');
 $('name').value = settings.name;
 $('name').addEventListener('input', () => { settings.name = $('name').value; saveSettings(); });
 $('bots').value = settings.bots; $('botsVal').textContent = settings.bots;
@@ -1809,9 +2055,9 @@ resize();
 
 // A random map plays itself behind the menu.
 function demoMap() {
-  genMap(); fitCamera(); makePlayers(); attacks = []; buildings = []; boats = []; nukes = []; booms = []; units = []; selected = null; T = 0;
+  genMap(); fitCamera(); makePlayers(); attacks = []; buildings = []; boats = []; nukes = []; booms = []; units = []; selected = null; T = 0; vis = null;
   players[1].isHuman = false; players[1].name = 'Askeland';
-  for (let k = 1; k <= P; k++) { randomSpawn(players[k]); recruit(players[k], 'inf', players[k].troops * 0.8); }
+  for (let k = 1; k <= P; k++) { randomSpawn(players[k]); for (let n = 0; n < 3; n++) recruit(players[k], 'inf', players[k].troops * 0.3); }
   dirty = true;
 }
 function startDemo() {
@@ -1828,7 +2074,7 @@ function startDemo() {
 startDemo();
 if ('serviceWorker' in navigator && location.protocol === 'https:') navigator.serviceWorker.register('sw.js').catch(() => {});
 requestAnimationFrame(frame);
-window.TW = { get units() { return units; }, recruit, orderUnit, cam, get W() { return W; }, get players() { return players; }, get attacks() { return attacks; }, get boats() { return boats; }, get buildings() { return buildings; }, get nukes() { return nukes; },
+window.TW = { get units() { return units; }, recruit, orderUnit, command, cam, get W() { return W; }, get players() { return players; }, get attacks() { return attacks; }, get boats() { return boats; }, get buildings() { return buildings; }, get nukes() { return nukes; },
   step, launch, sendBoat, build, proposeAlliance, allied, get state() { return state; }, get T() { return T; }, get landCells() { return landCells; }, newGame, startPlay, own: () => own, get S() { return S; }, adj: () => adj, settings };
 </script>
 </body>
