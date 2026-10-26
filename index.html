@@ -43,7 +43,25 @@ button:disabled{opacity:.4;cursor:default}
 #top{position:fixed;left:0;right:0;top:0;padding:calc(var(--safe-t) + 8px) 10px 0;display:flex;align-items:flex-start;gap:8px;pointer-events:none}
 #top>*{pointer-events:auto}
 .iconbtn{width:44px;height:44px;border-radius:14px;background:var(--panel);display:grid;place-items:center;font-size:20px;backdrop-filter:blur(6px);flex:none}
-#clock{background:var(--panel);border-radius:12px;padding:6px 10px;font-size:13px;color:var(--muted);font-variant-numeric:tabular-nums;margin-top:6px;white-space:nowrap}
+#clock{font-size:11px;color:var(--muted);font-variant-numeric:tabular-nums;text-align:right;padding:0 2px 2px}
+#btnRes{position:relative;color:#fffaf0}
+#btnRes.on{background:rgba(233,185,73,.35)}
+#resBadge{position:absolute;left:3px;right:3px;bottom:3px;height:4px;border-radius:2px;background:rgba(255,255,255,.15);overflow:hidden;font-style:normal}
+#resBadge b{display:block;height:100%;background:var(--gold)}
+#rbar{margin-bottom:8px;padding-bottom:8px;border-bottom:1px solid rgba(255,255,255,.1)}
+#rbRows{display:grid;gap:5px}
+#rbRows .row{display:flex;align-items:center;gap:8px;font-size:14px;font-weight:800}
+#rbRows .row svg{width:22px;height:22px;flex:none}
+#rbRows .row .nm{flex:1;min-width:0}
+#rbRows .row .nm small{display:block;font-size:11px;font-weight:600;color:var(--muted)}
+#rbRows .row button{flex:none;min-width:104px;padding:6px 8px;border-radius:10px;background:rgba(255,255,255,.12);font-weight:800;font-size:13px}
+#rbRows .row button b{color:var(--gold)}
+#rbRows .row button.cant{opacity:.4}
+#rbRows .row button.go{background:rgba(233,185,73,.3)}
+#hire button.lock{opacity:.55}
+#endGraph{width:100%;height:110px;margin:4px 0 2px;display:block}
+#endLegend{display:flex;flex-wrap:wrap;gap:4px 10px;justify-content:center;font-size:12px;color:var(--muted);margin-bottom:8px}
+#endLegend i{display:inline-block;width:10px;height:10px;border-radius:3px;margin-right:4px;vertical-align:-1px}
 #speed{font-size:14px;font-weight:700}
 #lb{margin-left:auto;background:var(--panel);border-radius:14px;padding:6px 8px;font-size:12px;min-width:132px;max-width:46vw;backdrop-filter:blur(6px)}
 #lb .r{display:flex;align-items:center;gap:6px;padding:2px 0;white-space:nowrap}
@@ -114,9 +132,9 @@ details ul{padding-left:18px;margin:8px 0 0}
 #selbar button{flex:none;padding:6px 10px;border-radius:999px;background:rgba(242,207,99,.18);color:#fffaf0;font-size:13px;font-weight:800;border:1px solid rgba(242,207,99,.5)}
 #selbar button.x{background:rgba(255,255,255,.1);border-color:transparent;margin-left:auto}
 #bbar{margin-bottom:8px;padding-bottom:8px;border-bottom:1px solid rgba(255,255,255,.1)}
-#bbHead{display:flex;align-items:center;font-weight:800;font-size:15px;margin-bottom:6px;gap:8px}
-#bbHead small{color:var(--muted);font-weight:600}
-#bbClose{margin-left:auto;width:30px;height:30px;border-radius:9px;background:rgba(255,255,255,.1);flex:none}
+#bbHead,.rbHead{display:flex;align-items:center;font-weight:800;font-size:15px;margin-bottom:6px;gap:8px}
+#bbHead small,.rbHead small{color:var(--muted);font-weight:600}
+#bbClose,#rbClose{margin-left:auto;width:30px;height:30px;border-radius:9px;background:rgba(255,255,255,.1);flex:none}
 #bbBtns{display:flex;gap:6px}
 #bbBtns button{flex:1;padding:7px 4px 6px;border-radius:12px;background:rgba(255,255,255,.12);font-weight:800;font-size:14px;line-height:1.15}
 #bbBtns button small{display:block;font-weight:600;font-size:11px;color:var(--muted)}
@@ -133,7 +151,7 @@ details ul{padding-left:18px;margin:8px 0 0}
   <button class="iconbtn" id="btnPause" aria-label="Pause">&#9776;</button>
   <button class="iconbtn" id="speed" aria-label="Hastighed">1×</button>
   <button class="iconbtn" id="btnHome" aria-label="Til dit HQ">&#8962;</button>
-  <div id="clock">0:00</div>
+  <button class="iconbtn" id="btnRes" aria-label="Forskning"><svg viewBox="-12 -12 24 24" width="24" height="24"><path d="M-3.5-10H3.5M-2.5-10V-3L-8.5 7.5Q-9.3 9.5-7 9.5H7Q9.3 9.5 8.5 7.5L2.5-3V-10" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/><path d="M-6.2 4H6.2L8 7.6Q8.4 8.6 7 8.6H-7Q-8.4 8.6-8 7.6Z" fill="currentColor"/></svg><i id="resBadge" class="hidden"></i></button>
   <div id="lb"></div>
 </div>
 
@@ -145,6 +163,7 @@ details ul{padding-left:18px;margin:8px 0 0}
       <div id="army">0 <small>/ 6 tropper</small></div>
       <div id="land"><b>0%</b> land</div>
     </div>
+    <div id="rbar" class="hidden"><div class="rbHead"><span>Forskning <small id="rbSub"></small></span><button id="rbClose" aria-label="Luk">✕</button></div><div id="rbRows"></div></div>
     <div id="bbar" class="hidden"><div id="bbHead"><span id="bbTitle"></span><button id="bbClose" aria-label="Luk">✕</button></div><div id="bbBtns"></div></div>
     <div id="selbar" class="hidden"></div>
     <div id="hire">
@@ -188,6 +207,7 @@ details ul{padding-left:18px;margin:8px 0 0}
   <div class="card">
     <h2>Pause</h2>
     <button class="big" id="btnResume">Fortsæt</button>
+    <button class="sec" id="btnSound">Lyd: til</button>
     <button class="sec" id="btnRestart">Nyt spil</button>
     <button class="sec" id="btnQuit">Til menuen</button>
     <div id="pauseHelp"></div>
@@ -203,7 +223,13 @@ details ul{padding-left:18px;margin:8px 0 0}
       <div><b id="stTime">0:00</b><span>Tid</span></div>
       <div><b id="stPeak">0%</b><span>Største land</span></div>
       <div><b id="stKills">0</b><span>Fjender skudt ned</span></div>
+      <div><b id="stHired">0</b><span>Tropper hyret</span></div>
+      <div><b id="stLost">0</b><span>Tropper tabt</span></div>
+      <div><b id="stTaken">0</b><span>Provinser erobret</span></div>
+      <div><b id="stGold">0</b><span>Guld tjent</span></div>
     </div>
+    <canvas id="endGraph" width="600" height="220"></canvas>
+    <div id="endLegend"></div>
     <button class="big" id="btnAgain">Spil igen</button>
     <button class="sec" id="btnWatch">Se resten af spillet</button>
     <button class="sec" id="btnMenu">Til menuen</button>
@@ -217,7 +243,7 @@ const cv = $('c'), ctx = cv.getContext('2d'), glc = $('gl');
 let DPR = 1, GDPR = 1, CW = 0, CH = 0;
 const cam = { x: 0, y: 0, s: 8 };
 
-const settings = Object.assign({ name: '', diff: 1 }, (() => { try { return JSON.parse(localStorage.getItem('tw.s4') || '{}'); } catch (e) { return {}; } })());
+const settings = Object.assign({ name: '', diff: 1, sound: true }, (() => { try { return JSON.parse(localStorage.getItem('tw.s4') || '{}'); } catch (e) { return {}; } })());
 function saveSettings() { try { localStorage.setItem('tw.s4', JSON.stringify(settings)); } catch (e) {} }
 
 // ---------- Rules ----------
@@ -242,6 +268,39 @@ const VS = {
   plane: { inf: 0.8,  tank: 1.8,  arty: 1.8, aa: 0.35, plane: 1 },
 };
 const VS_BASE = { inf: 1, tank: 1.5, arty: 1.6, aa: 0.4, plane: 1.2 };
+// Research: soldiers and tanks from the start, the rest is unlocked; every type can be upgraded 3 times.
+// One project at a time, and it takes a while.
+const UNLOCK = { arty: 150, aa: 120, plane: 250 }, UNLOCK_TIME = 20;
+const UPG_COST = [120, 250, 420], UPG_TIME = [20, 30, 40], UPG = 0.15, MAX_TECH = 3;
+function kOf(p, type) {
+  const c = p.kc[type]; if (c) return c;
+  const b = UNITS[type], lv = p.tech[type], m = 1 + UPG * lv;
+  return (p.kc[type] = Object.assign({}, b, { hp: Math.round(b.hp * m), dps: b.dps * m, lv }));
+}
+const unlocked = (p, type) => !UNLOCK[type] || p.unl.has(type);
+function resCost(p, type) { return unlocked(p, type) ? (p.tech[type] < MAX_TECH ? UPG_COST[p.tech[type]] : 0) : UNLOCK[type]; }
+function research(p, type) {
+  if (p.res) return 'busy';
+  const cost = resCost(p, type);
+  if (!cost) return 'max';
+  if (p.gold < cost) return 'gold';
+  p.gold -= cost;
+  const up = unlocked(p, type);
+  p.res = { type, up, t: 0, need: up ? UPG_TIME[p.tech[type]] : UNLOCK_TIME };
+  return 'ok';
+}
+function stepResearch(p) {
+  const r = p.res; if (!r) return;
+  r.t += DT; if (r.t < r.need) return;
+  p.res = null; p.done++;
+  if (!r.up) p.unl.add(r.type);
+  else {
+    p.tech[r.type]++; p.kc[r.type] = null;
+    const k = kOf(p, r.type);
+    for (const u of units) if (u.p === p.id && u.type === r.type) { u.hp = u.hp / u.k.hp * k.hp; u.k = k; }
+  }
+  if (p.human && state === 'play') { toast(r.up ? `${UNITS[r.type].name} er nu niveau ${p.tech[r.type] + 1}` : `${UNITS[r.type].name} er låst op!`); sfx('research'); }
+}
 const COOL = { inf: 4, tank: 8, arty: 12, aa: 2, plane: 4 };
 const MAX_UNITS = 10, QUEUE = 3;
 // Buildings, one per province: forts shoot and slow capture, factories build troops, markets pay gold.
@@ -385,7 +444,9 @@ function makePlayers(demo) {
     const [cx, cy] = CORNERS[k];
     const base = { x: cx + 0.5, y: cy + 0.5, owner: k, hp: BASE_HP, q: [], prog: 0, base: true };
     players.push({ id: k, name: k === 1 && !demo ? (settings.name.trim() || 'Dig') : names[k], col: COLORS[k], human: k === 1 && !demo, alive: true,
-      gold: START_GOLD, count: 0, peak: 0, kills: 0, lvl: 0, base, think: k * 3, mode: 0, place: 0 });
+      gold: START_GOLD, count: 0, peak: 0, kills: 0, lvl: 0, base, think: k * 3, mode: 0, place: 0,
+      tech: { inf: 0, tank: 0, arty: 0, aa: 0, plane: 0 }, kc: {}, unl: new Set(), res: null, done: 0,
+      hired: 0, lost: 0, taken: 0, earned: 0, hist: [] });
   }
   human = demo ? null : players[1];
 }
@@ -530,14 +591,15 @@ function unitCount(p) { let n = 0; for (const u of units) if (u.p === p.id) n++;
 function hire(p, type, site) {
   const k = UNITS[type];
   if (!p.alive || !site || site.owner !== p.id || !makes(site) || (site.base && site.hp <= 0)) return 'site';
+  if (!unlocked(p, type)) return 'locked';
   if (p.gold < k.cost) return 'gold';
   if (unitCount(p) >= maxUnits(p)) return 'full';
   if (site.q.length >= QUEUE) return 'queue';
-  p.gold -= k.cost; site.q.push(type);
+  p.gold -= k.cost; site.q.push(type); p.hired++;
   return 'ok';
 }
 function spawnUnit(p, type, site) {
-  const k = UNITS[type];
+  const k = kOf(p, type);
   let x = site.x, y = site.y;
   for (let n = 0; n < 20; n++) {
     const a = rng() * Math.PI * 2, r = 1.2 + rng() * 1.2, X = site.x + Math.cos(a) * r, Y = site.y + Math.sin(a) * r, i = cellOf(X, Y);
@@ -622,11 +684,13 @@ function damage(v, dmg, by) {
   if (!v.k.air && ci >= 0 && terr[ci] === 3) dmg *= FOREST_COVER;
   v.hp -= dmg; v.hit = 4;
   if (v.hp <= 0 && !v.dead) {
-    v.dead = true; booms.push({ x: v.x, y: v.y, t: 0, big: v.type === 'tank' });
+    v.dead = true; booms.push({ x: v.x, y: v.y, t: 0, big: v.type !== 'inf', parts: sparks(v.type !== 'inf' ? 14 : 7) });
     if (by > 0) players[by].kills++;
+    players[v.p].lost++;
+    sfxAt(v.type === 'inf' ? 'die' : 'boom', v.x, v.y);
   }
 }
-function shot(x0, y0, x1, y1, p, heavy) { shots.push({ x0, y0, x1, y1, p, heavy, t: 0 }); }
+function shot(x0, y0, x1, y1, p, heavy) { shots.push({ x0, y0, x1, y1, p, heavy, t: 0 }); sfxAt(heavy ? 'heavy' : 'shot', x0, y0); }
 function combat() {
   for (const u of units) {
     const e = enemyNear(u, u.k.range);
@@ -662,10 +726,13 @@ function combat() {
   for (const u of units) if (u.dead) selected.delete(u);
   units = units.filter(u => !u.dead);
 }
+function sparks(n) { const a = []; for (let k = 0; k < n; k++) a.push({ a: rng() * Math.PI * 2, v: 0.6 + rng() * 1.6, s: 0.5 + rng() }); return a; }
+let shake = 0;
 function eliminate(p, by) {
   if (!p.alive) return;
   p.alive = false; p.base.hp = 0; p.place = players.filter(q => q && q.alive).length + 1;
-  booms.push({ x: p.base.x, y: p.base.y, t: 0, big: true, huge: true });
+  booms.push({ x: p.base.x, y: p.base.y, t: 0, big: true, huge: true, parts: sparks(36) });
+  if (state === 'play' && human) { shake = 1; sfx('big'); }
   units = units.filter(u => u.p !== p.id);
   for (const u of [...selected]) if (u.p === p.id) selected.delete(u);
   for (const pr of provs) if (pr.owner === p.id) setProvOwner(pr, 0);
@@ -689,7 +756,8 @@ function stepProvinces() {
       if (pr.owner === 1 && pr.town && pr.cap === 0) alarm('p' + pr.id, pr.cx, pr.cy, players[who].name + ' prøver at tage din by!');
       if (++pr.cap >= capNeed(pr)) {
         const old = pr.owner;
-        setProvOwner(pr, who);
+        setProvOwner(pr, who); players[who].taken++;
+        if (state === 'play') { if (who === 1) sfx(pr.town ? 'town' : 'capture'); else if (old === 1) sfx('lose'); }
         if (state === 'play' && pr.town) { if (who === 1) toast('Du erobrede en by!'); else if (old === 1) toast(players[who].name + ' tog din by', [pr.cx, pr.cy]); }
       }
     } else if (pr.cap > 0) pr.cap = Math.max(0, pr.cap - 2);
@@ -709,6 +777,7 @@ function stepSites() {
 // ---------- Tick ----------
 function step() {
   T++;
+  if (T % 50 === 0) for (let k = 1; k <= 4; k++) players[k].hist.push(players[k].count / nOwnable);
   for (const u of units) moveUnit(u);
   separate();
   combat();
@@ -718,11 +787,13 @@ function step() {
     const p = players[k];
     if (!p.alive) continue;
     if (T % 10 === 0) {
-      p.gold += income(p) * (p.human ? 1 : DIFFS[settings.diff].inc);
+      const g = income(p) * (p.human ? 1 : DIFFS[settings.diff].inc);
+      p.gold += g; p.earned += g;
       const b = p.base;
       if (T - (b.lastHit || -99) > 50) b.hp = Math.min(BASE_HP, b.hp + BASE_REGEN);
     }
     p.peak = Math.max(p.peak, p.count / nOwnable);
+    stepResearch(p);
     if (!p.human && --p.think <= 0) { p.think = DIFFS[settings.diff].think; botThink(p); }
   }
   for (const u of units) {
@@ -763,6 +834,19 @@ function botThink(p) {
   const mySites = sites.filter(s => s.owner === p.id && (!s.base || s.hp > 0));
   const makers = mySites.filter(makes);
   // spend spare gold: a bigger HQ first, then forts on the border, a factory near the front, markets at home
+  // research when there is gold to spare: answer planes with anti-air, else unlock, else upgrade what we use most
+  if (!p.res && p.gold >= 200 && rng() < 0.35) {
+    const foePlanes = units.some(v => v.p !== p.id && v.type === 'plane');
+    const lockedT = Object.keys(UNLOCK).filter(t => !p.unl.has(t));
+    let t = null;
+    if (foePlanes && !p.unl.has('aa')) t = 'aa';
+    else if (lockedT.length && rng() < 0.55) t = lockedT[(rng() * lockedT.length) | 0];
+    else {
+      const cnt = {}; for (const u of mine) cnt[u.type] = (cnt[u.type] || 0) + 1;
+      t = UKEYS.filter(x => unlocked(p, x) && p.tech[x] < MAX_TECH).sort((a, b) => (cnt[b] || 0) - (cnt[a] || 0))[0];
+    }
+    if (t && p.gold >= resCost(p, t) + 60) research(p, t);
+  }
   if (unitCount(p) >= maxUnits(p) - 1) {
     if (p.lvl < HQ_COST.length && p.gold >= HQ_COST[p.lvl] + 40) upgradeHQ(p);
     else if (p.gold >= 230) {
@@ -782,6 +866,7 @@ function botThink(p) {
     else if (p.gold >= 160 && has('plane') < 1 && r < 0.25) type = 'plane';
     else if (p.gold >= 100 && has('arty') < 2 && r < 0.45) type = 'arty';
     else if (p.gold >= 120 && r < 0.7) type = 'tank';
+    if (!unlocked(p, type)) type = p.gold >= 120 && r < 0.6 ? 'tank' : 'inf';
     if (p.gold >= UNITS[type].cost) {
       const site = makers.find(s => !s.q.length) || makers[0];
       if (site) hire(p, type, site);
@@ -837,6 +922,7 @@ function newGame() {
   cam.x = CW / 2 - (human.base.x + 6) * cam.s; cam.y = CH * 0.42 - (human.base.y - 6) * cam.s; clampCam();
   $('speed').textContent = speed + '×';
   toast('Hyr din første trop forneden');
+  closeRes(); audioInit();
 }
 function checkEnd() {
   const alive = players.filter(p => p && p.alive);
@@ -856,9 +942,33 @@ function endScreen(win, winner) {
   $('stTime').textContent = fmtTime(T);
   $('stPeak').textContent = Math.round(human.peak * 100) + '%';
   $('stKills').textContent = human.kills;
+  $('stHired').textContent = human.hired;
+  $('stLost').textContent = human.lost;
+  $('stTaken').textContent = human.taken;
+  $('stGold').textContent = Math.round(human.earned).toLocaleString('da-DK');
+  drawEndGraph();
+  sfx(win ? 'win' : 'defeat');
   show('btnWatch', !win);
   show('over', true);
   if (win) state = 'over';
+}
+
+// land share of every player over the game
+function drawEndGraph() {
+  const c = $('endGraph'), g = c.getContext('2d'), w = c.width, h = c.height, pad = 8;
+  g.clearRect(0, 0, w, h);
+  g.strokeStyle = 'rgba(255,255,255,.12)'; g.lineWidth = 2;
+  for (const v of [0.25, 0.5, 0.75]) { g.beginPath(); g.moveTo(0, h - pad - v * (h - 2 * pad)); g.lineTo(w, h - pad - v * (h - 2 * pad)); g.stroke(); }
+  const n = Math.max(2, ...players.slice(1).map(p => p.hist.length));
+  const top = Math.max(0.3, ...players.slice(1).map(p => Math.max(0, ...p.hist))) * 1.08;
+  for (const p of players.slice(1)) {
+    if (p.hist.length < 2) continue;
+    g.strokeStyle = rgb(p.col); g.lineWidth = p === human ? 6 : 3.5; g.lineJoin = 'round';
+    g.beginPath();
+    p.hist.forEach((v, k) => { const x = k / (n - 1) * w, y = h - pad - v / top * (h - 2 * pad); if (k) g.lineTo(x, y); else g.moveTo(x, y); });
+    g.stroke();
+  }
+  $('endLegend').innerHTML = players.slice(1).map(p => `<span><i style="background:${rgb(p.col)}"></i>${esc(p.name)}</span>`).join('') + '<span>· land over tid</span>';
 }
 
 // ---------- Screen ----------
@@ -934,6 +1044,7 @@ function drawFog(now) {
 function render(now) {
   if (dirty) { if (gl) uploadMap(); else buildImage(); dirty = false; }
   ctx.setTransform(DPR, 0, 0, DPR, 0, 0);
+  if (shake > 0) { ctx.translate((Math.random() - 0.5) * 12 * shake, (Math.random() - 0.5) * 12 * shake); shake = Math.max(0, shake - 0.03); }
   if (gl) { ctx.clearRect(0, 0, CW, CH); renderGL(now); }
   else {
     ctx.fillStyle = '#0c2229'; ctx.fillRect(0, 0, CW, CH);
@@ -959,9 +1070,21 @@ function render(now) {
   }
   for (const b of booms) {
     if (!seen(b.x, b.y)) continue;
-    const f = b.t / (b.huge ? 1.6 : 0.7), r = (b.huge ? 5 : b.big ? 1.6 : 1.1) * cam.s * (0.3 + f);
+    const f = b.t / (b.huge ? 1.6 : 0.7), r = (b.huge ? 5 : b.big ? 1.6 : 1.1) * cam.s * (0.3 + f), X = sx(b.x), Y = sy(b.y);
+    if (b.parts) {
+      // smoke ring, then flying sparks
+      ctx.fillStyle = `rgba(60,52,44,${0.35 * (1 - f)})`;
+      ctx.beginPath(); ctx.arc(X, Y - f * cam.s * 0.8, r * 1.25, 0, 7); ctx.fill();
+      const reach = (b.huge ? 4 : 1.4) * cam.s;
+      for (const q of b.parts) {
+        const d = reach * q.v * Math.sqrt(f);
+        ctx.fillStyle = `rgba(255,${200 - 80 * f | 0},90,${1 - f})`;
+        ctx.beginPath(); ctx.arc(X + Math.cos(q.a) * d, Y + Math.sin(q.a) * d - f * f * cam.s, Math.max(1, q.s * (b.huge ? 3 : 2) * (1 - f)), 0, 7); ctx.fill();
+      }
+    }
     ctx.fillStyle = `rgba(255,${150 + 80 * (1 - f) | 0},60,${0.75 * (1 - f)})`;
-    ctx.beginPath(); ctx.arc(sx(b.x), sy(b.y), r, 0, 7); ctx.fill();
+    ctx.beginPath(); ctx.arc(X, Y, r, 0, 7); ctx.fill();
+    if (f < 0.25) { ctx.fillStyle = `rgba(255,250,220,${0.9 * (1 - f * 4)})`; ctx.beginPath(); ctx.arc(X, Y, r * 0.5, 0, 7); ctx.fill(); }
   }
 }
 function tokenR() { return Math.max(9, Math.min(18, cam.s * 0.75)); }
@@ -1297,11 +1420,13 @@ initGL();
 let hudT = 0, toastTimer = 0;
 function updateHud() {
   if (!players.length) return;
-  $('clock').textContent = fmtTime(T);
   const rows = players.slice(1).slice().sort((a, b) => (b.alive - a.alive) || b.count - a.count);
-  $('lb').innerHTML = rows.map((p, k) => `<div class="r${p === human ? ' me' : ''}"><b>${k + 1}</b><i style="background:${rgb(p.col)}"></i><span>${esc(p.name)}${p.alive ? '' : ' ✕'}</span><em>${Math.round(p.count / nOwnable * 100)}%</em><em class="u">${p.alive ? units.filter(u => u.p === p.id).length + '⚔' : ''}</em></div>`).join('');
+  $('lb').innerHTML = `<div id="clock">${fmtTime(T)}</div>` + rows.map((p, k) => `<div class="r${p === human ? ' me' : ''}"><b>${k + 1}</b><i style="background:${rgb(p.col)}"></i><span>${esc(p.name)}${p.alive ? '' : ' ✕'}</span><em>${Math.round(p.count / nOwnable * 100)}%</em><em class="u">${p.alive ? units.filter(u => u.p === p.id).length + '⚔' : ''}</em></div>`).join('');
   if (state !== 'play' || !human) return;
   if (selProv) { if (selProv.owner !== 1) closeBuild(); else fillBuild(); }
+  if (resOpen) fillRes();
+  const rr = human.res;
+  show('resBadge', !!rr); if (rr) $('resBadge').innerHTML = `<b style="width:${Math.floor(rr.t / rr.need * 100)}%"></b>`;
   $('gold').textContent = fmt(human.gold);
   $('inc').textContent = '+' + income(human).toFixed(1).replace('.', ',') + '/s';
   const n = unitCount(human);
@@ -1309,8 +1434,10 @@ function updateHud() {
   $('land').innerHTML = `<b>${Math.round(human.count / nOwnable * 100)}%</b> <small>/ ${WIN_SHARE * 100}% land</small>`;
   if (spawnSite && spawnSite.owner !== 1) spawnSite = human.base;
   for (const b of document.querySelectorAll('#hire button[data-t]')) {
-    const k = UNITS[b.dataset.t];
-    b.classList.toggle('cant', !human.alive || human.gold < k.cost || n >= maxUnits(human));
+    const k = UNITS[b.dataset.t], open = unlocked(human, b.dataset.t);
+    b.classList.toggle('lock', !open);
+    b.querySelector('small').textContent = open ? k.cost : '🔒';
+    b.classList.toggle('cant', open && (!human.alive || human.gold < k.cost || n >= maxUnits(human)));
     const q = spawnSite ? spawnSite.q.filter(x => x === b.dataset.t).length : 0;
     const i = b.querySelector('i'); i.textContent = q; i.classList.toggle('hidden', !q);
   }
@@ -1349,6 +1476,7 @@ function esc(s) { return s.replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;',
 // Tap one of your provinces (with no troop selected) to build there; tap your HQ to expand it.
 let selProv = null;
 function openBuild(pr) {
+  if (resOpen) closeRes();
   selProv = pr; show('bbar', true); fillBuild();
   for (const i of pr.cells) flash[i] = Math.max(flash[i], 120);
   dirty = true;
@@ -1373,6 +1501,36 @@ function fillBuild() {
   if ($('bbBtns').dataset.html !== html) { $('bbBtns').innerHTML = html; $('bbBtns').dataset.html = html; }
 }
 $('bbClose').onclick = closeBuild;
+// Research panel: unlock artillery, anti-air and planes, and upgrade every troop type
+let resOpen = false;
+function openRes() { closeBuild(); resOpen = true; show('rbar', true); fillRes(); $('btnRes').classList.add('on'); }
+function closeRes() { resOpen = false; show('rbar', false); $('btnRes').classList.remove('on'); }
+function fillRes() {
+  if (!human) return;
+  const r = human.res;
+  $('rbSub').textContent = r ? '' : 'én ting ad gangen';
+  $('rbRows').innerHTML = UKEYS.map(t => {
+    const k = UNITS[t], lv = human.tech[t], icon = document.querySelector(`#hire button[data-t=${t}] svg`).outerHTML;
+    const open = unlocked(human, t), dots = open ? '★'.repeat(lv) + '☆'.repeat(MAX_TECH - lv) : 'låst';
+    let btn;
+    if (r && r.type === t) btn = `<button class="go" disabled>${Math.floor(r.t / r.need * 100)}%</button>`;
+    else if (!open) btn = `<button data-r="${t}" class="${r || human.gold < UNLOCK[t] ? 'cant' : ''}">Lås op <b>${UNLOCK[t]}</b></button>`;
+    else if (lv < MAX_TECH) btn = `<button data-r="${t}" class="${r || human.gold < UPG_COST[lv] ? 'cant' : ''}">Opgrader <b>${UPG_COST[lv]}</b></button>`;
+    else btn = `<button disabled class="cant">Maks</button>`;
+    const info = open ? `${dots} · ${Math.round(kOf(human, t).hp)} liv` : `${UNLOCK_TIME} sek at forske`;
+    return `<div class="row">${icon}<span class="nm">${k.name}<small>${info}</small></span>${btn}</div>`;
+  }).join('');
+}
+$('btnRes').onclick = () => { if (state !== 'play') return; if (resOpen) closeRes(); else openRes(); sfx('click'); };
+$('rbClose').onclick = closeRes;
+$('rbRows').onclick = e => {
+  const b = e.target.closest('button[data-r]'); if (!b || !human) return;
+  const t = b.dataset.r, r = research(human, t);
+  if (r === 'busy') toast('Du forsker allerede i noget. Vent til det er færdigt');
+  else if (r === 'gold') toast(`Det koster ${resCost(human, t)} guld`);
+  else if (r === 'ok') { toast(human.res.up ? `Opgraderer ${UNITS[t].name.toLowerCase()} (${human.res.need} sek)` : `Låser ${UNITS[t].name.toLowerCase()} op (${human.res.need} sek)`); sfx('click'); buzz(8); }
+  fillRes(); updateHud();
+};
 $('bbBtns').onclick = e => {
   const b = e.target.closest('button'); if (!b || !selProv) return;
   if (b.dataset.hq) {
@@ -1404,7 +1562,7 @@ function alarm(key, x, y, msg) {
   // never more than one warning every 8 seconds, except for the HQ
   if (key !== 'hq' && T - (lastAlarm.any ?? -999) < 80) return;
   lastAlarm[key] = lastAlarm.any = T; alerts.push({ x, y, t0: T });
-  toast(msg, [x, y]); buzz([60, 40, 60]);
+  toast(msg, [x, y]); buzz([60, 40, 60]); sfx('alarm');
 }
 function drawAlerts(t) {
   alerts = alerts.filter(a => T - a.t0 < 60);
@@ -1424,6 +1582,56 @@ function drawAlerts(t) {
   }
 }
 function show(id, on) { $(id).classList.toggle('hidden', !on); }
+// ---------- Sound: small synthesized effects, no files ----------
+let AC = null, master = null, noiseBuf = null;
+const sndLast = {}, GAP = { shot: 0.07, heavy: 0.14, die: 0.09, boom: 0.12, capture: 0.3, alarm: 1 };
+function audioInit() {
+  if (AC) return;
+  try { AC = new (window.AudioContext || window.webkitAudioContext)(); master = AC.createGain(); master.gain.value = 0.45; master.connect(AC.destination); } catch (e) { AC = null; }
+}
+function env(g, t, a, d, v) { g.gain.setValueAtTime(0.0001, t); g.gain.exponentialRampToValueAtTime(v, t + a); g.gain.exponentialRampToValueAtTime(0.0001, t + a + d); }
+function tone(f, t, d, type, v, f2) {
+  const o = AC.createOscillator(), g = AC.createGain();
+  o.type = type || 'sine'; o.frequency.setValueAtTime(f, t); if (f2) o.frequency.exponentialRampToValueAtTime(f2, t + d);
+  env(g, t, 0.008, d, v || 0.15); o.connect(g); g.connect(master); o.start(t); o.stop(t + d + 0.05);
+}
+function hiss(t, d, f, v, kind) {
+  if (!noiseBuf) { noiseBuf = AC.createBuffer(1, AC.sampleRate * 0.8, AC.sampleRate); const n = noiseBuf.getChannelData(0); for (let i = 0; i < n.length; i++) n[i] = Math.random() * 2 - 1; }
+  const s = AC.createBufferSource(), fl = AC.createBiquadFilter(), g = AC.createGain();
+  s.buffer = noiseBuf; fl.type = kind || 'lowpass'; fl.frequency.value = f;
+  env(g, t, 0.005, d, v); s.connect(fl); fl.connect(g); g.connect(master); s.start(t); s.stop(t + d + 0.05);
+}
+const SFX = {
+  shot: t => hiss(t, 0.06, 2600, 0.10, 'bandpass'),
+  heavy: t => { hiss(t, 0.2, 600, 0.22); tone(120, t, 0.12, 'sine', 0.12, 60); },
+  die: t => hiss(t, 0.14, 1400, 0.12),
+  boom: t => { hiss(t, 0.6, 380, 0.4); tone(80, t, 0.45, 'sine', 0.3, 35); },
+  big: t => { hiss(t, 1.4, 260, 0.6); tone(60, t, 1.1, 'sine', 0.45, 25); },
+  capture: t => { tone(523, t, 0.1, 'triangle', 0.12); tone(784, t + 0.09, 0.16, 'triangle', 0.12); },
+  town: t => { tone(523, t, 0.1, 'triangle', 0.14); tone(659, t + 0.09, 0.1, 'triangle', 0.14); tone(1047, t + 0.18, 0.28, 'triangle', 0.14); },
+  lose: t => { tone(392, t, 0.14, 'triangle', 0.13); tone(262, t + 0.13, 0.26, 'triangle', 0.13); },
+  alarm: t => { tone(880, t, 0.09, 'square', 0.06); tone(880, t + 0.16, 0.09, 'square', 0.06); },
+  hire: t => tone(660, t, 0.06, 'triangle', 0.09),
+  click: t => tone(1300, t, 0.03, 'square', 0.04),
+  research: t => [523, 659, 784, 1047].forEach((f, k) => tone(f, t + k * 0.08, 0.18, 'triangle', 0.12)),
+  win: t => [392, 523, 659, 784, 1047].forEach((f, k) => tone(f, t + k * 0.12, 0.35, 'triangle', 0.14)),
+  defeat: t => [392, 330, 262, 196].forEach((f, k) => tone(f, t + k * 0.18, 0.4, 'triangle', 0.13)),
+};
+function sfx(k) {
+  if (!settings.sound || !human) return;
+  audioInit(); if (!AC) return;
+  if (AC.state === 'suspended') AC.resume();
+  const t = AC.currentTime;
+  if (GAP[k] && t - (sndLast[k] ?? -9) < GAP[k]) return;
+  sndLast[k] = t;
+  try { SFX[k](t + 0.01); } catch (e) {}
+}
+function sfxAt(k, x, y) {
+  if (state !== 'play' || !human) return;
+  const X = sx(x), Y = sy(y);
+  if (X < -30 || Y < -30 || X > CW + 30 || Y > CH + 30 || !seen(x, y)) return;
+  sfx(k);
+}
 function buzz(p) { if (navigator.vibrate) try { navigator.vibrate(p); } catch (e) {} }
 
 // ---------- Input ----------
@@ -1546,6 +1754,8 @@ for (const b of document.querySelectorAll('#hire button[data-t]')) b.onclick = (
   const type = b.dataset.t, k = UNITS[type];
   if (!spawnSite || spawnSite.owner !== 1) spawnSite = human.base;
   const r = hire(human, type, spawnSite);
+  if (r === 'locked') { openRes(); toast(`Lås ${k.name.toLowerCase()} op under forskning`); return; }
+  if (r === 'ok') sfx('hire');
   if (r === 'gold') toast(`${k.name} koster ${k.cost} guld`);
   else if (r === 'full') toast(human.lvl < HQ_COST.length ? `Du kan højst have ${maxUnits(human)} tropper. Tryk på dit HQ for at udvide det` : `Du kan højst have ${maxUnits(human)} tropper`);
   else if (r === 'queue') toast('Køen her er fuld. Vælg en anden by');
@@ -1572,6 +1782,9 @@ $('name').value = settings.name;
 $('name').addEventListener('input', () => { settings.name = $('name').value; saveSettings(); });
 $('btnPlay').onclick = () => { $('name').blur(); delete $('over').dataset.shown; newGame(); };
 $('btnPause').onclick = () => { if (state === 'play' || state === 'over') { paused = true; show('pause', true); } };
+function soundLabel() { $('btnSound').textContent = 'Lyd: ' + (settings.sound ? 'til' : 'fra'); }
+soundLabel();
+$('btnSound').onclick = () => { settings.sound = !settings.sound; saveSettings(); soundLabel(); if (settings.sound) sfx('click'); };
 $('btnResume').onclick = () => { paused = false; show('pause', false); };
 $('btnRestart').onclick = $('btnAgain').onclick = () => { delete $('over').dataset.shown; newGame(); };
 $('btnQuit').onclick = $('btnMenu').onclick = () => { paused = false; toMenu(); };
@@ -1613,7 +1826,7 @@ startDemo();
 if ('serviceWorker' in navigator && location.protocol === 'https:') navigator.serviceWorker.register('sw.js').catch(() => {});
 requestAnimationFrame(frame);
 window.TW = { get units() { return units; }, get players() { return players; }, get sites() { return sites; }, get towns() { return towns; }, build, upgradeHQ, get selProv() { return selProv; }, get provs() { return provs; }, get state() { return state; }, get T() { return T; },
-  get selected() { return selected; }, get nOwnable() { return nOwnable; }, step, hire, orderPoints, findPath, sendTo, newGame, tapAt, own: () => own, terr: () => terr, cam, settings, get gl() { return !!gl; } };
+  get selected() { return selected; }, get nOwnable() { return nOwnable; }, step, hire, orderPoints, findPath, sendTo, research, endScreen, newGame, tapAt, own: () => own, terr: () => terr, cam, settings, get gl() { return !!gl; } };
 </script>
 </body>
 </html>
