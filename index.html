@@ -171,6 +171,7 @@ details ul{padding-left:18px;margin:8px 0 0}
       <li>Hver provins giver guld. Provinser med en <b>by</b> giver mere og kan bygge tropper.</li>
       <li>Fjendtlige tropper kan <b>ikke gå igennem hinanden</b>, så fronten er dér, hvor hærene mødes. En provins med fjendtlige tropper i kan ikke tages. Tropper skyder selv. <b>Kampvogne</b> slår soldater, <b>fly</b> slår kampvogne, og <b>soldater</b> kan skyde fly ned. Skov giver dækning. Floder krydses ved broerne.</li>
       <li>Bliver dit HQ eller en by angrebet, får du en <b>rød advarsel</b>: tryk på den for at se hvor. ⌂ hopper hjem til dit HQ.</li>
+      <li>Tropper kan ikke gå igennem fjendens land: de skal <b>erobre en fjendeprovins</b>, før de kan gå videre ind i den næste. Byer og provinser med bygninger tager meget længere tid at tage.</li>
       <li>Tryk på din egen provins for at <b>bygge</b>: fort (skyder og gør provinsen svær at tage), fabrik (bygger tropper) eller marked (mere guld). Tryk på dit <b>HQ</b> for at udvide det, så du kan have flere tropper.</li>
       <li>Dit land heler dine tropper. Ødelæg de andres <b>HQ</b>, eller ej 70 % af landet, for at vinde.</li>
     </ul></details>
@@ -241,7 +242,7 @@ const maxUnits = p => MAX_UNITS + HQ_STEP * p.lvl;
 // fronts: enemy ground troops can't pass through each other, and land an enemy troop stands near can't be painted
 const BLOCK = 1.2;
 const BASE_HP = 1800, BASE_DPS = 16, BASE_RANGE = 4.5, BASE_REGEN = 4;
-const TOWN_DPS = 6, TOWN_RANGE = 3.2, CAP_NEUTRAL = 20, CAP_ENEMY = 40, CAP_TOWN = 1.5;
+const TOWN_DPS = 6, TOWN_RANGE = 3.2, CAP_NEUTRAL = 20, CAP_ENEMY = 40, CAP_TOWN = 2, CAP_BLD = 1;
 const START_GOLD = 100, INC_BASE = 1.8, INC_TOWN = 1.2, INC_PROV = 0.15;
 const HEAL = 3, HEAL_SITE = 12, FOREST_COVER = 0.7, WIN_SHARE = 0.7;
 const DIFFS = [{ inc: 0.75, think: 16, atk: 1800 }, { inc: 1, think: 10, atk: 1300 }, { inc: 1.3, think: 6, atk: 900 }];
@@ -268,6 +269,7 @@ let provs = [];
 const shade = new Float32Array(NC), flash = new Uint8Array(NC);
 let state = 'demo', T = 0, players = [], units = [], sites = [], towns = [], shots = [], booms = [], human = null, nOwnable = 1;
 let selected = new Set(), spawnSite = null, watching = false, speed = 1, dirty = true, uid = 1;
+let gateTold = false;
 const gpass = i => { const t = terr[i]; return t === 1 || t === 3 || t === 4 || t === 5; };
 const cellOf = (x, y) => { const cx = Math.floor(x), cy = Math.floor(y); return cx < 0 || cy < 0 || cx >= W || cy >= H ? -1 : cy * W + cx; };
 
@@ -538,6 +540,16 @@ function enemyNear(u, r) {
   }
   return best;
 }
+// ground troops must take an enemy province before moving on into another one
+function gateOk(u, X, Y) {
+  if (u.k.air) return true;
+  const a = cellOf(u.x, u.y), b = cellOf(X, Y);
+  if (a < 0 || b < 0) return true;
+  const pa = prov[a], pb = prov[b];
+  if (pa === pb || pb < 0 || pa < 0) return true;
+  const ob = provs[pb].owner, oa = provs[pa].owner;
+  return !(ob > 0 && ob !== u.p && oa > 0 && oa !== u.p);
+}
 function moveUnit(u) {
   let sp = u.k.speed * DT;
   const ci = cellOf(u.x, u.y);
@@ -548,6 +560,11 @@ function moveUnit(u) {
     const f = Math.min(1, sp / Math.max(d, 1e-6));
     if (blockedAt(u, u.x + dx * f, u.y + dy * f)) { u.stuck = true; return; }
     u.stuck = false;
+    if (!gateOk(u, u.x + dx * f, u.y + dy * f)) {
+      if (!u.gated && u.p === 1 && state === 'play' && !gateTold) { gateTold = true; toast('Tag provinsen først, så går tropperne videre'); }
+      u.gated = true; return;
+    }
+    u.gated = false;
     if (d <= sp) { u.x = pt[0]; u.y = pt[1]; if (++u.pi >= u.path.length) { u.path = null; u.ax = u.x; u.ay = u.y; } }
     else { u.x += dx / d * sp; u.y += dy / d * sp; }
     return;
@@ -556,10 +573,10 @@ function moveUnit(u) {
   const e = enemyNear(u, u.k.range + 3);
   if (e && Math.hypot(e.x - u.x, e.y - u.y) > u.k.range * 0.85) {
     const dx = e.x - u.x, dy = e.y - u.y, d = Math.hypot(dx, dy), X = u.x + dx / d * sp, Y = u.y + dy / d * sp, i = cellOf(X, Y);
-    if (i >= 0 && (u.k.air || gpass(i)) && Math.hypot(X - u.ax, Y - u.ay) < 5 && !blockedAt(u, X, Y)) { u.x = X; u.y = Y; u.dir = Math.atan2(dy, dx); }
+    if (i >= 0 && (u.k.air || gpass(i)) && Math.hypot(X - u.ax, Y - u.ay) < 5 && !blockedAt(u, X, Y) && gateOk(u, X, Y)) { u.x = X; u.y = Y; u.dir = Math.atan2(dy, dx); }
   } else if (!e && Math.hypot(u.x - u.ax, u.y - u.ay) > 0.5) {
     const dx = u.ax - u.x, dy = u.ay - u.y, d = Math.hypot(dx, dy), X = u.x + dx / d * sp, Y = u.y + dy / d * sp, i = cellOf(X, Y);
-    if (i >= 0 && (u.k.air || gpass(i)) && !blockedAt(u, X, Y)) { u.x = X; u.y = Y; }
+    if (i >= 0 && (u.k.air || gpass(i)) && !blockedAt(u, X, Y) && gateOk(u, X, Y)) { u.x = X; u.y = Y; }
   }
 }
 function separate() {
@@ -628,7 +645,8 @@ function eliminate(p, by) {
   p.base.q = []; p.count = 0;
   if (state === 'play' && by === 1 && p !== human) toast(p.name + ' er slået ud!');
 }
-const capNeed = pr => (pr.owner ? CAP_ENEMY : CAP_NEUTRAL) * (pr.town ? CAP_TOWN : 1) * (pr.bld && pr.bld.bld === 'fort' ? FORT_CAP : 1);
+// towns and buildings take much longer to capture: plain 4s, market/factory 8s, town 12s, fort 14s, town+fort 22s
+const capNeed = pr => (pr.owner ? CAP_ENEMY : CAP_NEUTRAL) * (1 + (pr.town ? CAP_TOWN : 0) + (pr.bld ? (pr.bld.bld === 'fort' ? FORT_CAP : CAP_BLD) : 0));
 // A province turns yours when only your ground troops stand in it for a few seconds.
 let provPres = new Int32Array(0);
 function stepProvinces() {
@@ -1496,7 +1514,7 @@ startDemo();
 if ('serviceWorker' in navigator && location.protocol === 'https:') navigator.serviceWorker.register('sw.js').catch(() => {});
 requestAnimationFrame(frame);
 window.TW = { get units() { return units; }, get players() { return players; }, get sites() { return sites; }, get towns() { return towns; }, build, upgradeHQ, get selProv() { return selProv; }, get provs() { return provs; }, get state() { return state; }, get T() { return T; },
-  get selected() { return selected; }, get nOwnable() { return nOwnable; }, step, hire, orderPoints, findPath, newGame, tapAt, own: () => own, terr: () => terr, cam, settings, get gl() { return !!gl; } };
+  get selected() { return selected; }, get nOwnable() { return nOwnable; }, step, hire, orderPoints, findPath, sendTo, newGame, tapAt, own: () => own, terr: () => terr, cam, settings, get gl() { return !!gl; } };
 </script>
 </body>
 </html>
