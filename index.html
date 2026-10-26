@@ -101,11 +101,11 @@ details ul{padding-left:18px;margin:8px 0 0}
 #gold{font-family:var(--display);font-weight:400;font-size:24px}
 #army{font-size:15px;font-weight:800;font-variant-numeric:tabular-nums}
 #army small{color:var(--muted);font-weight:600}
-#hire{display:flex;gap:6px;margin-top:8px}
-#hire button{flex:1;padding:7px 2px 6px;border-radius:12px;background:rgba(255,255,255,.1);color:#fffaf0;display:flex;flex-direction:column;align-items:center;gap:2px;font-size:13px;font-weight:800;line-height:1.1;position:relative}
+#hire{display:flex;gap:4px;margin-top:8px}
+#hire button{flex:1;padding:7px 2px 6px;border-radius:12px;background:rgba(255,255,255,.1);color:#fffaf0;display:flex;flex-direction:column;align-items:center;gap:2px;font-size:11px;min-width:0;font-weight:800;line-height:1.1;position:relative}
 #hire button small{font-size:12px;font-weight:700;color:var(--gold)}
 #hire button.cant{opacity:.4}
-#hire button svg{width:26px;height:26px}
+#hire button svg{width:24px;height:24px}
 #hire button i{position:absolute;top:4px;right:6px;font-style:normal;font-size:11px;background:var(--accent);color:var(--ink);border-radius:8px;padding:0 5px}
 #btnAll{flex:.8 !important;background:rgba(233,185,73,.18) !important}
 #btnAll.on{background:var(--accent) !important;color:var(--ink) !important}
@@ -146,6 +146,8 @@ details ul{padding-left:18px;margin:8px 0 0}
     <div id="hire">
       <button data-t="inf"><svg viewBox="-12 -12 24 24"><circle r="10.5" fill="none" stroke="currentColor" stroke-width="1.6"/><path d="M-3.4 6.6L-3 .4Q0-1 3 .4L3.4 6.6Z" fill="currentColor"/><circle cy="-2.7" r="1.9" fill="currentColor"/><path d="M-3.8-2.9A2.7 2.7 0 0 1 3.8-2.9Z" fill="currentColor"/><path d="M-4 5.2L5.2-4.8" stroke="#1a1f1b" stroke-width="1.2" stroke-linecap="round"/></svg>Soldat<small>40</small><i class="hidden"></i></button>
       <button data-t="tank"><svg viewBox="-13 -11 27 22"><rect x="-10.5" y="-8.6" width="21" height="4.2" rx="1.4" fill="currentColor" opacity=".55"/><rect x="-10.5" y="4.4" width="21" height="4.2" rx="1.4" fill="currentColor" opacity=".55"/><rect x="-9.5" y="-5.6" width="19" height="11.2" rx="2.2" fill="currentColor"/><rect x="1.5" y="-1.1" width="12.5" height="2.2" rx=".6" fill="#1a1f1b"/><circle r="4.4" fill="#1a1f1b"/><circle r="3.2" fill="currentColor"/></svg>Kampvogn<small>120</small><i class="hidden"></i></button>
+      <button data-t="arty"><svg viewBox="-12 -12 24 24"><path d="M-2 0L-11-4.5M-2 0L-11 4.5" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" opacity=".6"/><rect x="-4.5" y="-6" width="6" height="12" rx="1.6" fill="currentColor"/><rect x="-2" y="-1.2" width="14" height="2.4" rx=".8" fill="currentColor"/></svg>Artilleri<small>100</small><i class="hidden"></i></button>
+      <button data-t="aa"><svg viewBox="-12 -12 24 24"><rect x="-9.5" y="-7.5" width="19" height="15" rx="2.2" fill="currentColor" opacity=".55"/><rect x="-4.5" y="-4.5" width="9" height="9" rx="1.6" fill="currentColor"/><rect x="2" y="-3.6" width="10" height="1.6" rx=".5" fill="currentColor"/><rect x="2" y="2" width="10" height="1.6" rx=".5" fill="currentColor"/></svg>Luftværn<small>90</small><i class="hidden"></i></button>
       <button data-t="plane"><svg viewBox="-12 -12 24 24"><g transform="rotate(-90) scale(10)"><path d="M1.1 0Q1-.2.6-.2L.25-.2-.15-1.05-.42-1.05-.25-.2-.75-.17-1-.5-1.15-.5-1.05 0-1.15.5-1 .5-.75.17-.25.2-.42 1.05-.15 1.05.25.2.6.2Q1 .2 1.1 0Z" fill="currentColor"/></g></svg>Fly<small>160</small><i class="hidden"></i></button>
       <button id="btnAll">Vælg<br>alle</button>
     </div>
@@ -169,7 +171,7 @@ details ul{padding-left:18px;margin:8px 0 0}
       <li><b>Tryk på en trop</b> for at vælge den, og <b>tryk på en provins</b>, så finder den selv vejen dertil. Står flere tropper oven i hinanden, så tryk igen for at vælge den næste. Træk med fingeren for at flytte kortet. <b>Vælg alle</b> sender hele hæren.</li>
       <li>Kortet er delt i <b>provinser</b>, som i Supremacy. Stil en soldat eller kampvogn i en provins uden fjender, så bliver den din efter et par sekunder. Fly kan ikke tage land.</li>
       <li>Hver provins giver guld. Provinser med en <b>by</b> giver mere og kan bygge tropper.</li>
-      <li>Fjendtlige tropper kan <b>ikke gå igennem hinanden</b>, så fronten er dér, hvor hærene mødes. En provins med fjendtlige tropper i kan ikke tages. Tropper skyder selv. <b>Kampvogne</b> slår soldater, <b>fly</b> slår kampvogne, og <b>soldater</b> kan skyde fly ned. Skov giver dækning. Floder krydses ved broerne.</li>
+      <li>Fjendtlige tropper kan <b>ikke gå igennem hinanden</b>, så fronten er dér, hvor hærene mødes. En provins med fjendtlige tropper i kan ikke tages. Tropper skyder selv. <b>Kampvogne</b> slår soldater, <b>fly</b> slår kampvogne og artilleri, <b>artilleri</b> skyder langt og knuser HQ'er, og <b>luftværn</b> skyder fly ned. Skov giver dækning. Floder krydses ved broerne.</li>
       <li>Bliver dit HQ eller en by angrebet, får du en <b>rød advarsel</b>: tryk på den for at se hvor. ⌂ hopper hjem til dit HQ.</li>
       <li>Tropper kan ikke gå igennem fjendens land: de skal <b>erobre en fjendeprovins</b>, før de kan gå videre ind i den næste. Byer og provinser med bygninger tager meget længere tid at tage.</li>
       <li>Tryk på din egen provins for at <b>bygge</b>: fort (skyder og gør provinsen svær at tage), fabrik (bygger tropper) eller marked (mere guld). Tryk på dit <b>HQ</b> for at udvide det, så du kan have flere tropper.</li>
@@ -221,12 +223,22 @@ const W = 80, H = 80, NC = W * H, HALF = 40;
 const UNITS = {
   inf:   { name: 'Soldat',   cost: 40,  hp: 100, dps: 12, range: 2.4, speed: 1.5, build: 3, sight: 7 },
   tank:  { name: 'Kampvogn', cost: 120, hp: 340, dps: 26, range: 3.0, speed: 1.1, build: 6, sight: 7 },
+  arty:  { name: 'Artilleri', cost: 100, hp: 80, dps: 18, range: 6.0, speed: 0.9, build: 5, sight: 8, splash: 1.5 },
+  aa:    { name: 'Luftværn', cost: 90,  hp: 180, dps: 28, range: 4.2, speed: 1.2, build: 4, sight: 8 },
   plane: { name: 'Fly',      cost: 160, hp: 90,  dps: 22, range: 3.4, speed: 3.2, build: 6, sight: 10, air: true },
 };
-const UKEYS = ['inf', 'tank', 'plane'];
-// damage multiplier, attacker -> target: tanks beat soldiers, planes beat tanks, soldiers shoot planes down
-const VS = { inf: { inf: 1, tank: 0.5, plane: 0.7 }, tank: { inf: 1.6, tank: 1, plane: 0 }, plane: { inf: 0.8, tank: 1.8, plane: 1 } };
-const VS_BASE = { inf: 1, tank: 1.5, plane: 1.2 };
+const UKEYS = ['inf', 'tank', 'arty', 'aa', 'plane'];
+// damage multiplier, attacker -> target: tanks beat soldiers, planes beat tanks and artillery,
+// artillery shells soldiers from afar and smashes HQs, anti-air shreds planes but little else
+const VS = {
+  inf:   { inf: 1,    tank: 0.5,  arty: 1.2, aa: 0.8,  plane: 0.6 },
+  tank:  { inf: 1.6,  tank: 1,    arty: 1.6, aa: 1.3,  plane: 0 },
+  arty:  { inf: 1.3,  tank: 0.9,  arty: 1,   aa: 1,    plane: 0 },
+  aa:    { inf: 0.35, tank: 0.25, arty: 0.5, aa: 0.3,  plane: 2.4 },
+  plane: { inf: 0.8,  tank: 1.8,  arty: 1.8, aa: 0.35, plane: 1 },
+};
+const VS_BASE = { inf: 1, tank: 1.5, arty: 1.6, aa: 0.4, plane: 1.2 };
+const COOL = { inf: 4, tank: 8, arty: 12, aa: 2, plane: 4 };
 const MAX_UNITS = 10, QUEUE = 3;
 // Buildings, one per province: forts shoot and slow capture, factories build troops, markets pay gold.
 const BLD = {
@@ -532,10 +544,12 @@ function spawnUnit(p, type, site) {
   return u;
 }
 function enemyNear(u, r) {
-  let best = null, bd = r * r;
+  let best = null, bd = Infinity;
   for (const v of units) {
-    if (v.p === u.p || !VS[u.type][v.type]) continue;
-    const d = (v.x - u.x) ** 2 + (v.y - u.y) ** 2;
+    const m = v.p === u.p ? 0 : VS[u.type][v.type];
+    if (!m) continue;
+    const d = ((v.x - u.x) ** 2 + (v.y - u.y) ** 2) / (m * m);
+    if ((v.x - u.x) ** 2 + (v.y - u.y) ** 2 > r * r) continue;
     if (d < bd) { bd = d; best = v; }
   }
   return best;
@@ -608,7 +622,8 @@ function combat() {
     if (e) u.aim = Math.atan2(e.y - u.y, e.x - u.x);
     if (e) {
       damage(e, u.k.dps * VS[u.type][e.type] * DT, u.p);
-      if (u.cool-- <= 0) { u.cool = u.type === 'tank' ? 8 : 4; shot(u.x, u.y, e.x, e.y, u.p, u.type === 'tank'); }
+      if (u.k.splash) for (const v of units) if (v !== e && v.p !== u.p && !v.k.air && (v.x - e.x) ** 2 + (v.y - e.y) ** 2 < u.k.splash ** 2) damage(v, u.k.dps * VS[u.type][v.type] * DT * 0.5, u.p);
+      if (u.cool-- <= 0) { u.cool = COOL[u.type]; shot(u.x, u.y, e.x, e.y, u.p, u.type === 'tank' || u.type === 'arty'); if (u.type === 'arty') booms.push({ x: e.x, y: e.y, t: 0, big: false }); }
       continue;
     }
     for (let k = 1; k <= 4; k++) {
@@ -616,7 +631,7 @@ function combat() {
       if (k === u.p || b.hp <= 0 || Math.hypot(b.x - u.x, b.y - u.y) > u.k.range + 1.2) continue;
       b.hp -= u.k.dps * VS_BASE[u.type] * DT; b.hit = 4; b.lastHit = T; u.tgt = b;
       if (k === 1) alarm('hq', b.x, b.y, 'Dit HQ bliver angrebet!'); u.aim = Math.atan2(b.y - u.y, b.x - u.x);
-      if (u.cool-- <= 0) { u.cool = u.type === 'tank' ? 8 : 4; shot(u.x, u.y, b.x, b.y, u.p, u.type === 'tank'); }
+      if (u.cool-- <= 0) { u.cool = COOL[u.type]; shot(u.x, u.y, b.x, b.y, u.p, u.type === 'tank' || u.type === 'arty'); }
       if (b.hp <= 0) eliminate(players[k], u.p);
       break;
     }
@@ -748,10 +763,13 @@ function botThink(p) {
     }
   }
   if (unitCount(p) < maxUnits(p)) {
-    const planes = mine.filter(u => u.type === 'plane').length, r = rng();
+    const has = t => mine.filter(u => u.type === t).length, r = rng();
+    const foePlanes = units.filter(v => v.p !== p.id && v.type === 'plane' && Math.hypot(v.x - p.base.x, v.y - p.base.y) < 45).length;
     let type = 'inf';
-    if (p.gold >= 160 && planes < 1 && r < 0.25) type = 'plane';
-    else if (p.gold >= 120 && r < 0.6) type = 'tank';
+    if (foePlanes > has('aa') && p.gold >= 90 && r < 0.6) type = 'aa';
+    else if (p.gold >= 160 && has('plane') < 1 && r < 0.25) type = 'plane';
+    else if (p.gold >= 100 && has('arty') < 2 && r < 0.45) type = 'arty';
+    else if (p.gold >= 120 && r < 0.7) type = 'tank';
     if (p.gold >= UNITS[type].cost) {
       const site = makers.find(s => !s.q.length) || makers[0];
       if (site) hire(p, type, site);
@@ -1026,6 +1044,28 @@ function tankShape(col, turn) {
   ctx.beginPath(); ctx.roundRect(0.15, -0.11, 1.25, 0.22, 0.06); ctx.fill(); ctx.stroke();
   ctx.beginPath(); ctx.arc(0, 0, 0.44, 0, 7); ctx.fill(); ctx.stroke();
 }
+function artyShape(col, turn) {
+  ctx.strokeStyle = 'rgba(20,16,10,.95)'; ctx.lineWidth = 0.14; ctx.lineCap = 'round';
+  ctx.beginPath(); ctx.moveTo(0, 0); ctx.lineTo(-1.0, -0.45); ctx.moveTo(0, 0); ctx.lineTo(-1.0, 0.45); ctx.stroke();
+  ctx.rotate(turn);
+  ctx.fillStyle = 'rgba(28,24,18,.95)';
+  ctx.beginPath(); ctx.roundRect(-0.28, -0.78, 0.56, 0.26, 0.1); ctx.roundRect(-0.28, 0.52, 0.56, 0.26, 0.1); ctx.fill();
+  ctx.fillStyle = rgb(col); ctx.strokeStyle = 'rgba(20,16,10,.9)'; ctx.lineWidth = 0.1;
+  ctx.beginPath(); ctx.roundRect(-0.36, -0.55, 0.62, 1.1, 0.16); ctx.fill(); ctx.stroke();
+  ctx.fillStyle = rgb(lighten(col, 0.55));
+  ctx.beginPath(); ctx.roundRect(0, -0.12, 1.55, 0.24, 0.08); ctx.fill(); ctx.stroke();
+}
+function aaShape(col, turn) {
+  ctx.fillStyle = 'rgba(28,24,18,.95)';
+  ctx.beginPath(); ctx.roundRect(-0.85, -0.78, 1.7, 0.36, 0.12); ctx.roundRect(-0.85, 0.42, 1.7, 0.36, 0.12); ctx.fill();
+  ctx.fillStyle = rgb(col); ctx.strokeStyle = 'rgba(20,16,10,.9)'; ctx.lineWidth = 0.1;
+  ctx.beginPath(); ctx.roundRect(-0.8, -0.5, 1.6, 1.0, 0.18); ctx.fill(); ctx.stroke();
+  ctx.rotate(turn);
+  ctx.fillStyle = rgb(lighten(col, 0.55));
+  ctx.beginPath(); ctx.roundRect(0.1, -0.26, 1.05, 0.13, 0.05); ctx.roundRect(0.1, 0.13, 1.05, 0.13, 0.05); ctx.fill(); ctx.stroke();
+  ctx.beginPath(); ctx.roundRect(-0.36, -0.36, 0.72, 0.72, 0.12); ctx.fill(); ctx.stroke();
+  ctx.fillStyle = 'rgba(20,16,10,.85)'; ctx.beginPath(); ctx.arc(0, 0, 0.13, 0, 7); ctx.fill();
+}
 function planePath() {
   ctx.beginPath();
   ctx.moveTo(1.1, 0); ctx.quadraticCurveTo(1.0, -0.2, 0.6, -0.2);
@@ -1042,7 +1082,7 @@ function drawUnits(t) {
     if (u.p !== 1 && !seen(u.x, u.y)) continue;
     let X = sx(u.x), Y = sy(u.y);
     if (X < -40 || Y < -40 || X > CW + 40 || Y > CH + 40) continue;
-    const col = players[u.p].col, R = u.type === 'plane' ? r * 1.25 : u.type === 'tank' ? r * 1.05 : r * 0.95;
+    const col = players[u.p].col, R = u.type === 'plane' ? r * 1.25 : u.type === 'inf' ? r * 0.95 : r * 1.05;
     if (u.k.air) {
       ctx.save(); ctx.translate(X + R * 0.25, Y + R * 0.35); ctx.rotate(u.dir); ctx.scale(R * 0.85, R * 0.85);
       planePath(); ctx.fillStyle = 'rgba(0,0,0,.22)'; ctx.fill(); ctx.restore();
@@ -1059,6 +1099,8 @@ function drawUnits(t) {
       ctx.scale(R, R); soldierShape(Math.cos(u.dir) < -0.1);
     } else if (u.type === 'tank') {
       ctx.rotate(u.dir); ctx.scale(R, R); tankShape(u.hit ? lighten(col, 0.4) : col, (u.aim ?? u.dir) - u.dir);
+    } else if (u.type === 'arty' || u.type === 'aa') {
+      ctx.rotate(u.dir); ctx.scale(R, R); (u.type === 'arty' ? artyShape : aaShape)(u.hit ? lighten(col, 0.4) : col, (u.aim ?? u.dir) - u.dir);
     } else {
       ctx.rotate(u.dir); ctx.scale(R, R);
       planePath(); ctx.fillStyle = rgb(u.hit ? lighten(col, 0.4) : col); ctx.fill();
