@@ -110,6 +110,9 @@ details ul{padding-left:18px;margin:8px 0 0}
 #btnAll{flex:.8 !important;background:rgba(233,185,73,.18) !important}
 #btnAll.on{background:var(--accent) !important;color:var(--ink) !important}
 #hint{margin-top:6px}
+#selbar{display:flex;gap:6px;margin-top:8px;overflow-x:auto;scrollbar-width:none}
+#selbar button{flex:none;padding:6px 10px;border-radius:999px;background:rgba(242,207,99,.18);color:#fffaf0;font-size:13px;font-weight:800;border:1px solid rgba(242,207,99,.5)}
+#selbar button.x{background:rgba(255,255,255,.1);border-color:transparent;margin-left:auto}
 #bbar{margin-bottom:8px;padding-bottom:8px;border-bottom:1px solid rgba(255,255,255,.1)}
 #bbHead{display:flex;align-items:center;font-weight:800;font-size:15px;margin-bottom:6px;gap:8px}
 #bbHead small{color:var(--muted);font-weight:600}
@@ -143,6 +146,7 @@ details ul{padding-left:18px;margin:8px 0 0}
       <div id="land"><b>0%</b> land</div>
     </div>
     <div id="bbar" class="hidden"><div id="bbHead"><span id="bbTitle"></span><button id="bbClose" aria-label="Luk">✕</button></div><div id="bbBtns"></div></div>
+    <div id="selbar" class="hidden"></div>
     <div id="hire">
       <button data-t="inf"><svg viewBox="-12 -12 24 24"><circle r="10.5" fill="none" stroke="currentColor" stroke-width="1.6"/><path d="M-3.4 6.6L-3 .4Q0-1 3 .4L3.4 6.6Z" fill="currentColor"/><circle cy="-2.7" r="1.9" fill="currentColor"/><path d="M-3.8-2.9A2.7 2.7 0 0 1 3.8-2.9Z" fill="currentColor"/><path d="M-4 5.2L5.2-4.8" stroke="#1a1f1b" stroke-width="1.2" stroke-linecap="round"/></svg>Soldat<small>40</small><i class="hidden"></i></button>
       <button data-t="tank"><svg viewBox="-13 -11 27 22"><rect x="-10.5" y="-8.6" width="21" height="4.2" rx="1.4" fill="currentColor" opacity=".55"/><rect x="-10.5" y="4.4" width="21" height="4.2" rx="1.4" fill="currentColor" opacity=".55"/><rect x="-9.5" y="-5.6" width="19" height="11.2" rx="2.2" fill="currentColor"/><rect x="1.5" y="-1.1" width="12.5" height="2.2" rx=".6" fill="#1a1f1b"/><circle r="4.4" fill="#1a1f1b"/><circle r="3.2" fill="currentColor"/></svg>Kampvogn<small>120</small><i class="hidden"></i></button>
@@ -254,7 +258,7 @@ const maxUnits = p => MAX_UNITS + HQ_STEP * p.lvl;
 // fronts: enemy ground troops can't pass through each other, and land an enemy troop stands near can't be painted
 const BLOCK = 1.2;
 const BASE_HP = 1800, BASE_DPS = 16, BASE_RANGE = 4.5, BASE_REGEN = 4;
-const TOWN_DPS = 6, TOWN_RANGE = 3.2, CAP_NEUTRAL = 20, CAP_ENEMY = 40, CAP_TOWN = 2, CAP_BLD = 1;
+const TOWN_DPS = 6, TOWN_RANGE = 3.2, CAP_NEUTRAL = 25, CAP_ENEMY = 60, CAP_TOWN = 2, CAP_BLD = 1;
 const START_GOLD = 100, INC_BASE = 1.8, INC_TOWN = 1.2, INC_PROV = 0.15;
 const HEAL = 3, HEAL_SITE = 12, FOREST_COVER = 0.7, WIN_SHARE = 0.7;
 const DIFFS = [{ inc: 0.75, think: 16, atk: 1800 }, { inc: 1, think: 10, atk: 1300 }, { inc: 1.3, think: 6, atk: 900 }];
@@ -568,11 +572,19 @@ function moveUnit(u) {
   let sp = u.k.speed * DT;
   const ci = cellOf(u.x, u.y);
   if (!u.k.air && ci >= 0 && terr[ci] === 3) sp *= u.type === 'tank' ? 0.55 : 0.7;
+  // engaged troops can't just run past: inside an enemy's fire they crawl, and they can't push in closer
+  // than their own range, so they stand and fight or back off
+  let pin = null;
+  if (!u.k.air) for (const v of units) if (v.p !== u.p && !v.k.air && (v.x - u.x) ** 2 + (v.y - u.y) ** 2 < (v.k.range + 0.5) ** 2) { pin = v; sp *= 0.35; break; }
   if (u.path) {
     const pt = u.path[u.pi], dx = pt[0] - u.x, dy = pt[1] - u.y, d = Math.hypot(dx, dy);
     if (d > 1e-6) u.dir = Math.atan2(dy, dx);
     const f = Math.min(1, sp / Math.max(d, 1e-6));
     if (blockedAt(u, u.x + dx * f, u.y + dy * f)) { u.stuck = true; return; }
+    if (pin) {
+      const X = u.x + dx * f, Y = u.y + dy * f, d0 = Math.hypot(pin.x - u.x, pin.y - u.y);
+      if (d0 < Math.max(u.k.range * 0.9, 1.6) && Math.hypot(pin.x - X, pin.y - Y) < d0 - 1e-3) { u.stuck = true; return; }
+    }
     u.stuck = false;
     if (!gateOk(u, u.x + dx * f, u.y + dy * f)) {
       if (!u.gated && u.p === 1 && state === 'play' && !gateTold) { gateTold = true; toast('Tag provinsen først, så går tropperne videre'); }
@@ -660,7 +672,7 @@ function eliminate(p, by) {
   p.base.q = []; p.count = 0;
   if (state === 'play' && by === 1 && p !== human) toast(p.name + ' er slået ud!');
 }
-// towns and buildings take much longer to capture: plain 4s, market/factory 8s, town 12s, fort 14s, town+fort 22s
+// towns and buildings take much longer to capture: plain 6s, market/factory 12s, town 18s, fort 21s, town+fort 33s
 const capNeed = pr => (pr.owner ? CAP_ENEMY : CAP_NEUTRAL) * (1 + (pr.town ? CAP_TOWN : 0) + (pr.bld ? (pr.bld.bld === 'fort' ? FORT_CAP : CAP_BLD) : 0));
 // A province turns yours when only your ground troops stand in it for a few seconds.
 let provPres = new Int32Array(0);
@@ -911,7 +923,7 @@ function render(now) {
     ctx.imageSmoothingEnabled = true; ctx.drawImage(fbCanvas, cam.x, cam.y, W * cam.s, H * cam.s);
   }
   const t = now / 1000;
-  drawPaths();
+  drawRanges(); drawPaths();
   drawSites(t);
   for (const pr of provs) {
     if (!pr.cap || !seen(pr.cx, pr.cy)) continue;
@@ -935,6 +947,16 @@ function render(now) {
   }
 }
 function tokenR() { return Math.max(9, Math.min(18, cam.s * 0.75)); }
+function drawRanges() {
+  for (const u of selected) {
+    const X = sx(u.x), Y = sy(u.y) - (u.k.air ? tokenR() * 1.5 : 0), R = u.k.range * cam.s;
+    const arty = u.type === 'arty';
+    ctx.fillStyle = arty ? 'rgba(255,120,80,.10)' : 'rgba(255,236,150,.07)';
+    ctx.strokeStyle = arty ? 'rgba(255,150,110,.85)' : 'rgba(255,236,150,.55)';
+    ctx.lineWidth = arty ? 2 : 1.4; ctx.setLineDash([6, 5]);
+    ctx.beginPath(); ctx.arc(X, Y, R, 0, 7); ctx.fill(); ctx.stroke(); ctx.setLineDash([]);
+  }
+}
 function drawPaths() {
   ctx.lineCap = 'round'; ctx.lineJoin = 'round';
   for (const u of units) {
@@ -1281,11 +1303,30 @@ function updateHud() {
   let hint;
   if (!human.alive) hint = 'Dit HQ er faldet. Du ser med.';
   else if (!mine.length) hint = n ? 'Din første trop er på vej ud af ' + (spawnSite && spawnSite.town ? 'byen' : 'dit HQ') : 'Hyr en trop. Den bygges i ' + (spawnSite && spawnSite.town ? 'den valgte by' : 'dit HQ');
-  else if (!selected.size) hint = 'Tryk på en trop for at vælge den';
-  else if (selected.size === 1) { const u = [...selected][0]; hint = `${u.k.name}, ${Math.ceil(u.hp)}/${u.k.hp} liv. <b>Tryk på en provins</b> for at sende den dertil`; }
+  else if (!selected.size) hint = 'Tryk på tropper for at vælge dem';
+  else if (selected.size === 1) { const u = [...selected][0]; hint = `${u.k.name}, ${Math.ceil(u.hp)}/${u.k.hp} liv. <b>Tryk på en provins</b> for at sende den, eller på flere tropper`; }
   else hint = `${selected.size} tropper valgt. <b>Tryk på en provins</b> for at sende dem dertil`;
   $('hint').innerHTML = hint;
+  fillSel();
 }
+// chips for what is selected: tap a type to keep only that type, ✕ to drop all
+let selSig = '';
+function fillSel() {
+  const cnt = {};
+  for (const u of selected) cnt[u.type] = (cnt[u.type] || 0) + 1;
+  const sig = UKEYS.map(t => cnt[t] || 0).join();
+  if (sig === selSig) return;
+  selSig = sig;
+  const types = UKEYS.filter(t => cnt[t]);
+  show('selbar', types.length > 0);
+  $('selbar').innerHTML = types.map(t => `<button data-only="${t}">${cnt[t]} ${UNITS[t].name.toLowerCase()}</button>`).join('') + (types.length ? '<button class="x" data-only="">✕ Fravælg</button>' : '');
+}
+$('selbar').onclick = e => {
+  const b = e.target.closest('button'); if (!b) return;
+  const t = b.dataset.only;
+  for (const u of [...selected]) if (!t || u.type !== t) selected.delete(u);
+  buzz(6); updateHud();
+};
 function esc(s) { return s.replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c])); }
 // Tap one of your provinces (with no troop selected) to build there; tap your HQ to expand it.
 let selProv = null;
@@ -1402,15 +1443,13 @@ function sendSelected(wx, wy) {
 }
 function tapAt(px, py) {
   if (state !== 'play' || !human.alive) return;
-  // tapping a clump again picks the next troop in it, and after the last one deselects
+  // tap troops to add them to the selection (the whole clump under your finger), tap them again to drop them
   const near = unitsAt(px, py);
   if (near.length) {
     closeBuild();
-    const cur = selected.size === 1 ? [...selected][0] : null, k = near.indexOf(cur);
-    selected.clear();
-    if (k < 0) selected.add(near[0]);
-    else if (k + 1 < near.length) selected.add(near[k + 1]);
-    buzz(8); return;
+    if (near.every(u => selected.has(u))) for (const u of near) selected.delete(u);
+    else for (const u of near) selected.add(u);
+    buzz(8); updateHud(); return;
   }
   const [wx, wy] = world(px, py);
   if (selected.size) { sendSelected(wx, wy); buzz(10); return; }
