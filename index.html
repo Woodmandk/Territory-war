@@ -769,7 +769,6 @@ function stepSites() {
     s.prog += DT;
     if (s.prog >= UNITS[s.q[0]].build) {
       const u = spawnUnit(players[s.owner], s.q.shift(), s); s.prog = 0;
-      if (s.owner === 1 && state === 'play' && !selected.size) selected.add(u);
     }
   }
 }
@@ -1448,8 +1447,8 @@ function updateHud() {
   let hint;
   if (!human.alive) hint = 'Dit HQ er faldet. Du ser med.';
   else if (!mine.length) hint = n ? 'Din første trop er på vej ud af ' + (spawnSite && spawnSite.town ? 'byen' : 'dit HQ') : 'Hyr en trop. Den bygges i ' + (spawnSite && spawnSite.town ? 'den valgte by' : 'dit HQ');
-  else if (!selected.size) hint = 'Tryk på tropper for at vælge dem';
-  else if (selected.size === 1) { const u = [...selected][0]; hint = `${u.k.name}, ${Math.ceil(u.hp)}/${u.k.hp} liv. <b>Tryk på en provins</b> for at sende den, eller på flere tropper`; }
+  else if (!selected.size) hint = 'Tryk på en trop for at vælge den. Hold fingeren på flere for at tilføje dem';
+  else if (selected.size === 1) { const u = [...selected][0]; hint = `${u.k.name}, ${Math.ceil(u.hp)}/${u.k.hp} liv. <b>Tryk på en provins</b> for at sende den. Tryk på den igen for at fravælge`; }
   else hint = `${selected.size} tropper valgt. <b>Tryk på en provins</b> for at sende dem dertil`;
   $('hint').innerHTML = hint;
   fillSel();
@@ -1658,24 +1657,34 @@ function sendTo(list, pr) {
     const n = list.length, a = k / n * Math.PI * 2, r = n > 1 ? 0.7 + 0.15 * n : 0;
     ok += orderPoints(u, [[pr.cx + Math.cos(a) * r, pr.cy + Math.sin(a) * r]]);
   });
-  if (!ok) { toast('Der kan dine tropper ikke komme hen'); return; }
+  if (!ok) { toast('Der kan dine tropper ikke komme hen'); return 0; }
   for (const i of pr.cells) flash[i] = Math.max(flash[i], 150);
   dirty = true;
+  return ok;
 }
 function sendSelected(wx, wy) {
   const pr = provAtWorld(wx, wy);
   if (!pr) { toast('Tryk på en provins på land'); return; }
-  sendTo([...selected], pr);
+  if (sendTo([...selected], pr)) { selected.clear(); updateHud(); }
+}
+function holdAt(px, py) {
+  if (state !== 'play' || !human.alive) return false;
+  const u = unitsAt(px, py).find(v => !selected.has(v));
+  if (!u) return false;
+  closeBuild(); selected.add(u); buzz(20); sfx('click'); updateHud();
+  return true;
 }
 function tapAt(px, py) {
   if (state !== 'play' || !human.alive) return;
-  // tap troops to add them to the selection (the whole clump under your finger), tap them again to drop them
+  // tap a troop to pick just that one; tap a picked troop to drop the selection.
+  // Hold on a troop to add it to the selection. After an order the selection is dropped.
   const near = unitsAt(px, py);
   if (near.length) {
     closeBuild();
-    if (near.every(u => selected.has(u))) for (const u of near) selected.delete(u);
-    else for (const u of near) selected.add(u);
-    buzz(8); updateHud(); return;
+    const u = near[0];
+    if (selected.has(u)) selected.clear();
+    else { selected.clear(); selected.add(u); }
+    buzz(8); sfx('click'); updateHud(); return;
   }
   const [wx, wy] = world(px, py);
   if (selected.size) { sendSelected(wx, wy); buzz(10); return; }
@@ -1706,7 +1715,10 @@ let gesture = null, pinch = null;
 cv.addEventListener('pointerdown', e => {
   cv.setPointerCapture(e.pointerId);
   ptrs.set(e.pointerId, { x: e.clientX, y: e.clientY });
-  if (ptrs.size === 1) gesture = { tap: true, t: performance.now(), x0: e.clientX, y0: e.clientY };
+  if (ptrs.size === 1) {
+    const g = gesture = { tap: true, t: performance.now(), x0: e.clientX, y0: e.clientY };
+    setTimeout(() => { if (gesture === g && g.tap && ptrs.size === 1 && holdAt(g.x0, g.y0)) g.tap = false; }, 450);
+  }
   else if (gesture) gesture.tap = false;
   pinchStart();
 });

@@ -19,7 +19,7 @@ Four armies, one map, a bit like Supremacy but much simpler. You and three bots 
 - Troops fire on their own. **Tanks** beat soldiers, **planes** beat tanks and **soldiers** shoot planes down. Forest gives cover. Rivers can only be crossed at the bridges.
 - Ground troops cannot walk through enemy land: they must **capture an enemy province** before moving on into the next one. Towns and provinces with buildings take much longer to capture.
 - Troops in enemy fire slow to a crawl and cannot push closer than their own range, so they cannot just run past an enemy army.
-- Tap troops to select them (the whole clump under your finger); tap again to drop them. Chips above the buy buttons keep one type or clear the selection. Selected troops show their firing range.
+- Tap a troop to select just that one; tap it again to drop it. Hold your finger on more troops to add them. After you send troops to a province the selection is cleared. Chips above the buy buttons keep one type or clear the selection. Selected troops show their firing range.
 - Fog of war is visible: land outside your territory and your troops' sight is darkened. Artillery sees a bit past its firing range.
 - Tap one of your provinces to **build** there: a fort (shoots and makes the province slow to take), a factory (builds troops) or a market (more gold). Tap your **HQ** to expand it so you can field more troops (10, 13, 16, 19).
 - Your own land heals your troops. Destroy the other HQs, or own 70% of the land, to win.
