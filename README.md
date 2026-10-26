@@ -14,6 +14,7 @@ Four armies, one map, a bit like Supremacy but much simpler. You and three bots 
 - Every province pays gold. Provinces with a **town** pay more and can build troops.
 - Enemy ground troops **can't walk through each other**, so the front is wherever the armies meet, drawn as a thick line between two countries. A province with enemy troops in it can't be taken.
 - Troops fire on their own. **Tanks** beat soldiers, **planes** beat tanks and **soldiers** shoot planes down. Forest gives cover. Rivers can only be crossed at the bridges.
+- Tap one of your provinces to **build** there: a fort (shoots and makes the province slow to take), a factory (builds troops) or a market (more gold). Tap your **HQ** to expand it so you can field more troops (10, 13, 16, 19).
 - Your own land heals your troops. Destroy the other HQs, or own 70% of the land, to win.
 
 The map is one quadrant mirrored four ways, so every corner is the same fight. Bots play by the same rules. They pick fights with their nearest, weakest neighbour and avoid ganging up on one player. Three difficulties.

@@ -110,6 +110,16 @@ details ul{padding-left:18px;margin:8px 0 0}
 #btnAll{flex:.8 !important;background:rgba(233,185,73,.18) !important}
 #btnAll.on{background:var(--accent) !important;color:var(--ink) !important}
 #hint{margin-top:6px}
+#bbar{margin-bottom:8px;padding-bottom:8px;border-bottom:1px solid rgba(255,255,255,.1)}
+#bbHead{display:flex;align-items:center;font-weight:800;font-size:15px;margin-bottom:6px;gap:8px}
+#bbHead small{color:var(--muted);font-weight:600}
+#bbClose{margin-left:auto;width:30px;height:30px;border-radius:9px;background:rgba(255,255,255,.1);flex:none}
+#bbBtns{display:flex;gap:6px}
+#bbBtns button{flex:1;padding:7px 4px 6px;border-radius:12px;background:rgba(255,255,255,.12);font-weight:800;font-size:14px;line-height:1.15}
+#bbBtns button small{display:block;font-weight:600;font-size:11px;color:var(--muted)}
+#bbBtns button b{display:block;color:var(--gold);font-size:12px}
+#bbBtns button.cant{opacity:.4}
+#bbBtns p{margin:0;font-size:13px;color:var(--muted);line-height:1.3}
 </style>
 </head>
 <body>
@@ -132,6 +142,7 @@ details ul{padding-left:18px;margin:8px 0 0}
       <div id="army">0 <small>/ 6 tropper</small></div>
       <div id="land"><b>0%</b> land</div>
     </div>
+    <div id="bbar" class="hidden"><div id="bbHead"><span id="bbTitle"></span><button id="bbClose" aria-label="Luk">✕</button></div><div id="bbBtns"></div></div>
     <div id="hire">
       <button data-t="inf"><svg viewBox="-12 -12 24 24"><circle r="10.5" fill="none" stroke="currentColor" stroke-width="1.6"/><path d="M-3.4 6.6L-3 .4Q0-1 3 .4L3.4 6.6Z" fill="currentColor"/><circle cy="-2.7" r="1.9" fill="currentColor"/><path d="M-3.8-2.9A2.7 2.7 0 0 1 3.8-2.9Z" fill="currentColor"/><path d="M-4 5.2L5.2-4.8" stroke="#1a1f1b" stroke-width="1.2" stroke-linecap="round"/></svg>Soldat<small>40</small><i class="hidden"></i></button>
       <button data-t="tank"><svg viewBox="-13 -11 27 22"><rect x="-10.5" y="-8.6" width="21" height="4.2" rx="1.4" fill="currentColor" opacity=".55"/><rect x="-10.5" y="4.4" width="21" height="4.2" rx="1.4" fill="currentColor" opacity=".55"/><rect x="-9.5" y="-5.6" width="19" height="11.2" rx="2.2" fill="currentColor"/><rect x="1.5" y="-1.1" width="12.5" height="2.2" rx=".6" fill="#1a1f1b"/><circle r="4.4" fill="#1a1f1b"/><circle r="3.2" fill="currentColor"/></svg>Kampvogn<small>120</small><i class="hidden"></i></button>
@@ -160,6 +171,7 @@ details ul{padding-left:18px;margin:8px 0 0}
       <li>Hver provins giver guld. Provinser med en <b>by</b> giver mere og kan bygge tropper.</li>
       <li>Fjendtlige tropper kan <b>ikke gå igennem hinanden</b>, så fronten er dér, hvor hærene mødes. En provins med fjendtlige tropper i kan ikke tages. Tropper skyder selv. <b>Kampvogne</b> slår soldater, <b>fly</b> slår kampvogne, og <b>soldater</b> kan skyde fly ned. Skov giver dækning. Floder krydses ved broerne.</li>
       <li>Bliver dit HQ eller en by angrebet, får du en <b>rød advarsel</b>: tryk på den for at se hvor. ⌂ hopper hjem til dit HQ.</li>
+      <li>Tryk på din egen provins for at <b>bygge</b>: fort (skyder og gør provinsen svær at tage), fabrik (bygger tropper) eller marked (mere guld). Tryk på dit <b>HQ</b> for at udvide det, så du kan have flere tropper.</li>
       <li>Dit land heler dine tropper. Ødelæg de andres <b>HQ</b>, eller ej 70 % af landet, for at vinde.</li>
     </ul></details>
   </div>
@@ -215,6 +227,17 @@ const UKEYS = ['inf', 'tank', 'plane'];
 const VS = { inf: { inf: 1, tank: 0.5, plane: 0.7 }, tank: { inf: 1.6, tank: 1, plane: 0 }, plane: { inf: 0.8, tank: 1.8, plane: 1 } };
 const VS_BASE = { inf: 1, tank: 1.5, plane: 1.2 };
 const MAX_UNITS = 10, QUEUE = 3;
+// Buildings, one per province: forts shoot and slow capture, factories build troops, markets pay gold.
+const BLD = {
+  fort:    { name: 'Fort',   cost: 150, desc: 'Skyder, svær at tage' },
+  factory: { name: 'Fabrik', cost: 200, desc: 'Bygger tropper' },
+  market:  { name: 'Marked', cost: 120, desc: '+1,5 guld/s' },
+};
+const BLD_KEYS = ['fort', 'factory', 'market'];
+const FORT_DPS = 12, FORT_RANGE = 4, FORT_CAP = 2.5, MARKET_INC = 1.5;
+// Expanding the HQ raises how many troops you may have.
+const HQ_COST = [300, 600, 900], HQ_STEP = 3;
+const maxUnits = p => MAX_UNITS + HQ_STEP * p.lvl;
 // fronts: enemy ground troops can't pass through each other, and land an enemy troop stands near can't be painted
 const BLOCK = 1.2;
 const BASE_HP = 1800, BASE_DPS = 16, BASE_RANGE = 4.5, BASE_REGEN = 4;
@@ -344,7 +367,7 @@ function makePlayers(demo) {
     const [cx, cy] = CORNERS[k];
     const base = { x: cx + 0.5, y: cy + 0.5, owner: k, hp: BASE_HP, q: [], prog: 0, base: true };
     players.push({ id: k, name: k === 1 && !demo ? (settings.name.trim() || 'Dig') : names[k], col: COLORS[k], human: k === 1 && !demo, alive: true,
-      gold: START_GOLD, count: 0, peak: 0, kills: 0, base, think: k * 3, mode: 0, place: 0 });
+      gold: START_GOLD, count: 0, peak: 0, kills: 0, lvl: 0, base, think: k * 3, mode: 0, place: 0 });
   }
   human = demo ? null : players[1];
 }
@@ -361,11 +384,29 @@ function setProvOwner(pr, p) {
   const old = pr.owner;
   pr.owner = p; pr.cap = 0; pr.capBy = 0;
   for (const i of pr.cells) setOwn(i, p);
-  const t = pr.town;
-  if (t) {
+  // the town and any building change hands with the province
+  for (const t of [pr.town, pr.bld]) {
+    if (!t) continue;
     if (old) { for (const q of t.q) players[old].gold += UNITS[q].cost; if (spawnSite === t && old === 1 && human) spawnSite = human.base; }
     t.owner = p; t.q = []; t.prog = 0;
   }
+  if (selProv === pr && p !== 1) closeBuild();
+}
+const makes = s => s.base || s.town || (s.bld === 'factory');
+function build(p, pr, kind) {
+  const b = BLD[kind];
+  if (!p.alive || pr.owner !== p.id || pr.bld || pr.hq) return 'no';
+  if (p.gold < b.cost) return 'gold';
+  p.gold -= b.cost;
+  const site = { x: pr.cx + (pr.town ? 1.4 : 0), y: pr.cy + (pr.town ? 0.4 : 0), owner: p.id, q: [], prog: 0, bld: kind, prov: pr };
+  pr.bld = site; sites.push(site);
+  return 'ok';
+}
+function upgradeHQ(p) {
+  if (!p.alive || p.lvl >= HQ_COST.length) return 'max';
+  if (p.gold < HQ_COST[p.lvl]) return 'gold';
+  p.gold -= HQ_COST[p.lvl]; p.lvl++;
+  return 'ok';
 }
 // a ground troop may not step closer into an enemy ground troop
 function blockedAt(u, X, Y) {
@@ -389,7 +430,7 @@ function newWorld(demo) {
     pr.hq = k; setProvOwner(pr, k);
   }
   sites = [...players.slice(1).map(p => p.base), ...towns];
-  units = []; shots = []; booms = []; alerts = []; for (const k in lastAlarm) delete lastAlarm[k]; selected.clear(); spawnSite = human ? human.base : null;
+  units = []; shots = []; booms = []; alerts = []; selProv = null; show('bbar', false); for (const k in lastAlarm) delete lastAlarm[k]; selected.clear(); spawnSite = human ? human.base : null;
   T = 0; uid = 1; dirty = true;
 }
 
@@ -470,9 +511,9 @@ function orderPoints(u, pts) {
 function unitCount(p) { let n = 0; for (const u of units) if (u.p === p.id) n++; for (const s of sites) if (s.owner === p.id) n += s.q.length; return n; }
 function hire(p, type, site) {
   const k = UNITS[type];
-  if (!p.alive || !site || site.owner !== p.id || (site.base && site.hp <= 0)) return 'site';
+  if (!p.alive || !site || site.owner !== p.id || !makes(site) || (site.base && site.hp <= 0)) return 'site';
   if (p.gold < k.cost) return 'gold';
-  if (unitCount(p) >= MAX_UNITS) return 'full';
+  if (unitCount(p) >= maxUnits(p)) return 'full';
   if (site.q.length >= QUEUE) return 'queue';
   p.gold -= k.cost; site.q.push(type);
   return 'ok';
@@ -563,14 +604,14 @@ function combat() {
       break;
     }
   }
-  // HQs and towns shoot back
+  // HQs, towns and forts shoot back
   for (const s of sites) {
-    if (!s.owner || (s.base && s.hp <= 0)) continue;
-    const r = s.base ? BASE_RANGE : TOWN_RANGE;
+    if (!s.owner || (s.base && s.hp <= 0) || (s.bld && s.bld !== 'fort')) continue;
+    const r = s.base ? BASE_RANGE : s.bld ? FORT_RANGE : TOWN_RANGE;
     let best = null, bd = r * r;
     for (const v of units) { if (v.p === s.owner) continue; const d = (v.x - s.x) ** 2 + (v.y - s.y) ** 2; if (d < bd) { bd = d; best = v; } }
     if (!best) continue;
-    damage(best, (s.base ? BASE_DPS : TOWN_DPS) * DT, s.owner);
+    damage(best, (s.base ? BASE_DPS : s.bld ? FORT_DPS : TOWN_DPS) * DT, s.owner);
     s.cool = (s.cool || 0) - 1;
     if (s.cool <= 0) { s.cool = 6; shot(s.x, s.y, best.x, best.y, s.owner, s.base); }
   }
@@ -587,6 +628,7 @@ function eliminate(p, by) {
   p.base.q = []; p.count = 0;
   if (state === 'play' && by === 1 && p !== human) toast(p.name + ' er slået ud!');
 }
+const capNeed = pr => (pr.owner ? CAP_ENEMY : CAP_NEUTRAL) * (pr.town ? CAP_TOWN : 1) * (pr.bld && pr.bld.bld === 'fort' ? FORT_CAP : 1);
 // A province turns yours when only your ground troops stand in it for a few seconds.
 let provPres = new Int32Array(0);
 function stepProvinces() {
@@ -600,7 +642,7 @@ function stepProvinces() {
       const who = 31 - Math.clz32(others);
       if (pr.capBy !== who) { pr.capBy = who; pr.cap = 0; }
       if (pr.owner === 1 && pr.town && pr.cap === 0) alarm('p' + pr.id, pr.cx, pr.cy, players[who].name + ' prøver at tage din by!');
-      if (++pr.cap >= (pr.owner ? CAP_ENEMY : CAP_NEUTRAL) * (pr.town ? CAP_TOWN : 1)) {
+      if (++pr.cap >= capNeed(pr)) {
         const old = pr.owner;
         setProvOwner(pr, who);
         if (state === 'play' && pr.town) { if (who === 1) toast('Du erobrede en by!'); else if (old === 1) toast(players[who].name + ' tog din by', [pr.cx, pr.cy]); }
@@ -666,7 +708,7 @@ function pickTarget(p, enemies) {
 }
 function income(p) {
   let n = INC_BASE;
-  for (const pr of provs) if (pr.owner === p.id) n += INC_PROV + (pr.town ? INC_TOWN : 0);
+  for (const pr of provs) if (pr.owner === p.id) n += INC_PROV + (pr.town ? INC_TOWN : 0) + (pr.bld && pr.bld.bld === 'market' ? MARKET_INC : 0);
   return n;
 }
 
@@ -674,13 +716,26 @@ function income(p) {
 function botThink(p) {
   const mine = units.filter(u => u.p === p.id);
   const mySites = sites.filter(s => s.owner === p.id && (!s.base || s.hp > 0));
-  if (unitCount(p) < MAX_UNITS) {
+  const makers = mySites.filter(makes);
+  // spend spare gold: a bigger HQ first, then forts on the border, a factory near the front, markets at home
+  if (unitCount(p) >= maxUnits(p) - 1) {
+    if (p.lvl < HQ_COST.length && p.gold >= HQ_COST[p.lvl] + 40) upgradeHQ(p);
+    else if (p.gold >= 230) {
+      const free = provs.filter(pr => pr.owner === p.id && !pr.bld && !pr.hq);
+      const border = free.filter(pr => pr.nb.some(j => provs[j].owner && provs[j].owner !== p.id));
+      const r = rng();
+      if (border.length && r < 0.45) build(p, border[(rng() * border.length) | 0], 'fort');
+      else if (border.length && r < 0.65 && !mySites.some(s => s.bld === 'factory')) build(p, border[(rng() * border.length) | 0], 'factory');
+      else if (free.length) build(p, free[(rng() * free.length) | 0], 'market');
+    }
+  }
+  if (unitCount(p) < maxUnits(p)) {
     const planes = mine.filter(u => u.type === 'plane').length, r = rng();
     let type = 'inf';
     if (p.gold >= 160 && planes < 1 && r < 0.25) type = 'plane';
     else if (p.gold >= 120 && r < 0.6) type = 'tank';
     if (p.gold >= UNITS[type].cost) {
-      const site = mySites.find(s => !s.q.length) || mySites[0];
+      const site = makers.find(s => !s.q.length) || makers[0];
       if (site) hire(p, type, site);
     }
   }
@@ -824,7 +879,7 @@ function render(now) {
   drawSites(t);
   for (const pr of provs) {
     if (!pr.cap || !seen(pr.cx, pr.cy)) continue;
-    const X = sx(pr.cx), Y = sy(pr.cy), r = Math.max(10, cam.s * 0.9) + (pr.town ? 4 : 0), f = pr.cap / ((pr.owner ? CAP_ENEMY : CAP_NEUTRAL) * (pr.town ? CAP_TOWN : 1));
+    const X = sx(pr.cx), Y = sy(pr.cy), r = Math.max(10, cam.s * 0.9) + (pr.town ? 4 : 0), f = pr.cap / capNeed(pr);
     ctx.strokeStyle = 'rgba(0,0,0,.45)'; ctx.lineWidth = 6; ctx.beginPath(); ctx.arc(X, Y, r, 0, 7); ctx.stroke();
     ctx.strokeStyle = rgb(players[pr.capBy].col); ctx.lineWidth = 4;
     ctx.beginPath(); ctx.arc(X, Y, r, -Math.PI / 2, -Math.PI / 2 + Math.PI * 2 * f); ctx.stroke();
@@ -867,7 +922,8 @@ function drawSites(t) {
     const X = sx(s.x), Y = sy(s.y);
     if (X < -60 || Y < -60 || X > CW + 60 || Y > CH + 60) continue;
     const col = s.owner ? players[s.owner].col : [214, 206, 182];
-    if (s.base) {
+    if (s.bld) { drawBuilding(X, Y, s.bld, col, z); }
+    else if (s.base) {
       const dead = s.hp <= 0, r = 15 * z;
       // star fort
       ctx.beginPath();
@@ -878,6 +934,7 @@ function drawSites(t) {
       ctx.fillStyle = '#fff'; ctx.font = `800 ${11 * z}px ${UI_FONT}`; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
       ctx.fillText(dead ? '✕' : 'HQ', X, Y + 1);
       if (!dead) hpBar(X, Y - r - 6, 30 * z, s.hp / BASE_HP);
+      if (!dead && players[s.owner].lvl) { ctx.fillStyle = '#f2cf63'; ctx.font = `800 ${10 * z}px ${UI_FONT}`; ctx.fillText('★'.repeat(players[s.owner].lvl), X, Y - r - 13 * z); }
       if (state === 'demo' || !dead) { ctx.font = `700 ${12 * z}px ${UI_FONT}`; ctx.fillStyle = 'rgba(255,255,255,.9)'; ctx.strokeStyle = 'rgba(0,0,0,.6)'; ctx.lineWidth = 3; ctx.strokeText(players[s.owner].name, X, Y + r + 9); ctx.fillText(players[s.owner].name, X, Y + r + 9); }
     } else {
       const r = 9 * z;
@@ -898,6 +955,30 @@ function drawSites(t) {
       ctx.beginPath(); ctx.arc(X, Y, (s.base ? 24 : 17) * z, 0, 7); ctx.stroke(); ctx.setLineDash([]);
     }
   }
+}
+function drawBuilding(X, Y, kind, col, z) {
+  const h = 9 * z;
+  ctx.fillStyle = rgb(col); ctx.strokeStyle = 'rgba(20,16,10,.85)'; ctx.lineWidth = 2;
+  ctx.beginPath(); ctx.roundRect(X - h, Y - h, h * 2, h * 2, 4 * z); ctx.fill(); ctx.stroke();
+  ctx.fillStyle = '#fff'; ctx.beginPath();
+  if (kind === 'fort') {
+    // tower with battlements
+    const w = h * 0.55;
+    ctx.moveTo(X - w, Y + h * 0.6); ctx.lineTo(X - w, Y - h * 0.6);
+    for (let k = 0; k < 3; k++) { const x0 = X - w + k * w * 2 / 2.5; ctx.lineTo(x0, Y - h * 0.6); ctx.lineTo(x0, Y - h * 0.3); ctx.lineTo(x0 + w * 0.4, Y - h * 0.3); ctx.lineTo(x0 + w * 0.4, Y - h * 0.6); }
+    ctx.lineTo(X + w, Y - h * 0.6); ctx.lineTo(X + w, Y + h * 0.6); ctx.closePath();
+  } else if (kind === 'factory') {
+    // saw-tooth roof and a chimney
+    const w = h * 0.7;
+    ctx.moveTo(X - w, Y + h * 0.6); ctx.lineTo(X - w, Y - h * 0.05); ctx.lineTo(X - w * 0.35, Y - h * 0.45); ctx.lineTo(X - w * 0.35, Y - h * 0.05);
+    ctx.lineTo(X + w * 0.3, Y - h * 0.45); ctx.lineTo(X + w * 0.3, Y - h * 0.05); ctx.lineTo(X + w * 0.45, Y - h * 0.05);
+    ctx.lineTo(X + w * 0.45, Y - h * 0.75); ctx.lineTo(X + w, Y - h * 0.75); ctx.lineTo(X + w, Y + h * 0.6); ctx.closePath();
+  } else {
+    // a stack of coins
+    for (const dy of [0.35, 0, -0.35]) { ctx.moveTo(X + h * 0.55, Y + dy * h); ctx.ellipse(X, Y + dy * h, h * 0.55, h * 0.24, 0, 0, 7); }
+  }
+  ctx.fill();
+  if (kind === 'market') { ctx.strokeStyle = rgb(col); ctx.lineWidth = 1; ctx.stroke(); }
 }
 function hpBar(X, Y, w, f) {
   f = Math.max(0, Math.min(1, f));
@@ -1120,15 +1201,16 @@ function updateHud() {
   const rows = players.slice(1).slice().sort((a, b) => (b.alive - a.alive) || b.count - a.count);
   $('lb').innerHTML = rows.map((p, k) => `<div class="r${p === human ? ' me' : ''}"><b>${k + 1}</b><i style="background:${rgb(p.col)}"></i><span>${esc(p.name)}${p.alive ? '' : ' ✕'}</span><em>${Math.round(p.count / nOwnable * 100)}%</em><em class="u">${p.alive ? units.filter(u => u.p === p.id).length + '⚔' : ''}</em></div>`).join('');
   if (state !== 'play' || !human) return;
+  if (selProv) { if (selProv.owner !== 1) closeBuild(); else fillBuild(); }
   $('gold').textContent = fmt(human.gold);
   $('inc').textContent = '+' + income(human).toFixed(1).replace('.', ',') + '/s';
   const n = unitCount(human);
-  $('army').innerHTML = `${n} <small>/ ${MAX_UNITS} tropper</small>`;
+  $('army').innerHTML = `${n} <small>/ ${maxUnits(human)} tropper</small>`;
   $('land').innerHTML = `<b>${Math.round(human.count / nOwnable * 100)}%</b> <small>/ ${WIN_SHARE * 100}% land</small>`;
   if (spawnSite && spawnSite.owner !== 1) spawnSite = human.base;
   for (const b of document.querySelectorAll('#hire button[data-t]')) {
     const k = UNITS[b.dataset.t];
-    b.classList.toggle('cant', !human.alive || human.gold < k.cost || n >= MAX_UNITS);
+    b.classList.toggle('cant', !human.alive || human.gold < k.cost || n >= maxUnits(human));
     const q = spawnSite ? spawnSite.q.filter(x => x === b.dataset.t).length : 0;
     const i = b.querySelector('i'); i.textContent = q; i.classList.toggle('hidden', !q);
   }
@@ -1145,9 +1227,51 @@ function updateHud() {
   $('hint').innerHTML = hint;
 }
 function esc(s) { return s.replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c])); }
+// Tap one of your provinces (with no troop selected) to build there; tap your HQ to expand it.
+let selProv = null;
+function openBuild(pr) {
+  selProv = pr; show('bbar', true); fillBuild();
+  for (const i of pr.cells) flash[i] = Math.max(flash[i], 120);
+  dirty = true;
+}
+function closeBuild() { selProv = null; show('bbar', false); }
+function fillBuild() {
+  const pr = selProv; if (!pr || !human) return;
+  let title, html = '';
+  if (pr.hq === 1) {
+    title = `Dit HQ <small>niveau ${human.lvl + 1}, op til ${maxUnits(human)} tropper</small>`;
+    if (human.lvl < HQ_COST.length) html = `<button data-hq="1" class="${human.gold < HQ_COST[human.lvl] ? 'cant' : ''}">Udvid HQ<small>+${HQ_STEP} tropper</small><b>${HQ_COST[human.lvl]}</b></button>`;
+    else html = '<p>Dit HQ er fuldt udbygget.</p>';
+  } else if (pr.bld) {
+    const b = BLD[pr.bld.bld];
+    title = (pr.town ? 'Din by' : 'Din provins') + ` <small>${b.name}</small>`;
+    html = `<p>${pr.bld.bld === 'fort' ? 'Fortet skyder på fjender, og provinsen tager meget længere tid at erobre.' : pr.bld.bld === 'factory' ? 'Fabrikken bygger tropper. Tryk på den for at vælge den som byggested.' : 'Markedet giver 1,5 guld i sekundet.'}</p>`;
+  } else {
+    title = pr.town ? 'Din by <small>byg én ting her</small>' : 'Din provins <small>byg én ting her</small>';
+    html = BLD_KEYS.map(k => `<button data-b="${k}" class="${human.gold < BLD[k].cost ? 'cant' : ''}">${BLD[k].name}<small>${BLD[k].desc}</small><b>${BLD[k].cost}</b></button>`).join('');
+  }
+  $('bbTitle').innerHTML = title;
+  if ($('bbBtns').dataset.html !== html) { $('bbBtns').innerHTML = html; $('bbBtns').dataset.html = html; }
+}
+$('bbClose').onclick = closeBuild;
+$('bbBtns').onclick = e => {
+  const b = e.target.closest('button'); if (!b || !selProv) return;
+  if (b.dataset.hq) {
+    const r = upgradeHQ(human);
+    if (r === 'gold') toast(`Det koster ${HQ_COST[human.lvl]} guld`); else if (r === 'ok') { toast(`HQ udvidet. Du kan nu have ${maxUnits(human)} tropper`); buzz(15); }
+  } else {
+    const k = b.dataset.b, r = build(human, selProv, k);
+    if (r === 'gold') toast(`${BLD[k].name} koster ${BLD[k].cost} guld`);
+    else if (r === 'ok') { toast(BLD[k].name + ' bygget'); buzz(15); if (k === 'factory') spawnSite = selProv.bld; }
+  }
+  fillBuild(); updateHud();
+};
 let toastAt = null;
 function toast(msg, at) {
-  const t = $('toast'); t.textContent = at ? msg + '  ›' : msg; t.classList.add('on'); t.classList.toggle('go', !!at); toastAt = at || null;
+  const t = $('toast'), bot = $('bottom');
+  // keep the toast just above the bottom panel, however tall it is right now
+  t.style.bottom = (bot.classList.contains('hidden') ? 24 : bot.offsetHeight + 12) + 'px';
+  t.textContent = at ? msg + '  ›' : msg; t.classList.add('on'); t.classList.toggle('go', !!at); toastAt = at || null;
   clearTimeout(toastTimer); toastTimer = setTimeout(() => { t.classList.remove('on', 'go'); toastAt = null; }, at ? 3500 : 1900);
 }
 $('toast').onclick = () => { if (toastAt) { centerOn(toastAt[0], toastAt[1]); $('toast').classList.remove('on', 'go'); toastAt = null; } };
@@ -1221,6 +1345,7 @@ function tapAt(px, py) {
   // tapping a clump again picks the next troop in it, and after the last one deselects
   const near = unitsAt(px, py);
   if (near.length) {
+    closeBuild();
     const cur = selected.size === 1 ? [...selected][0] : null, k = near.indexOf(cur);
     selected.clear();
     if (k < 0) selected.add(near[0]);
@@ -1233,11 +1358,13 @@ function tapAt(px, py) {
   const e = enemyAt(px, py);
   if (e) { toast(`${players[e.p].name}: ${e.k.name.toLowerCase()}, ${Math.ceil(e.hp)}/${e.k.hp} liv`); return; }
   const s = siteAt(px, py);
-  if (s && s.owner === 1) { spawnSite = s; toast(s.base ? 'Nye tropper bygges i dit HQ' : 'Nye tropper bygges i denne by'); return; }
+  if (s && s.owner === 1 && makes(s)) { spawnSite = s; toast(s.base ? 'Nye tropper bygges i dit HQ' : s.town ? 'Nye tropper bygges i denne by' : 'Nye tropper bygges i denne fabrik'); }
+  if (s && s.bld && s.owner !== 1) { toast(`${s.owner ? players[s.owner].name + 's' : 'Et'} ${BLD[s.bld].name.toLowerCase()}`); return; }
   if (s && s.town) { toast(s.owner ? 'By ejet af ' + players[s.owner].name + '. Stil en trop i den for at tage den' : 'Fri by. Stil en soldat eller kampvogn i den for at tage den'); return; }
   if (s && s.base && s.owner !== 1) { toast(players[s.owner].name + 's HQ. Ødelæg det for at slå dem ud'); return; }
   const pr = provAtWorld(wx, wy);
-  if (pr) toast(pr.owner === 1 ? 'Din provins. Vælg en trop for at sende den et sted hen' : pr.owner ? players[pr.owner].name + 's provins' : 'Fri provins. Send en soldat eller kampvogn derind for at tage den');
+  if (pr && pr.owner === 1) { if (selProv === pr) closeBuild(); else openBuild(pr); return; }
+  if (pr) toast(pr.owner ? players[pr.owner].name + 's provins' : 'Fri provins. Send en soldat eller kampvogn derind for at tage den');
 }
 function enemyAt(px, py) {
   const r = Math.max(20, tokenR() * 1.7);
@@ -1303,7 +1430,7 @@ for (const b of document.querySelectorAll('#hire button[data-t]')) b.onclick = (
   if (!spawnSite || spawnSite.owner !== 1) spawnSite = human.base;
   const r = hire(human, type, spawnSite);
   if (r === 'gold') toast(`${k.name} koster ${k.cost} guld`);
-  else if (r === 'full') toast(`Du kan højst have ${MAX_UNITS} tropper`);
+  else if (r === 'full') toast(human.lvl < HQ_COST.length ? `Du kan højst have ${maxUnits(human)} tropper. Tryk på dit HQ for at udvide det` : `Du kan højst have ${maxUnits(human)} tropper`);
   else if (r === 'queue') toast('Køen her er fuld. Vælg en anden by');
   else if (r === 'site') toast('Du kan ikke bygge her');
   else buzz(8);
@@ -1368,7 +1495,7 @@ function startDemo() {
 startDemo();
 if ('serviceWorker' in navigator && location.protocol === 'https:') navigator.serviceWorker.register('sw.js').catch(() => {});
 requestAnimationFrame(frame);
-window.TW = { get units() { return units; }, get players() { return players; }, get sites() { return sites; }, get towns() { return towns; }, get provs() { return provs; }, get state() { return state; }, get T() { return T; },
+window.TW = { get units() { return units; }, get players() { return players; }, get sites() { return sites; }, get towns() { return towns; }, build, upgradeHQ, get selProv() { return selProv; }, get provs() { return provs; }, get state() { return state; }, get T() { return T; },
   get selected() { return selected; }, get nOwnable() { return nOwnable; }, step, hire, orderPoints, findPath, newGame, tapAt, own: () => own, terr: () => terr, cam, settings, get gl() { return !!gl; } };
 </script>
 </body>
