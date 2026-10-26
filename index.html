@@ -227,7 +227,7 @@ const W = 80, H = 80, NC = W * H, HALF = 40;
 const UNITS = {
   inf:   { name: 'Soldat',   cost: 40,  hp: 100, dps: 12, range: 2.4, speed: 1.5, build: 3, sight: 7 },
   tank:  { name: 'Kampvogn', cost: 120, hp: 340, dps: 26, range: 3.0, speed: 1.1, build: 6, sight: 7 },
-  arty:  { name: 'Artilleri', cost: 100, hp: 80, dps: 18, range: 6.0, speed: 0.9, build: 5, sight: 8, splash: 1.5 },
+  arty:  { name: 'Artilleri', cost: 100, hp: 80, dps: 18, range: 6.0, speed: 0.9, build: 5, sight: 7.5, splash: 1.5 },
   aa:    { name: 'Luftværn', cost: 90,  hp: 180, dps: 28, range: 4.2, speed: 1.2, build: 4, sight: 8 },
   plane: { name: 'Fly',      cost: 160, hp: 90,  dps: 22, range: 3.4, speed: 3.2, build: 6, sight: 10, air: true },
 };
@@ -914,6 +914,23 @@ function buildImage() {
   fbCtx.putImageData(fbImg, 0, 0);
 }
 
+// Fog of war: land you can't see (outside your land, troops' sight and buildings) is veiled.
+const fogCanvas = document.createElement('canvas'); fogCanvas.width = W; fogCanvas.height = H;
+const fogCtx = fogCanvas.getContext('2d'), fogImg = fogCtx.createImageData(W, H);
+let fogT = -1e9;
+function drawFog(now) {
+  if (!human || !human.alive || state !== 'play') return;
+  if (now - fogT > 250) {
+    fogT = now;
+    const d = fogImg.data;
+    for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) {
+      const q = (y * W + x) * 4;
+      d[q] = 8; d[q + 1] = 14; d[q + 2] = 20; d[q + 3] = seen(x + 0.5, y + 0.5) ? 0 : 105;
+    }
+    fogCtx.putImageData(fogImg, 0, 0);
+  }
+  ctx.imageSmoothingEnabled = true; ctx.drawImage(fogCanvas, cam.x, cam.y, W * cam.s, H * cam.s);
+}
 function render(now) {
   if (dirty) { if (gl) uploadMap(); else buildImage(); dirty = false; }
   ctx.setTransform(DPR, 0, 0, DPR, 0, 0);
@@ -923,6 +940,7 @@ function render(now) {
     ctx.imageSmoothingEnabled = true; ctx.drawImage(fbCanvas, cam.x, cam.y, W * cam.s, H * cam.s);
   }
   const t = now / 1000;
+  drawFog(now);
   drawRanges(); drawPaths();
   drawSites(t);
   for (const pr of provs) {
