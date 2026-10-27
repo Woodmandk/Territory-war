@@ -86,7 +86,7 @@ button:disabled{opacity:.4;cursor:default}
 #hint{text-align:center;font-size:12px;color:var(--muted);margin-top:4px;min-height:15px}
 #hint b{color:var(--good)}
 
-#toast{position:fixed;left:50%;bottom:calc(var(--safe-b) + 170px);transform:translateX(-50%);background:rgba(0,0,0,.78);padding:8px 14px;border-radius:12px;font-size:14px;opacity:0;transition:opacity .25s;pointer-events:none;max-width:92vw;text-align:center}
+#toast{position:fixed;z-index:20;left:50%;bottom:calc(var(--safe-b) + 170px);transform:translateX(-50%);background:rgba(0,0,0,.78);padding:8px 14px;border-radius:12px;font-size:14px;opacity:0;transition:opacity .25s;pointer-events:none;max-width:92vw;text-align:center}
 #toast.on{opacity:1}
 #toast.go{pointer-events:auto;background:rgba(150,30,20,.92);font-weight:700;cursor:pointer}
 #lb .r em.u{min-width:22px;text-align:right}
@@ -149,6 +149,21 @@ details ul{padding-left:18px;margin:8px 0 0}
 #bbBtns button b{display:block;color:var(--gold);font-size:12px}
 #bbBtns button.cant{opacity:.4}
 #bbBtns p{margin:0;font-size:13px;color:var(--muted);line-height:1.3}
+
+/* Online lobby */
+#olRoom{font-family:var(--display);font-size:44px;letter-spacing:6px;text-align:center;color:var(--accent);margin:-8px 0 4px;user-select:text;-webkit-user-select:text}
+.joinrow{display:flex;gap:8px}
+.joinrow input{flex:1;min-width:0;text-transform:uppercase;letter-spacing:4px;font-weight:800!important}
+.joinrow button{flex:none;padding:0 18px;border-radius:12px;background:var(--brass);color:var(--ink);font-weight:800;font-size:17px;box-shadow:0 3px 0 var(--brass-edge)}
+#olSlots{display:grid;gap:6px;margin:14px 0 4px}
+#olSlots div{display:flex;align-items:center;gap:10px;padding:9px 12px;border-radius:12px;background:rgba(0,0,0,.22);font-size:16px;font-weight:700}
+#olSlots i{width:14px;height:14px;border-radius:4px;flex:none}
+#olSlots span{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+#olSlots em{font-style:normal;font-size:13px;color:var(--muted);font-weight:600}
+#olSlots .bot span{color:var(--muted)}
+#olMsg{min-height:18px;margin:10px 0 0;text-align:center;font-size:14px;color:var(--bad)}
+#olMsg.ok{color:var(--muted)}
+#olNote{font-size:12px;color:var(--muted);text-align:center;margin:10px 0 0;line-height:1.35}
 </style>
 </head>
 <body>
@@ -201,6 +216,7 @@ details ul{padding-left:18px;margin:8px 0 0}
     <div class="field"><label>Sværhedsgrad</label>
       <div class="seg" id="diff"><button data-v="0">Let</button><button data-v="1" class="on">Normal</button><button data-v="2">Svær</button></div></div>
     <button class="big" id="btnPlay">SPIL</button>
+    <button class="sec" id="btnOnline">Spil online med venner</button>
     <details><summary>Sådan spiller du</summary><ul>
       <li>Du og 3 computere starter med et <b>hovedkvarter (HQ)</b> i hvert sit hjørne og 100 guld. Ingen tropper.</li>
       <li><b>Hyr</b> soldater (rundt mærke med en figur), kampvogne og fly med knapperne forneden. De bliver bygget i dit HQ, eller i en by du ejer, hvis du har trykket på den. Højst 10 tropper ad gangen.</li>
@@ -246,6 +262,29 @@ details ul{padding-left:18px;margin:8px 0 0}
     <button class="big" id="btnAgain">Spil igen</button>
     <button class="sec" id="btnWatch">Se resten af spillet</button>
     <button class="sec" id="btnMenu">Til menuen</button>
+  </div>
+</div>
+
+<div class="ov hidden" id="online">
+  <div class="card">
+    <h2>Spil online</h2>
+    <div id="olPick">
+      <p class="sub">Op til fire på samme kort. Opret et rum og send linket til dine venner. Tomme pladser bliver computere.</p>
+      <div class="field"><label for="olName">Dit navn</label><input type="text" id="olName" maxlength="14" placeholder="Dig" autocomplete="off"></div>
+      <button class="big" id="btnHost">OPRET RUM</button>
+      <div class="field" style="margin-top:18px"><label for="olCode">Har du en kode?</label>
+        <div class="joinrow"><input type="text" id="olCode" maxlength="5" placeholder="KODE" autocomplete="off" autocapitalize="characters"><button id="btnJoin">Join</button></div></div>
+    </div>
+    <div id="olLobby" class="hidden">
+      <p class="sub" style="margin-bottom:6px">Rumkode</p>
+      <div id="olRoom">·····</div>
+      <button class="sec" id="btnShare">Del link til rummet</button>
+      <div id="olSlots"></div>
+      <button class="big" id="btnStart">START SPILLET</button>
+    </div>
+    <p id="olMsg"></p>
+    <button class="sec" id="btnOlBack">Tilbage</button>
+    <p id="olNote">Spillet kører på værtens telefon. Værten skal holde spillet åbent, til I er færdige.</p>
   </div>
 </div>
 
@@ -349,7 +388,7 @@ function stepResearch(p) {
   if (m && UNITS[m[1]]) p.tech[m[1]] = +m[2];
   if (r.id === 'fort') p.base.hp *= 1.5;
   refreshUnits(p);
-  if (p.human && state === 'play') { toast(t.unit ? `${t.name} er låst op!` : `${t.name} er færdig`); sfx('research'); }
+  if (p === human && state === 'play') { toast(t.unit ? `${t.name} er låst op!` : `${t.name} er færdig`); sfx('research'); }
 }
 const HEAVY = new Set(['tank', 'htank', 'arty', 'rocket', 'bomber']);
 const COOL = { inf: 4, tank: 8, cmd: 3, htank: 9, arty: 12, rocket: 16, aa: 2, plane: 4, bomber: 10 };
@@ -394,6 +433,8 @@ const terr = new Uint8Array(NC), own = new Int8Array(NC), prov = new Int16Array(
 let provs = [];
 const shade = new Float32Array(NC), flash = new Uint8Array(NC);
 let state = 'demo', T = 0, players = [], units = [], sites = [], towns = [], shots = [], booms = [], human = null, nOwnable = 1;
+// ME is the id of the player on this screen: 1 offline and for the host, 2-4 for friends who joined online
+let ME = 0;
 let selected = new Set(), spawnSite = null, watching = false, speed = 1, dirty = true, uid = 1;
 let gateTold = false;
 const gpass = i => { const t = terr[i]; return t === 1 || t === 3 || t === 4 || t === 5; };
@@ -499,7 +540,7 @@ function makePlayers(demo) {
       tech: Object.fromEntries(UKEYS.map(t => [t, 0])), kc: {}, techs: new Set(), res: null, done: 0,
       hired: 0, lost: 0, taken: 0, earned: 0, hist: [] });
   }
-  human = demo ? null : players[1];
+  human = demo ? null : players[1]; ME = human ? human.id : 0;
 }
 
 function setOwn(i, p) {
@@ -517,10 +558,10 @@ function setProvOwner(pr, p) {
   // the town and any building change hands with the province
   for (const t of [pr.town, pr.bld]) {
     if (!t) continue;
-    if (old) { for (const q of t.q) players[old].gold += UNITS[q].cost; if (spawnSite === t && old === 1 && human) spawnSite = human.base; }
+    if (old) { for (const q of t.q) players[old].gold += UNITS[q].cost; if (spawnSite === t && old === ME && human) spawnSite = human.base; }
     t.owner = p; t.q = []; t.prog = 0;
   }
-  if (selProv === pr && p !== 1) closeBuild();
+  if (selProv === pr && p !== ME) closeBuild();
 }
 const makes = s => s.base || s.town || (s.bld === 'factory');
 function build(p, pr, kind) {
@@ -700,7 +741,7 @@ function moveUnit(u) {
     }
     u.stuck = false;
     if (!gateOk(u, u.x + dx * f, u.y + dy * f)) {
-      if (!u.gated && u.p === 1 && state === 'play' && !gateTold) { gateTold = true; toast('Tag provinsen først, så går tropperne videre'); }
+      if (!u.gated && u.p === ME && state === 'play' && !gateTold) { gateTold = true; toast('Tag provinsen først, så går tropperne videre'); }
       u.gated = true; return;
     }
     u.gated = false;
@@ -757,7 +798,7 @@ function combat() {
       const b = players[k].base;
       if (k === u.p || b.hp <= 0 || Math.hypot(b.x - u.x, b.y - u.y) > u.k.range + 1.2) continue;
       b.hp -= u.k.dps * VS_BASE[u.type] * DT; b.hit = 4; b.lastHit = T; u.tgt = b;
-      if (k === 1) alarm('hq', b.x, b.y, 'Dit HQ bliver angrebet!'); u.aim = Math.atan2(b.y - u.y, b.x - u.x);
+      if (k === ME) alarm('hq', b.x, b.y, 'Dit HQ bliver angrebet!'); u.aim = Math.atan2(b.y - u.y, b.x - u.x);
       if (u.cool-- <= 0) { u.cool = COOL[u.type]; shot(u.x, u.y, b.x, b.y, u.p, HEAVY.has(u.type)); }
       if (b.hp <= 0) eliminate(players[k], u.p);
       break;
@@ -788,7 +829,7 @@ function eliminate(p, by) {
   for (const u of [...selected]) if (u.p === p.id) selected.delete(u);
   for (const pr of provs) if (pr.owner === p.id) setProvOwner(pr, 0);
   p.base.q = []; p.count = 0;
-  if (state === 'play' && by === 1 && p !== human) toast(p.name + ' er slået ud!');
+  if (state === 'play' && by === ME && p !== human) toast(p.name + ' er slået ud!');
 }
 // towns and buildings take much longer to capture: plain 6s, market/factory 12s, town 18s, fort 21s, town+fort 33s
 const capNeed = pr => (pr.owner ? CAP_ENEMY : CAP_NEUTRAL) * (1 + (pr.town ? CAP_TOWN : 0) + (pr.bld ? (pr.bld.bld === 'fort' ? FORT_CAP : CAP_BLD) : 0));
@@ -804,12 +845,12 @@ function stepProvinces() {
     if (others && !(m & (1 << pr.owner)) && !(others & (others - 1)) && !locked) {
       const who = 31 - Math.clz32(others);
       if (pr.capBy !== who) { pr.capBy = who; pr.cap = 0; }
-      if (pr.owner === 1 && pr.town && pr.cap === 0) alarm('p' + pr.id, pr.cx, pr.cy, players[who].name + ' prøver at tage din by!');
+      if (pr.owner === ME && pr.town && pr.cap === 0) alarm('p' + pr.id, pr.cx, pr.cy, players[who].name + ' prøver at tage din by!');
       if ((pr.cap += has(players[who], 'occ') ? 1.3 : 1) >= capNeed(pr)) {
         const old = pr.owner;
         setProvOwner(pr, who); players[who].taken++;
-        if (state === 'play') { if (who === 1) sfx(pr.town ? 'town' : 'capture'); else if (old === 1) sfx('lose'); }
-        if (state === 'play' && pr.town) { if (who === 1) toast('Du erobrede en by!'); else if (old === 1) toast(players[who].name + ' tog din by', [pr.cx, pr.cy]); }
+        if (state === 'play') { if (who === ME) sfx(pr.town ? 'town' : 'capture'); else if (old === ME) sfx('lose'); }
+        if (state === 'play' && pr.town) { if (who === ME) toast('Du erobrede en by!'); else if (old === ME) toast(players[who].name + ' tog din by', [pr.cx, pr.cy]); }
       }
     } else if (pr.cap > 0) pr.cap = Math.max(0, pr.cap - 2);
   }
@@ -966,13 +1007,22 @@ function provOrder(u, p) {
 }
 
 // ---------- Game flow ----------
-function newGame() {
-  seed = (Date.now() & 0xffffff) | 1;
+// o is set for an online match: the shared seed, everyone's names, which seats are people, and which seat is ours
+function newGame(o) {
+  seed = o ? o.seed : (Date.now() & 0xffffff) | 1;
   state = 'play'; watching = false; paused = false;
   newWorld(false);
+  if (o) {
+    for (let k = 1; k <= 4; k++) { if (o.names[k]) players[k].name = o.names[k]; players[k].human = !!o.humans[k]; }
+    human = players[o.me]; ME = o.me; spawnSite = human.base;
+    speed = 1;
+  }
+  show('speed', !o); show('btnRestart', !o || o.me === 1); show('btnAgain', !o || o.me === 1);
+  $('pause').querySelector('h2').textContent = o ? 'Menu' : 'Pause';
   show('menu', false); show('over', false); show('pause', false); show('top', true); show('bottom', true);
   cam.s = Math.max(Math.min(CW, CH) / 30, 10);
-  cam.x = CW / 2 - (human.base.x + 6) * cam.s; cam.y = CH * 0.42 - (human.base.y - 6) * cam.s; clampCam();
+  const [ix, iy] = inland(6);
+  cam.x = CW / 2 - ix * cam.s; cam.y = CH * 0.42 - iy * cam.s; clampCam();
   $('speed').textContent = speed + '×';
   toast('Hyr din første trop forneden');
   closeRes(); audioInit();
@@ -1055,9 +1105,9 @@ const UI_FONT = '"Barlow Condensed","Arial Narrow",system-ui,sans-serif';
 function seen(x, y) {
   if (!human || !human.alive || state !== 'play') return true;
   const ci = cellOf(x, y);
-  if (ci >= 0 && own[ci] === 1) return true;
-  for (const u of units) if (u.p === 1 && (u.x - x) ** 2 + (u.y - y) ** 2 < u.k.sight * u.k.sight) return true;
-  for (const s of sites) if (s.owner === 1 && (s.x - x) ** 2 + (s.y - y) ** 2 < 64) return true;
+  if (ci >= 0 && own[ci] === ME) return true;
+  for (const u of units) if (u.p === ME && (u.x - x) ** 2 + (u.y - y) ** 2 < u.k.sight * u.k.sight) return true;
+  for (const s of sites) if (s.owner === ME && (s.x - x) ** 2 + (s.y - y) ** 2 < 64) return true;
   return false;
 }
 
@@ -1155,7 +1205,7 @@ function drawPaths() {
   ctx.lineCap = 'round'; ctx.lineJoin = 'round';
   for (const u of units) {
     if (!u.path || !selected.has(u)) continue;
-    const mine = u.p === 1 && human;
+    const mine = u.p === ME && human;
     ctx.strokeStyle = mine ? (selected.has(u) ? 'rgba(255,236,170,.9)' : 'rgba(255,255,255,.55)') : rgb(players[u.p].col, 0.35);
     ctx.lineWidth = mine ? 2 : 1.2; ctx.setLineDash([5, 5]);
     ctx.beginPath(); ctx.moveTo(sx(u.x), sy(u.y));
@@ -1196,7 +1246,7 @@ function drawSites(t) {
       ctx.fillStyle = s.owner ? '#fff' : '#5a4f3a';
       ctx.beginPath(); ctx.moveTo(X - r * 0.5, Y + r * 0.45); ctx.lineTo(X - r * 0.5, Y - r * 0.05); ctx.lineTo(X, Y - r * 0.55); ctx.lineTo(X + r * 0.5, Y - r * 0.05); ctx.lineTo(X + r * 0.5, Y + r * 0.45); ctx.closePath(); ctx.fill();
     }
-    if (s.q.length && (s.owner === 1 || !human)) {
+    if (s.q.length && (s.owner === ME || !human)) {
       const r = (s.base ? 19 : 13) * z;
       ctx.strokeStyle = '#f2cf63'; ctx.lineWidth = 3;
       ctx.beginPath(); ctx.arc(X, Y, r, -Math.PI / 2, -Math.PI / 2 + Math.PI * 2 * s.prog / UNITS[s.q[0]].build); ctx.stroke();
@@ -1320,7 +1370,7 @@ function drawUnits(t) {
   const r = tokenR();
   for (const pass of [0, 1]) for (const u of units) {
     if (!!u.k.air !== !!pass) continue;
-    if (u.p !== 1 && !seen(u.x, u.y)) continue;
+    if (u.p !== ME && !seen(u.x, u.y)) continue;
     let X = sx(u.x), Y = sy(u.y);
     if (X < -40 || Y < -40 || X > CW + 40 || Y > CH + 40) continue;
     const col = players[u.p].col, R = u.type === 'plane' ? r * 1.25 : u.type === 'bomber' ? r * 1.5 : u.type === 'inf' || u.type === 'cmd' ? r * 0.95 : u.type === 'htank' ? r * 1.2 : r * 1.05;
@@ -1510,7 +1560,7 @@ function updateHud() {
   const rows = players.slice(1).slice().sort((a, b) => (b.alive - a.alive) || b.count - a.count);
   $('lb').innerHTML = `<div id="clock">${fmtTime(T)}</div>` + rows.map((p, k) => `<div class="r${p === human ? ' me' : ''}"><b>${k + 1}</b><i style="background:${rgb(p.col)}"></i><span>${esc(p.name)}${p.alive ? '' : ' ✕'}</span><em>${Math.round(p.count / nOwnable * 100)}%</em><em class="u">${p.alive ? units.filter(u => u.p === p.id).length + '⚔' : ''}</em></div>`).join('');
   if (state !== 'play' || !human) return;
-  if (selProv) { if (selProv.owner !== 1) closeBuild(); else fillBuild(); }
+  if (selProv) { if (selProv.owner !== ME) closeBuild(); else fillBuild(); }
   if (resOpen) fillRes();
   const rr = human.res;
   show('resBadge', !!rr); if (rr) $('resBadge').innerHTML = `<b style="width:${Math.floor(rr.t / rr.need * 100)}%"></b>`;
@@ -1519,7 +1569,7 @@ function updateHud() {
   const n = unitCount(human);
   $('army').innerHTML = `${n} <small>/ ${maxUnits(human)} tropper</small>`;
   $('land').innerHTML = `<b>${Math.round(human.count / nOwnable * 100)}%</b> <small>/ ${WIN_SHARE * 100}% land</small>`;
-  if (spawnSite && spawnSite.owner !== 1) spawnSite = human.base;
+  if (spawnSite && spawnSite.owner !== ME) spawnSite = human.base;
   for (const b of document.querySelectorAll('#hire button[data-t]')) {
     const k = UNITS[b.dataset.t], open = unlocked(human, b.dataset.t);
     b.classList.toggle('hidden', !open);
@@ -1528,7 +1578,7 @@ function updateHud() {
     const i = b.querySelector('i'); i.textContent = q; i.classList.toggle('hidden', !q);
   }
   show('btnMore', UKEYS.some(t => !unlocked(human, t)));
-  const mine = units.filter(u => u.p === 1);
+  const mine = units.filter(u => u.p === ME);
   const all = mine.length && mine.every(u => selected.has(u));
   $('btnAll').innerHTML = all ? 'Fravælg' : 'Vælg<br>alle';
   $('btnAll').classList.toggle('on', !!all);
@@ -1572,7 +1622,7 @@ function closeBuild() { selProv = null; show('bbar', false); }
 function fillBuild() {
   const pr = selProv; if (!pr || !human) return;
   let title, html = '';
-  if (pr.hq === 1) {
+  if (pr.hq === ME) {
     title = `Dit HQ <small>niveau ${human.lvl + 1}, op til ${maxUnits(human)} tropper</small>`;
     if (human.lvl < HQ_COST.length) html = `<button data-hq="1" class="${human.gold < HQ_COST[human.lvl] ? 'cant' : ''}">Udvid HQ<small>+${HQ_STEP} tropper</small><b>${HQ_COST[human.lvl]}</b></button>`;
     else html = '<p>Dit HQ er fuldt udbygget.</p>';
@@ -1633,7 +1683,7 @@ $('rbClose').onclick = closeRes;
 $('rbTabs').onclick = e => { const b = e.target.closest('button[data-tab]'); if (!b) return; resTab = b.dataset.tab; $('rbRows').scrollTop = 0; fillRes(); sfx('click'); };
 $('rbRows').onclick = e => {
   const b = e.target.closest('button[data-r]'); if (!b || !human) return;
-  const id = b.dataset.r, t = TECH_BY[id], r = research(human, id);
+  const id = b.dataset.r, t = TECH_BY[id], r = act({ c: 'res', id }, () => research(human, id));
   if (r === 'busy') toast('Du forsker allerede i noget. Vent til det er færdigt');
   else if (r === 'gold') toast(`Det koster ${t.cost} guld`);
   else if (r === 'ok') { toast(`Forsker i ${t.name.toLowerCase()} (${t.time} sek)`); sfx('click'); buzz(8); }
@@ -1642,12 +1692,14 @@ $('rbRows').onclick = e => {
 $('bbBtns').onclick = e => {
   const b = e.target.closest('button'); if (!b || !selProv) return;
   if (b.dataset.hq) {
-    const r = upgradeHQ(human);
+    const r = act({ c: 'hq' }, () => upgradeHQ(human));
     if (r === 'gold') toast(`Det koster ${HQ_COST[human.lvl]} guld`); else if (r === 'ok') { toast(`HQ udvidet. Du kan nu have ${maxUnits(human)} tropper`); buzz(15); }
   } else {
-    const k = b.dataset.b, r = build(human, selProv, k);
+    const k = b.dataset.b, pr = selProv;
+    // a friend's screen only asks the host to build; the building shows up with the next update
+    const r = act({ c: 'build', pr: pr.id, k }, () => net.role === 'client' ? (pr.bld ? 'no' : human.gold < BLD[k].cost ? 'gold' : 'ok') : build(human, pr, k));
     if (r === 'gold') toast(`${BLD[k].name} koster ${BLD[k].cost} guld`);
-    else if (r === 'ok') { toast(BLD[k].name + ' bygget'); buzz(15); if (k === 'factory') spawnSite = selProv.bld; }
+    else if (r === 'ok') { toast(BLD[k].name + ' bygget'); buzz(15); if (k === 'factory' && pr.bld) spawnSite = pr.bld; }
   }
   fillBuild(); updateHud();
 };
@@ -1747,7 +1799,7 @@ const world = (px, py) => [(px - cam.x) / cam.s, (py - cam.y) / cam.s];
 function unitsAt(px, py) {
   const r = Math.max(20, tokenR() * 1.7), out = [];
   for (const u of units) {
-    if (u.p !== 1) continue;
+    if (u.p !== ME) continue;
     const Y = sy(u.y) - (u.k.air ? tokenR() * 1.5 : 0), d = (sx(u.x) - px) ** 2 + (Y - py) ** 2;
     if (d < r * r) out.push([d, u]);
   }
@@ -1760,12 +1812,16 @@ function siteAt(px, py) {
 }
 // Orders go to a province: tap it and the troops find their own way to its middle.
 function provAtWorld(wx, wy) { const i = cellOf(wx, wy); return i >= 0 && prov[i] >= 0 ? provs[prov[i]] : null; }
-function sendTo(list, pr) {
+function orderTo(list, pr) {
   let ok = 0;
   list.forEach((u, k) => {
     const n = list.length, a = k / n * Math.PI * 2, r = n > 1 ? 0.7 + 0.15 * n : 0;
     ok += orderPoints(u, [[pr.cx + Math.cos(a) * r, pr.cy + Math.sin(a) * r]]);
   });
+  return ok;
+}
+function sendTo(list, pr) {
+  const ok = act({ c: 'go', ids: list.map(u => u.id), pr: pr.id }, () => orderTo(list, pr) ? 'ok' : 'no') === 'ok';
   if (!ok) { toast('Der kan dine tropper ikke komme hen'); return 0; }
   for (const i of pr.cells) flash[i] = Math.max(flash[i], 150);
   dirty = true;
@@ -1801,19 +1857,19 @@ function tapAt(px, py) {
   const e = enemyAt(px, py);
   if (e) { toast(`${players[e.p].name}: ${e.k.name.toLowerCase()}, ${Math.ceil(e.hp)}/${e.k.hp} liv`); return; }
   const s = siteAt(px, py);
-  if (s && s.owner === 1 && makes(s)) { spawnSite = s; toast(s.base ? 'Nye tropper bygges i dit HQ' : s.town ? 'Nye tropper bygges i denne by' : 'Nye tropper bygges i denne fabrik'); }
-  if (s && s.bld && s.owner !== 1) { toast(`${s.owner ? players[s.owner].name + 's' : 'Et'} ${BLD[s.bld].name.toLowerCase()}`); return; }
+  if (s && s.owner === ME && makes(s)) { spawnSite = s; toast(s.base ? 'Nye tropper bygges i dit HQ' : s.town ? 'Nye tropper bygges i denne by' : 'Nye tropper bygges i denne fabrik'); }
+  if (s && s.bld && s.owner !== ME) { toast(`${s.owner ? players[s.owner].name + 's' : 'Et'} ${BLD[s.bld].name.toLowerCase()}`); return; }
   if (s && s.town) { toast(s.owner ? 'By ejet af ' + players[s.owner].name + '. Stil en trop i den for at tage den' : 'Fri by. Stil en soldat eller kampvogn i den for at tage den'); return; }
-  if (s && s.base && s.owner !== 1) { toast(players[s.owner].name + 's HQ. Ødelæg det for at slå dem ud'); return; }
+  if (s && s.base && s.owner !== ME) { toast(players[s.owner].name + 's HQ. Ødelæg det for at slå dem ud'); return; }
   const pr = provAtWorld(wx, wy);
-  if (pr && pr.owner === 1) { if (selProv === pr) closeBuild(); else openBuild(pr); return; }
+  if (pr && pr.owner === ME) { if (selProv === pr) closeBuild(); else openBuild(pr); return; }
   if (pr) toast(pr.owner ? players[pr.owner].name + 's provins' : 'Fri provins. Send en soldat eller kampvogn derind for at tage den');
 }
 function enemyAt(px, py) {
   const r = Math.max(20, tokenR() * 1.7);
   let best = null, bd = r * r;
   for (const u of units) {
-    if (u.p === 1 || !seen(u.x, u.y)) continue;
+    if (u.p === ME || !seen(u.x, u.y)) continue;
     const Y = sy(u.y) - (u.k.air ? tokenR() * 1.5 : 0), d = (sx(u.x) - px) ** 2 + (Y - py) ** 2;
     if (d < bd) { bd = d; best = u; }
   }
@@ -1873,8 +1929,8 @@ document.addEventListener('gesturestart', e => e.preventDefault());
 for (const b of document.querySelectorAll('#hire button[data-t]')) b.onclick = () => {
   if (state !== 'play') return;
   const type = b.dataset.t, k = UNITS[type];
-  if (!spawnSite || spawnSite.owner !== 1) spawnSite = human.base;
-  const r = hire(human, type, spawnSite);
+  if (!spawnSite || spawnSite.owner !== ME) spawnSite = human.base;
+  const site = spawnSite, r = act({ c: 'hire', u: type, s: sites.indexOf(site) }, () => hire(human, type, site));
   if (r === 'locked') { openRes(); toast(`Lås ${k.name.toLowerCase()} op under forskning`); return; }
   if (r === 'ok') sfx('hire');
   if (r === 'gold') toast(`${k.name} koster ${k.cost} guld`);
@@ -1885,7 +1941,7 @@ for (const b of document.querySelectorAll('#hire button[data-t]')) b.onclick = (
   updateHud();
 };
 $('btnAll').onclick = () => {
-  const mine = units.filter(u => u.p === 1);
+  const mine = units.filter(u => u.p === ME);
   if (mine.length && mine.every(u => selected.has(u))) selected.clear();
   else { selected.clear(); for (const u of mine) selected.add(u); }
   if (!mine.length) toast('Du har ingen tropper endnu');
@@ -1907,30 +1963,370 @@ function soundLabel() { $('btnSound').textContent = 'Lyd: ' + (settings.sound ? 
 soundLabel();
 $('btnSound').onclick = () => { settings.sound = !settings.sound; saveSettings(); soundLabel(); if (settings.sound) sfx('click'); };
 $('btnResume').onclick = () => { paused = false; show('pause', false); };
-$('btnRestart').onclick = $('btnAgain').onclick = () => { delete $('over').dataset.shown; newGame(); };
+$('btnRestart').onclick = $('btnAgain').onclick = () => { delete $('over').dataset.shown; if (net.live) netStart(); else newGame(); };
 $('btnQuit').onclick = $('btnMenu').onclick = () => { paused = false; toMenu(); };
 $('pauseHelp').appendChild(document.querySelector('#menu details').cloneNode(true));
-$('btnHome').onclick = () => { if (human) centerOn(human.base.x + 4, human.base.y - 4); };
+// a point a little way from our HQ towards the middle of the map, whichever corner we are in
+function inland(d) { const b = human.base; return [b.x + Math.sign(HALF - b.x) * d, b.y + Math.sign(HALF - b.y) * d]; }
+$('btnHome').onclick = () => { if (human) centerOn(...inland(4)); };
 $('btnWatch').onclick = () => { watching = true; show('over', false); };
 $('speed').onclick = () => { speed = speed === 1 ? 2 : speed === 2 ? 3 : 1; $('speed').textContent = speed + '×'; };
 function toMenu() {
-  show('pause', false); show('over', false); show('top', false); show('bottom', false); show('menu', true);
+  if (net.role) netLeave();
+  show('pause', false); show('online', false); show('over', false); show('top', false); show('bottom', false); show('menu', true);
   delete $('over').dataset.shown;
   startDemo();
 }
-document.addEventListener('visibilitychange', () => { if (document.hidden && state === 'play') { paused = true; show('pause', true); } });
+// an online match can't be paused: the others keep playing
+document.addEventListener('visibilitychange', () => { if (document.hidden && state === 'play' && !net.live) { paused = true; show('pause', true); } });
+
+// ---------- Online ----------
+// One player hosts: their phone runs the game exactly as offline and sends everyone else what happens,
+// ten times a second at most. Friends only send their orders. Phones find each other through PeerJS
+// (a free public matchmaking server), then talk directly. No accounts, no server of our own.
+const PEER_PREFIX = 'territorywar-v1-', CODE_CHARS = 'ABCDEFGHJKMNPQRSTUVWXYZ23456789', SNAP_EVERY = 2, SNAP_MS = SNAP_EVERY * TICK_MS;
+const net = { role: null, live: false, peer: null, conn: null, code: '', guests: new Map(), seats: null, lastMsg: 0, pend: { F: [], B: [] }, byId: new Map(), snapAt: 0 };
+const TIDX = Object.fromEntries(UKEYS.map((t, i) => [t, i])), TECH_I = Object.fromEntries(TECH.map((t, i) => [t.id, i]));
+const r1 = v => Math.round(v * 10) / 10, r2 = v => Math.round(v * 100) / 100;
+let peerLib = null;
+function loadPeer() {
+  if (peerLib) return peerLib;
+  return (peerLib = new Promise((ok, no) => {
+    const s = document.createElement('script'); s.src = 'lib/peerjs.min.js';
+    s.onload = () => ok(); s.onerror = () => { peerLib = null; no(new Error('lib')); };
+    document.head.appendChild(s);
+  }));
+}
+function peerOpts() {
+  // ?peer=host:port points at a local PeerJS server, for testing
+  const q = new URLSearchParams(location.search).get('peer');
+  if (!q) return { debug: 0 };
+  const [host, port] = q.split(':');
+  return { host, port: +port || 9000, path: '/', secure: false, debug: 0 };
+}
+function olMsg(m, ok) { $('olMsg').textContent = m || ''; $('olMsg').classList.toggle('ok', !!ok); }
+function myName() { return (settings.name.trim() || 'Spiller').slice(0, 14); }
+function act(m, local) {
+  // offline and on the host the order is carried out here; a friend's screen also tries it at once,
+  // so the answer (not enough gold, queue full...) shows right away, and sends it to the host
+  const r = local();
+  if (net.live && net.role === 'client' && r === 'ok') netSend(Object.assign({ t: 'cmd' }, m));
+  return r;
+}
+function netSend(m) { try { if (net.conn && net.conn.open) net.conn.send(m); } catch (e) {} }
+function openOnline(code) {
+  show('menu', false); show('online', true);
+  $('olName').value = settings.name;
+  if (code) $('olCode').value = code;
+  olView('pick'); olMsg('');
+}
+function olView(v) {
+  show('olPick', v === 'pick'); show('olLobby', v === 'lobby');
+  $('btnOlBack').textContent = v === 'lobby' ? 'Forlad rummet' : 'Tilbage';
+}
+function netLeave() {
+  if (net.role === 'host') for (const c of net.guests.keys()) try { c.send({ t: 'bye' }); } catch (e) {}
+  const peer = net.peer;
+  // give the goodbye a moment to leave before the line is cut
+  setTimeout(() => { try { peer && peer.destroy(); } catch (e) {} }, 300);
+  Object.assign(net, { role: null, live: false, peer: null, conn: null, code: '', seats: null });
+  net.guests.clear(); net.byId.clear();
+  show('speed', true); show('btnRestart', true); show('btnAgain', true);
+}
+
+// --- host ---
+function netHost() {
+  olMsg('Opretter rum…', true);
+  loadPeer().then(() => {
+    const code = Array.from({ length: 5 }, () => CODE_CHARS[(Math.random() * CODE_CHARS.length) | 0]).join('');
+    const peer = new Peer(PEER_PREFIX + code, peerOpts());
+    net.peer = peer; net.role = 'host';
+    peer.on('open', () => {
+      if (net.peer !== peer) return;
+      net.code = code; net.seats = [null, { name: myName(), kind: 'host' }, null, null, null];
+      $('olRoom').textContent = code; olView('lobby'); olMsg(''); drawSeats();
+    });
+    peer.on('error', e => {
+      if (net.peer !== peer) return;
+      if (e.type === 'unavailable-id') { peer.destroy(); net.peer = null; netHost(); return; }
+      if (e.type === 'peer-unavailable') return;
+      olMsg(netErr(e));
+    });
+    peer.on('connection', conn => {
+      conn.on('data', d => hostData(conn, d));
+      conn.on('close', () => hostDrop(conn));
+      conn.on('error', () => hostDrop(conn));
+    });
+    peer.on('disconnected', () => { try { if (!peer.destroyed) peer.reconnect(); } catch (e) {} });
+  }).catch(() => olMsg('Kunne ikke hente netværksdelen. Er du online?'));
+}
+function netErr(e) {
+  return e.type === 'network' || e.type === 'server-error' || e.type === 'socket-error' ? 'Kan ikke nå matchmaking-serveren. Prøv igen om lidt.'
+    : e.type === 'browser-incompatible' ? 'Din browser kan ikke spille online.' : 'Netværksfejl: ' + e.type;
+}
+function hostData(conn, d) {
+  if (!d || typeof d !== 'object') return;
+  const g = net.guests.get(conn);
+  if (g) g.last = performance.now();
+  if (d.t === 'hi' && !g) {
+    if (net.live) { conn.send({ t: 'no', why: 'Spillet er allerede i gang' }); return; }
+    const seat = [2, 3, 4].find(k => !net.seats[k]);
+    if (!seat) { conn.send({ t: 'no', why: 'Rummet er fuldt' }); return; }
+    const name = String(d.name || 'Spiller').replace(/\s+/g, ' ').trim().slice(0, 14) || 'Spiller';
+    net.seats[seat] = { name, kind: 'guest', conn };
+    net.guests.set(conn, { seat, last: performance.now() });
+    sfx('click'); drawSeats(); sendLobby();
+  } else if (d.t === 'cmd' && g && net.live) runCmd(players[g.seat], d);
+}
+function hostDrop(conn) {
+  const g = net.guests.get(conn); if (!g) return;
+  net.guests.delete(conn);
+  const seat = net.seats[g.seat];
+  net.seats[g.seat] = null;
+  if (net.live) {
+    // a bot takes over the army of whoever left
+    const p = players[g.seat];
+    if (p && p.human) { p.human = false; p.think = 5; if (state === 'play') toast(p.name + ' forlod spillet. En computer tager over'); }
+  } else { drawSeats(); sendLobby(); }
+  try { conn.close(); } catch (e) {}
+  return seat;
+}
+function sendLobby() {
+  const list = net.seats.map(s => s && { name: s.name, kind: s.kind });
+  for (const [c, g] of net.guests) try { c.send({ t: 'lobby', seats: list, you: g.seat, code: net.code }); } catch (e) {}
+}
+function drawSeats(list, you) {
+  list = list || net.seats; you = you || 1;
+  let html = '';
+  for (let k = 1; k <= 4; k++) {
+    const s = list[k];
+    html += `<div class="${s ? '' : 'bot'}"><i style="background:${rgb(COLORS[k])}"></i><span>${s ? esc(s.name) : 'Computer'}</span><em>${k === you ? 'dig' : s && s.kind === 'host' ? 'vært' : s ? 'ven' : ''}</em></div>`;
+  }
+  $('olSlots').innerHTML = html;
+  const host = net.role === 'host';
+  show('btnStart', host); show('btnShare', true);
+  if (!host) olMsg('Venter på at værten starter spillet…', true);
+  else olMsg(net.guests.size ? '' : 'Send linket til dine venner. Du kan også starte alene mod computere.', true);
+}
+function netStart() {
+  if (net.role !== 'host') return;
+  const names = [null], humans = [null];
+  for (let k = 1; k <= 4; k++) { names.push(net.seats[k] ? net.seats[k].name : null); humans.push(!!net.seats[k]); }
+  const seedv = (Date.now() & 0xffffff) | 1;
+  for (const [c, g] of net.guests) try { c.send({ t: 'start', seed: seedv, names, humans, me: g.seat }); } catch (e) {}
+  net.live = true; net.pend = { F: [], B: [] }; net.tick = 0;
+  show('online', false); delete $('over').dataset.shown;
+  newGame({ seed: seedv, names, humans, me: 1 });
+}
+function runCmd(p, m) {
+  if (!p || !p.alive || !p.human) return;
+  if (m.c === 'hire' && UNITS[m.u] && sites[m.s]) hire(p, m.u, sites[m.s]);
+  else if (m.c === 'res' && TECH_BY[m.id]) research(p, m.id);
+  else if (m.c === 'build' && BLD[m.k] && provs[m.pr]) build(p, provs[m.pr], m.k);
+  else if (m.c === 'hq') upgradeHQ(p);
+  else if (m.c === 'go' && provs[m.pr] && Array.isArray(m.ids)) {
+    const want = new Set(m.ids);
+    orderTo(units.filter(u => u.p === p.id && want.has(u.id)), provs[m.pr]);
+  }
+}
+// after every tick: remember new shots and blasts, and every other tick send the world to everyone
+function netTick() {
+  for (const s of shots) if (!s.sent) { s.sent = 1; net.pend.F.push([r1(s.x0), r1(s.y0), r1(s.x1), r1(s.y1), s.heavy ? 1 : 0]); }
+  for (const b of booms) if (!b.sent) { b.sent = 1; net.pend.B.push([r1(b.x), r1(b.y), (b.big ? 1 : 0) | (b.huge ? 2 : 0) | (b.parts ? 4 : 0)]); }
+  if (++net.tick % SNAP_EVERY) return;
+  const now = performance.now();
+  for (const [c, g] of [...net.guests]) if (now - g.last > 12000) hostDrop(c);
+  if (!net.guests.size) { net.pend = { F: [], B: [] }; return; }
+  const m = snapshot();
+  net.pend = { F: [], B: [] };
+  for (const c of net.guests.keys()) try { c.send(m); } catch (e) {}
+}
+function snapshot() {
+  return {
+    t: 's', T,
+    P: players.slice(1).map(p => [Math.floor(p.gold), p.alive ? 1 : 0, p.count, p.kills, p.lvl, p.res ? [TECH_I[p.res.id], r1(p.res.t), p.res.need] : 0,
+      UKEYS.map(t => p.tech[t]), [...p.techs].map(id => TECH_I[id]), p.place, p.hired, p.lost, p.taken, Math.round(p.earned), r2(p.peak),
+      p.hist.length, p.hist.length ? r2(p.hist[p.hist.length - 1]) : 0, p.human ? 1 : 0]),
+    U: units.map(u => [u.id, u.p, TIDX[u.type], r2(u.x), r2(u.y), Math.ceil(u.hp), r2(u.dir), u.aim == null ? null : r2(u.aim), u.hit,
+      u.path ? u.path.slice(u.pi).map(q => [r1(q[0]), r1(q[1])]) : 0]),
+    R: provs.map(pr => [pr.owner, Math.round(pr.cap), pr.capBy]),
+    S: sites.map(s => [s.owner, s.q.map(t => TIDX[t]), r1(s.prog), s.base ? Math.round(s.hp) : 0, s.bld ? BLD_KEYS.indexOf(s.bld) : -1, s.prov ? s.prov.id : -1, r2(s.x), r2(s.y)]),
+    F: net.pend.F, B: net.pend.B,
+  };
+}
+
+// --- friend ---
+function netJoin(code) {
+  code = String(code || '').toUpperCase().replace(/[^A-Z0-9]/g, '');
+  if (code.length !== 5) { olMsg('Koden har fem tegn'); return; }
+  olMsg('Forbinder…', true);
+  loadPeer().then(() => {
+    const peer = new Peer(peerOpts());
+    net.peer = peer; net.role = 'client'; net.code = code;
+    const fail = setTimeout(() => { if (net.peer === peer && !net.conn?.open) { olMsg('Fandt ikke rummet. Tjek koden, og at værten har spillet åbent'); dropPeer(); } }, 15000);
+    peer.on('open', () => {
+      if (net.peer !== peer) return;
+      const conn = peer.connect(PEER_PREFIX + code, { serialization: 'json', reliable: true });
+      net.conn = conn;
+      conn.on('open', () => { clearTimeout(fail); net.lastMsg = performance.now(); conn.send({ t: 'hi', name: myName() }); });
+      conn.on('data', clientData);
+      conn.on('close', () => { if (net.conn === conn) netLost('Forbindelsen til værten blev afbrudt'); });
+    });
+    peer.on('error', e => {
+      if (net.peer !== peer) return;
+      clearTimeout(fail);
+      olMsg(e.type === 'peer-unavailable' ? 'Rummet findes ikke. Tjek koden' : netErr(e)); dropPeer();
+    });
+  }).catch(() => olMsg('Kunne ikke hente netværksdelen. Er du online?'));
+}
+function dropPeer() { const p = net.peer; Object.assign(net, { role: null, peer: null, conn: null, live: false }); try { p && p.destroy(); } catch (e) {} }
+function netLost(msg) {
+  if (!net.role) return;
+  const wasLive = net.live;
+  dropPeer();
+  if (wasLive) { state = 'over'; show('pause', false); show('over', false); show('top', false); show('bottom', false); }
+  show('menu', false); show('online', true); olView('pick'); olMsg(msg);
+}
+// ping the host now and then so it knows we're still here, and notice if it goes quiet
+setInterval(() => {
+  if (net.role !== 'client' || !net.conn || !net.conn.open) return;
+  netSend({ t: 'p' });
+  if (net.live && performance.now() - net.lastMsg > 8000) netLost('Værten svarer ikke længere');
+}, 2000);
+function clientData(d) {
+  if (!d || typeof d !== 'object') return;
+  net.lastMsg = performance.now();
+  if (d.t === 'lobby') { $('olRoom').textContent = d.code; olView('lobby'); drawSeats(d.seats, d.you); }
+  else if (d.t === 'no') { olMsg(d.why); dropPeer(); olView('pick'); }
+  else if (d.t === 'bye') netLost('Værten forlod spillet');
+  else if (d.t === 'start') {
+    net.live = true; net.byId.clear(); net.snapAt = performance.now();
+    show('online', false); delete $('over').dataset.shown;
+    newGame({ seed: d.seed, names: d.names, humans: d.humans, me: d.me });
+  } else if (d.t === 's' && net.live) applySnap(d);
+}
+function applySnap(m) {
+  const now = performance.now();
+  net.snapAt = now; T = m.T;
+  m.P.forEach((a, i) => {
+    const p = players[i + 1];
+    const wasAlive = p.alive;
+    p.gold = a[0]; p.alive = !!a[1]; p.kills = a[3]; p.lvl = a[4];
+    p.res = a[5] ? { id: TECH[a[5][0]].id, t: a[5][1], need: a[5][2] } : null;
+    if (a[6].some((v, k) => v !== p.tech[UKEYS[k]])) { UKEYS.forEach((t, k) => p.tech[t] = a[6][k]); for (const t of UKEYS) p.kc[t] = null; }
+    if (a[7].length !== p.techs.size) {
+      for (const ti of a[7]) {
+        const t = TECH[ti];
+        if (p.techs.has(t.id)) continue;
+        p.techs.add(t.id); for (const k of UKEYS) p.kc[k] = null;
+        if (p === human && state === 'play') { toast(t.unit ? `${t.name} er låst op!` : `${t.name} er færdig`); sfx('research'); }
+      }
+    }
+    p.place = a[8]; p.hired = a[9]; p.lost = a[10]; p.taken = a[11]; p.earned = a[12]; p.peak = a[13];
+    while (p.hist.length < a[14]) p.hist.push(a[15]);
+    p.human = !!a[16];
+    if (wasAlive && !p.alive && p !== human && state === 'play') toast(p.name + ' er slået ud!');
+  });
+  m.R.forEach((a, i) => {
+    const pr = provs[i], old = pr.owner;
+    if (a[0] !== old) {
+      pr.owner = a[0];
+      for (const c of pr.cells) setOwn(c, a[0]);
+      if (selProv === pr && a[0] !== ME) closeBuild();
+      if (state === 'play') {
+        if (a[0] === ME) sfx(pr.town ? 'town' : 'capture'); else if (old === ME) sfx('lose');
+        if (pr.town) { if (a[0] === ME) toast('Du erobrede en by!'); else if (old === ME && a[0]) toast(players[a[0]].name + ' tog din by', [pr.cx, pr.cy]); }
+      }
+    }
+    if (pr.owner === ME && pr.town && a[1] > 0 && !pr.cap) alarm('p' + pr.id, pr.cx, pr.cy, players[a[2]].name + ' prøver at tage din by!');
+    pr.cap = a[1]; pr.capBy = a[2];
+  });
+  for (let k = 1; k <= 4; k++) players[k].count = m.P[k - 1][2];
+  m.S.forEach((a, i) => {
+    let s = sites[i];
+    if (!s) {
+      const pr = provs[a[5]];
+      s = { x: a[6], y: a[7], owner: a[0], q: [], prog: 0, bld: BLD_KEYS[a[4]], prov: pr };
+      if (pr) pr.bld = s;
+      sites.push(s);
+    }
+    s.owner = a[0]; s.q = a[1].map(t => UKEYS[t]); s.prog = a[2];
+    if (s.base) {
+      if (a[3] < s.hp - 0.5) { s.hit = 4; if (s.owner === ME) alarm('hq', s.x, s.y, 'Dit HQ bliver angrebet!'); }
+      s.hp = a[3];
+    }
+  });
+  const alive = new Set();
+  for (const a of m.U) {
+    const id = a[0], p = players[a[1]], type = UKEYS[a[2]];
+    alive.add(id);
+    let u = net.byId.get(id);
+    if (!u) {
+      u = { id, p: a[1], type, k: kOf(p, type), x: a[3], y: a[4], hp: a[5], path: null, pi: 0, dir: a[6], hit: 0 };
+      net.byId.set(id, u); units.push(u);
+    }
+    // glide from where it is drawn now to where the host says it is, over one update
+    if (Math.hypot(a[3] - u.x, a[4] - u.y) > 4) { u.x = a[3]; u.y = a[4]; }
+    u.fx = u.x; u.fy = u.y; u.tx = a[3]; u.ty = a[4];
+    u.k = kOf(p, type); u.hp = a[5]; u.dir = a[6]; u.aim = a[7] == null ? undefined : a[7]; u.hit = a[8];
+    u.path = a[9] || null; u.pi = 0;
+  }
+  if (units.length !== alive.size) {
+    for (const u of units) if (!alive.has(u.id)) { selected.delete(u); net.byId.delete(u.id); }
+    units = units.filter(u => alive.has(u.id));
+  }
+  for (const f of m.F) { shots.push({ x0: f[0], y0: f[1], x1: f[2], y1: f[3], heavy: !!f[4], t: 0 }); sfxAt(f[4] ? 'heavy' : 'shot', f[0], f[1]); }
+  for (const b of m.B) {
+    const big = !!(b[2] & 1), huge = !!(b[2] & 2);
+    booms.push({ x: b[0], y: b[1], t: 0, big, huge, parts: b[2] & 4 ? sparks(huge ? 36 : big ? 14 : 7) : null });
+    if (huge) { if (state === 'play') { shake = 1; sfx('big'); } }
+    else if (b[2] & 4) sfxAt(big ? 'boom' : 'die', b[0], b[1]);
+  }
+}
+function clientFrame(dt, now) {
+  const f = Math.min(1, (now - net.snapAt) / SNAP_MS);
+  for (const u of units) if (u.tx !== undefined) { u.x = u.fx + (u.tx - u.fx) * f; u.y = u.fy + (u.ty - u.fy) * f; }
+  for (const s of shots) s.t += dt / 1000;
+  shots = shots.filter(s => s.t < 0.18);
+  for (const b of booms) b.t += dt / 1000;
+  booms = booms.filter(b => b.t < (b.huge ? 1.6 : 0.7));
+  if (state === 'play') checkEnd();
+}
+
+$('btnOnline').onclick = () => { $('name').blur(); openOnline(); sfx('click'); };
+$('olName').addEventListener('input', () => { settings.name = $('olName').value; $('name').value = settings.name; saveSettings(); });
+$('btnHost').onclick = () => { if (!net.role) netHost(); };
+$('btnJoin').onclick = () => { if (!net.role) netJoin($('olCode').value); };
+$('olCode').addEventListener('keydown', e => { if (e.key === 'Enter') $('btnJoin').click(); });
+$('btnStart').onclick = () => netStart();
+$('btnShare').onclick = () => {
+  const url = location.origin + location.pathname + '?rum=' + net.code;
+  const text = `Spil Territory War med mig! Rumkode ${net.code}`;
+  if (navigator.share) navigator.share({ title: 'Territory War', text, url }).catch(() => {});
+  else if (navigator.clipboard) navigator.clipboard.writeText(url).then(() => toast('Linket er kopieret'), () => toast(url));
+  else toast(url);
+};
+$('btnOlBack').onclick = () => { if (net.role) netLeave(); show('online', false); show('menu', true); olMsg(''); };
 
 // ---------- Main loop ----------
 let paused = false, last = performance.now(), acc = 0;
-function frame(now) {
-  const dt = Math.min(250, now - last); last = now;
-  if ((state === 'play' || state === 'over' || state === 'demo') && !paused) {
-    acc += dt * (state === 'demo' ? 2 : speed);
-    let n = 0;
-    while (acc >= TICK_MS && n < 8) { step(); acc -= TICK_MS; n++; }
-    if (n === 8) acc = 0;
+// The host runs the whole world for everyone; a friend's screen only shows what the host sends.
+function pumpSim(now) {
+  const host = net.live && net.role === 'host';
+  const dt = Math.min(host ? 1000 : 250, now - last); last = now;
+  if (net.live && net.role === 'client') { clientFrame(dt, now); return; }
+  if ((state === 'play' || state === 'over' || state === 'demo') && (!paused || host)) {
+    acc += dt * (state === 'demo' ? 2 : host ? 1 : speed);
+    let n = 0; const max = host ? 12 : 8;
+    while (acc >= TICK_MS && n < max) { step(); if (host) netTick(); acc -= TICK_MS; n++; }
+    if (n === max) acc = 0;
     if (state === 'demo' && (players.filter(p => p && p.alive).length <= 1 || T > 6000)) startDemo();
   }
+}
+// browsers stop animation frames in a hidden tab, so the host keeps the game going on a timer
+setInterval(() => { if (net.live && net.role === 'host' && document.hidden) pumpSim(performance.now()); }, 200);
+function frame(now) {
+  pumpSim(now);
   try { render(now); } catch (e) { console.error(e); }
   if (now - hudT > 200) { hudT = now; updateHud(); }
   requestAnimationFrame(frame);
@@ -1944,9 +2340,18 @@ function startDemo() {
   newWorld(true); fitCamera();
 }
 startDemo();
+// opened from a friend's link: go straight to joining their room
+{
+  const room = new URLSearchParams(location.search).get('rum');
+  if (room) {
+    history.replaceState(null, '', location.pathname + location.search.replace(/[?&]rum=[^&]*/, '').replace(/^&/, '?'));
+    openOnline(room.toUpperCase());
+    if (settings.name.trim()) netJoin(room); else { olMsg('Skriv dit navn og tryk Join', true); $('olName').focus(); }
+  }
+}
 if ('serviceWorker' in navigator && location.protocol === 'https:') navigator.serviceWorker.register('sw.js').catch(() => {});
 requestAnimationFrame(frame);
-window.TW = { get units() { return units; }, get players() { return players; }, get sites() { return sites; }, get towns() { return towns; }, build, upgradeHQ, get selProv() { return selProv; }, get provs() { return provs; }, get state() { return state; }, get T() { return T; },
+window.TW = { net, get units() { return units; }, get human() { return human; }, get players() { return players; }, get sites() { return sites; }, get towns() { return towns; }, build, upgradeHQ, get selProv() { return selProv; }, get provs() { return provs; }, get state() { return state; }, get T() { return T; },
   get selected() { return selected; }, get nOwnable() { return nOwnable; }, step, hire, orderPoints, findPath, sendTo, research, endScreen, newGame, tapAt, own: () => own, terr: () => terr, cam, settings, get gl() { return !!gl; } };
 </script>
 </body>

@@ -4,6 +4,10 @@ A real-time war game for four on your phone: hire troops one at a time, steer th
 
 **Play here:** https://woodmandk.github.io/Territory-war/
 
+## Play online with friends
+
+Tap **Spil online med venner**, create a room and share the link (or the five-letter code). Up to four people on one map; empty seats are bots. The host's phone runs the game and sends everyone else what happens; friends only send their orders. Phones find each other through the free PeerJS matchmaking server and then talk directly (WebRTC), so there is no server or account of our own. The host has to keep the game open until the match is over. If a friend drops out, a bot takes over their army.
+
 ## How it works
 
 Four armies, one map, a bit like Supremacy but much simpler. You and three bots each start with a headquarters (HQ) in a corner, 100 gold and no troops.
