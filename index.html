@@ -332,6 +332,8 @@ const VS_BASE = { inf: 1, tank: 1.5, cmd: 1.2, htank: 2, arty: 0.8, rocket: 0.9,
 // Research tree: soldiers and tanks from the start, everything else is researched. Some research needs
 // other research first. One project at a time, and each takes a while.
 const UPG = 0.15, MAX_TECH = 3;
+// ground troops march faster on the roads, which are longer than the straight line
+const ROAD_SPEED = 1.3;
 const TECH = [];
 function tech(id, tab, name, cost, time, req, desc, unit) { TECH.push({ id, tab, name, cost, time, req: req || [], desc, unit }); }
 tech('aa',     'units', 'Luftværn',      120, 20, [],         'Skyder fly ned', 'aa');
@@ -362,7 +364,7 @@ function kOf(p, type) {
   const c = p.kc[type]; if (c) return c;
   const b = UNITS[type], lv = p.tech[type], m = 1 + UPG * lv;
   return (p.kc[type] = Object.assign({}, b, { hp: Math.round(b.hp * m), dps: b.dps * m, lv,
-    speed: b.speed * (!b.air && has(p, 'log') ? 1.15 : 1), sight: b.sight * (has(p, 'radar') ? 1.3 : 1) }));
+    speed: b.speed * (b.air ? 1 : ROAD_SPEED) * (!b.air && has(p, 'log') ? 1.15 : 1), sight: b.sight * (has(p, 'radar') ? 1.3 : 1) }));
 }
 function refreshUnits(p) {
   for (const t of UKEYS) p.kc[t] = null;
@@ -596,6 +598,7 @@ function newWorld(demo) {
   for (let i = 0; i < NC; i++) { if (prov[i] < 0) own[i] = -1; else nOwnable++; }
   for (const t of towns) { const pr = provs[prov[cellOf(t.x, t.y)]]; pr.town = t; t.prov = pr; }
   makePlayers(demo);
+  buildRoads();
   for (let k = 1; k <= 4; k++) {
     const pr = provs[prov[cellOf(players[k].base.x, players[k].base.y)]];
     pr.hq = k; setProvOwner(pr, k);
@@ -625,11 +628,11 @@ function los(x0, y0, x1, y1) {
   return true;
 }
 // Breadth-first search on the grid, then string-pulled into straight legs.
-function findPath(sx, sy, tx, ty) {
+function findPath(sx, sy, tx, ty, ok) {
   const s = nearestPass(cellOf(sx, sy)), tc = cellOf(tx, ty), t = nearestPass(tc);
   if (s < 0 || t < 0) return null;
   if (t !== tc) { tx = t % W + 0.5; ty = ((t / W) | 0) + 0.5; }
-  if (los(sx, sy, tx, ty)) return [[tx, ty]];
+  if (!ok && los(sx, sy, tx, ty)) return [[tx, ty]];
   pstamp++; let h = 0, e = 0; pq[e++] = s; pseen[s] = pstamp; par[s] = -1;
   let found = false;
   while (h < e) {
@@ -641,7 +644,7 @@ function findPath(sx, sy, tx, ty) {
       const X = x + dx, Y = y + dy;
       if (X < 0 || Y < 0 || X >= W || Y >= H) continue;
       const j = Y * W + X;
-      if (pseen[j] === pstamp || !gpass(j)) continue;
+      if (pseen[j] === pstamp || !gpass(j) || (ok && !ok(j))) continue;
       if (dx && dy && (!gpass(y * W + X) || !gpass(Y * W + x))) continue;
       pseen[j] = pstamp; par[j] = i; pq[e++] = j;
     }
@@ -661,7 +664,69 @@ function findPath(sx, sy, tx, ty) {
   }
   return out;
 }
-// Orders: a list of waypoints. Ground troops walk around water and rock between them; planes fly straight.
+// Roads, like in Supremacy: every province has a node (a passable spot near its middle), and neighbouring
+// provinces are joined by a road that stays inside the two of them. Ground troops travel road to road.
+let roads = new Map();
+function buildRoads() {
+  roads = new Map();
+  for (const pr of provs) {
+    let best = -1, bd = 1e9;
+    for (const i of pr.cells) { if (!gpass(i)) continue; const d = (i % W + 0.5 - pr.cx) ** 2 + (((i / W) | 0) + 0.5 - pr.cy) ** 2; if (d < bd) { bd = d; best = i; } }
+    pr.nx = best >= 0 ? best % W + 0.5 : pr.cx; pr.ny = best >= 0 ? ((best / W) | 0) + 0.5 : pr.cy; pr.node = best >= 0;
+  }
+  for (const a of provs) for (const j of a.nb) {
+    const b = provs[j];
+    if (a.id > b.id || !a.node || !b.node) continue;
+    const pts = findPath(a.nx, a.ny, b.nx, b.ny, i => prov[i] === a.id || prov[i] === b.id);
+    if (!pts) continue;
+    let len = 0, x = a.nx, y = a.ny;
+    for (const q of pts) { len += Math.hypot(q[0] - x, q[1] - y); x = q[0]; y = q[1]; }
+    if (len > 3 * Math.hypot(b.nx - a.nx, b.ny - a.ny) + 4) continue;
+    roads.set(a.id + '-' + b.id, { a: a.id, b: b.id, pts: [[a.nx, a.ny], ...pts], len });
+  }
+}
+function road(a, b) {
+  const r = roads.get(Math.min(a, b) + '-' + Math.max(a, b));
+  if (!r) return null;
+  return r.a === a ? r : { len: r.len, pts: r.pts.slice().reverse() };
+}
+// shortest chain of roads between two provinces
+function roadRoute(from, to) {
+  const n = provs.length, dist = new Float64Array(n).fill(Infinity), prev = new Int32Array(n).fill(-1), done = new Uint8Array(n);
+  dist[from] = 0;
+  for (;;) {
+    let i = -1, bd = Infinity;
+    for (let k = 0; k < n; k++) if (!done[k] && dist[k] < bd) { bd = dist[k]; i = k; }
+    if (i < 0 || i === to) break;
+    done[i] = 1;
+    for (const j of provs[i].nb) { const r = road(i, j); if (r && dist[i] + r.len < dist[j]) { dist[j] = dist[i] + r.len; prev[j] = i; } }
+  }
+  if (!isFinite(dist[to])) return null;
+  const chain = [to];
+  while (chain[0] !== from) chain.unshift(prev[chain[0]]);
+  return chain;
+}
+function roadPath(x, y, tx, ty) {
+  const a = cellOf(x, y), b = cellOf(tx, ty);
+  if (a < 0 || b < 0 || prov[a] < 0 || prov[b] < 0 || prov[a] === prov[b]) return null;
+  const chain = roadRoute(prov[a], prov[b]);
+  if (!chain) return null;
+  const A = provs[chain[0]], out = [];
+  // onto the road at our own node (unless we are already past it towards the next province)
+  const nxt = provs[chain[1]];
+  if (Math.hypot(A.nx - x, A.ny - y) > 1.2 && Math.hypot(nxt.nx - x, nxt.ny - y) > Math.hypot(nxt.nx - A.nx, nxt.ny - A.ny)) {
+    const seg = los(x, y, A.nx, A.ny) ? [[A.nx, A.ny]] : findPath(x, y, A.nx, A.ny);
+    if (seg) out.push(...seg);
+  }
+  for (let k = 0; k + 1 < chain.length; k++) {
+    const r = road(chain[k], chain[k + 1]);
+    out.push(...(k === 0 && !out.length ? r.pts : r.pts.slice(1)));
+  }
+  const B = provs[chain[chain.length - 1]];
+  if (Math.hypot(tx - B.nx, ty - B.ny) > 0.3) { const seg = los(B.nx, B.ny, tx, ty) ? [[tx, ty]] : findPath(B.nx, B.ny, tx, ty); if (seg) out.push(...seg); }
+  return out.length ? out : null;
+}
+// Orders: a list of waypoints. Ground troops follow the roads between provinces; planes fly straight.
 function orderPoints(u, pts) {
   const path = [];
   let cx = u.x, cy = u.y;
@@ -669,7 +734,7 @@ function orderPoints(u, pts) {
     const tx = Math.max(0.3, Math.min(W - 0.3, tx0)), ty = Math.max(0.3, Math.min(H - 0.3, ty0));
     let seg;
     if (u.k.air) seg = [[tx, ty]];
-    else { const i = cellOf(tx, ty); seg = i >= 0 && gpass(i) && los(cx, cy, tx, ty) ? [[tx, ty]] : findPath(cx, cy, tx, ty); }
+    else { const i = cellOf(tx, ty); seg = roadPath(cx, cy, tx, ty) || (i >= 0 && gpass(i) && los(cx, cy, tx, ty) ? [[tx, ty]] : findPath(cx, cy, tx, ty)); }
     if (!seg) continue;
     for (const p of seg) path.push(p);
     cx = path[path.length - 1][0]; cy = path[path.length - 1][1];
@@ -723,7 +788,7 @@ function gateOk(u, X, Y) {
   return !(ob > 0 && ob !== u.p && oa > 0 && oa !== u.p);
 }
 function moveUnit(u) {
-  let sp = u.k.speed * DT;
+  let sp = Math.min(u.k.speed, u.vmax || Infinity) * DT;
   const ci = cellOf(u.x, u.y);
   if (!u.k.air && ci >= 0 && terr[ci] === 3) sp *= u.type === 'tank' || u.type === 'htank' ? 0.55 : 0.7;
   // engaged troops can't just run past: inside an enemy's fire they crawl, and they can't push in closer
@@ -745,7 +810,7 @@ function moveUnit(u) {
       u.gated = true; return;
     }
     u.gated = false;
-    if (d <= sp) { u.x = pt[0]; u.y = pt[1]; if (++u.pi >= u.path.length) { u.path = null; u.ax = u.x; u.ay = u.y; } }
+    if (d <= sp) { u.x = pt[0]; u.y = pt[1]; if (++u.pi >= u.path.length) { u.path = null; u.ax = u.x; u.ay = u.y; u.vmax = 0; } }
     else { u.x += dx / d * sp; u.y += dy / d * sp; }
     return;
   }
@@ -1154,6 +1219,7 @@ function render(now) {
     ctx.imageSmoothingEnabled = true; ctx.drawImage(fbCanvas, cam.x, cam.y, W * cam.s, H * cam.s);
   }
   const t = now / 1000;
+  drawRoads();
   drawFog(now);
   drawRanges(); drawPaths();
   drawSites(t);
@@ -1191,8 +1257,24 @@ function render(now) {
   }
 }
 function tokenR() { return Math.max(9, Math.min(18, cam.s * 0.75)); }
+function drawRoads() {
+  ctx.lineCap = 'round'; ctx.lineJoin = 'round';
+  const w = Math.max(1.6, cam.s * 0.16);
+  for (const pass of [0, 1]) {
+    ctx.strokeStyle = pass ? 'rgba(236,222,186,.55)' : 'rgba(40,30,18,.35)'; ctx.lineWidth = pass ? w : w + 2;
+    ctx.beginPath();
+    for (const r of roads.values()) { ctx.moveTo(sx(r.pts[0][0]), sy(r.pts[0][1])); for (let k = 1; k < r.pts.length; k++) ctx.lineTo(sx(r.pts[k][0]), sy(r.pts[k][1])); }
+    ctx.stroke();
+  }
+  ctx.fillStyle = 'rgba(236,222,186,.8)';
+  const nr = Math.max(2, cam.s * 0.22);
+  for (const pr of provs) if (pr.node && !pr.hq && !pr.town && !pr.bld) { ctx.beginPath(); ctx.arc(sx(pr.nx), sy(pr.ny), nr, 0, 7); ctx.fill(); }
+}
 function drawRanges() {
-  for (const u of selected) {
+  // one circle per stack: the longest reach in it
+  const best = new Map();
+  for (const u of selected) { const st = stackOf.get(u) || u, b = best.get(st); if (!b || u.k.range > b.k.range) best.set(st, u); }
+  for (const u of best.values()) {
     const X = sx(u.x), Y = sy(u.y) - (u.k.air ? tokenR() * 1.5 : 0), R = u.k.range * cam.s;
     const arty = u.type === 'arty';
     ctx.fillStyle = arty ? 'rgba(255,120,80,.10)' : 'rgba(255,236,150,.07)';
@@ -1366,11 +1448,36 @@ function planePath() {
   ctx.lineTo(-0.25, 0.2); ctx.lineTo(-0.42, 1.05); ctx.lineTo(-0.15, 1.05); ctx.lineTo(0.25, 0.2);
   ctx.lineTo(0.6, 0.2); ctx.quadraticCurveTo(1.0, 0.2, 1.1, 0); ctx.closePath();
 }
+// Stacks: troops of one player that stand together (ground and air apart) are one stack, like in Supremacy.
+// A stack is drawn as its strongest troop with a count, and a tap picks the whole stack.
+const STACK_R = 1.7;
+let stackOf = new Map();
+function buildStacks() {
+  stackOf = new Map();
+  const n = units.length, par = Array.from({ length: n }, (_, i) => i);
+  const find = i => { while (par[i] !== i) i = par[i] = par[par[i]]; return i; };
+  for (let a = 0; a < n; a++) for (let b = a + 1; b < n; b++) {
+    const A = units[a], B = units[b];
+    if (A.p !== B.p || !!A.k.air !== !!B.k.air || (A.x - B.x) ** 2 + (A.y - B.y) ** 2 > STACK_R * STACK_R) continue;
+    par[find(a)] = find(b);
+  }
+  const groups = new Map();
+  units.forEach((u, i) => { const g = find(i); if (!groups.has(g)) groups.set(g, []); groups.get(g).push(u); });
+  for (const list of groups.values()) {
+    const lead = list.reduce((a, b) => (b.k.cost > a.k.cost ? b : a));
+    const st = { units: list, lead };
+    for (const u of list) stackOf.set(u, st);
+  }
+}
+const stackUnits = u => (stackOf.get(u) || { units: [u] }).units;
 function drawUnits(t) {
   const r = tokenR();
+  buildStacks();
   for (const pass of [0, 1]) for (const u of units) {
     if (!!u.k.air !== !!pass) continue;
     if (u.p !== ME && !seen(u.x, u.y)) continue;
+    const st = stackOf.get(u), many = st && st.units.length > 1;
+    if (many && st.lead !== u) continue;
     let X = sx(u.x), Y = sy(u.y);
     if (X < -40 || Y < -40 || X > CW + 40 || Y > CH + 40) continue;
     const col = players[u.p].col, R = u.type === 'plane' ? r * 1.25 : u.type === 'bomber' ? r * 1.5 : u.type === 'inf' || u.type === 'cmd' ? r * 0.95 : u.type === 'htank' ? r * 1.2 : r * 1.05;
@@ -1379,7 +1486,12 @@ function drawUnits(t) {
       planePath(); ctx.fillStyle = 'rgba(0,0,0,.22)'; ctx.fill(); ctx.restore();
       Y -= r * 1.5 + Math.sin(t * 3 + u.id) * 1.5;
     }
-    if (selected.has(u)) {
+    if (many) {
+      // the troops underneath peek out behind the leader
+      ctx.fillStyle = rgb(col.map(v => v * 0.6)); ctx.strokeStyle = 'rgba(15,12,8,.9)'; ctx.lineWidth = 1.4;
+      for (const k of [2, 1]) { ctx.beginPath(); ctx.arc(X + k * 3.5, Y + k * 3.5, R * 0.95, 0, 7); ctx.fill(); ctx.stroke(); }
+    }
+    if (many ? st.units.some(v => selected.has(v)) : selected.has(u)) {
       ctx.strokeStyle = `rgba(255,236,150,${0.7 + 0.3 * Math.sin(t * 6)})`; ctx.lineWidth = 3;
       ctx.beginPath(); ctx.arc(X, Y, R * 1.3 + 4, 0, 7); ctx.stroke();
     }
@@ -1408,7 +1520,15 @@ function drawUnits(t) {
       ctx.fillStyle = '#fff'; ctx.beginPath(); ctx.arc(0.5, 0, 0.13, 0, 7); ctx.fill();
     }
     ctx.restore();
-    if (u.hp < u.k.hp) hpBar(X, Y + R * 1.15 + 2, R * 2, u.hp / u.k.hp);
+    if (many) {
+      const hp = st.units.reduce((a, v) => a + v.hp, 0), mx = st.units.reduce((a, v) => a + v.k.hp, 0);
+      if (hp < mx) hpBar(X, Y + R * 1.15 + 2, R * 2.2, hp / mx);
+      const bx = X + R * 0.95, by = Y - R * 0.95, br = Math.max(7, R * 0.5);
+      ctx.fillStyle = '#16130e'; ctx.strokeStyle = rgb(lighten(col, 0.5)); ctx.lineWidth = 1.6;
+      ctx.beginPath(); ctx.arc(bx, by, br, 0, 7); ctx.fill(); ctx.stroke();
+      ctx.fillStyle = '#fff'; ctx.font = `800 ${Math.round(br * 1.25)}px system-ui, sans-serif`; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+      ctx.fillText(st.units.length, bx, by + 0.5);
+    } else if (u.hp < u.k.hp) hpBar(X, Y + R * 1.15 + 2, R * 2, u.hp / u.k.hp);
   }
 }
 
@@ -1587,7 +1707,7 @@ function updateHud() {
   else if (!mine.length) hint = n ? 'Din første trop er på vej ud af ' + (spawnSite && spawnSite.town ? 'byen' : 'dit HQ') : 'Hyr en trop. Den bygges i ' + (spawnSite && spawnSite.town ? 'den valgte by' : 'dit HQ');
   else if (!selected.size) hint = 'Tryk på en trop for at vælge den. Hold fingeren på flere for at tilføje dem';
   else if (selected.size === 1) { const u = [...selected][0]; hint = `${u.k.name}, ${Math.ceil(u.hp)}/${u.k.hp} liv. <b>Tryk på en provins</b> for at sende den. Tryk på den igen for at fravælge`; }
-  else hint = `${selected.size} tropper valgt. <b>Tryk på en provins</b> for at sende dem dertil`;
+  else hint = `Stak med ${selected.size} tropper. <b>Tryk på en provins</b> for at sende den samlet`;
   $('hint').innerHTML = hint;
   fillSel();
 }
@@ -1814,9 +1934,12 @@ function siteAt(px, py) {
 function provAtWorld(wx, wy) { const i = cellOf(wx, wy); return i >= 0 && prov[i] >= 0 ? provs[prov[i]] : null; }
 function orderTo(list, pr) {
   let ok = 0;
+  const slow = air => Math.min(...list.filter(u => !!u.k.air === air).map(u => u.k.speed));
+  const vg = slow(false), va = slow(true);
+  for (const u of list) u.vmax = u.k.air ? va : vg;
   list.forEach((u, k) => {
-    const n = list.length, a = k / n * Math.PI * 2, r = n > 1 ? 0.7 + 0.15 * n : 0;
-    ok += orderPoints(u, [[pr.cx + Math.cos(a) * r, pr.cy + Math.sin(a) * r]]);
+    const n = list.length, a = k / n * Math.PI * 2, r = n > 1 ? 0.5 + 0.08 * n : 0;
+    ok += orderPoints(u, [[(pr.node ? pr.nx : pr.cx) + Math.cos(a) * r, (pr.node ? pr.ny : pr.cy) + Math.sin(a) * r]]);
   });
   return ok;
 }
@@ -1836,7 +1959,8 @@ function holdAt(px, py) {
   if (state !== 'play' || !human.alive) return false;
   const u = unitsAt(px, py).find(v => !selected.has(v));
   if (!u) return false;
-  closeBuild(); selected.add(u); buzz(20); sfx('click'); updateHud();
+  buildStacks();
+  closeBuild(); for (const v of stackUnits(u)) selected.add(v); buzz(20); sfx('click'); updateHud();
   return true;
 }
 function tapAt(px, py) {
@@ -1846,9 +1970,10 @@ function tapAt(px, py) {
   const near = unitsAt(px, py);
   if (near.length) {
     closeBuild();
-    const u = near[0];
-    if (selected.has(u)) selected.clear();
-    else { selected.clear(); selected.add(u); }
+    buildStacks();
+    const st = stackUnits(near[0]);
+    if (st.every(v => selected.has(v))) selected.clear();
+    else { selected.clear(); for (const v of st) selected.add(v); }
     buzz(8); sfx('click'); updateHud(); return;
   }
   const [wx, wy] = world(px, py);
@@ -2352,7 +2477,7 @@ startDemo();
 if ('serviceWorker' in navigator && location.protocol === 'https:') navigator.serviceWorker.register('sw.js').catch(() => {});
 requestAnimationFrame(frame);
 window.TW = { net, get units() { return units; }, get human() { return human; }, get players() { return players; }, get sites() { return sites; }, get towns() { return towns; }, build, upgradeHQ, get selProv() { return selProv; }, get provs() { return provs; }, get state() { return state; }, get T() { return T; },
-  get selected() { return selected; }, get nOwnable() { return nOwnable; }, step, hire, orderPoints, findPath, sendTo, research, endScreen, newGame, tapAt, own: () => own, terr: () => terr, cam, settings, get gl() { return !!gl; } };
+  get selected() { return selected; }, get nOwnable() { return nOwnable; }, step, hire, orderPoints, findPath, sendTo, get roads() { return roads; }, research, endScreen, newGame, tapAt, own: () => own, terr: () => terr, cam, settings, get gl() { return !!gl; } };
 </script>
 </body>
 </html>
