@@ -49,12 +49,16 @@ button:disabled{opacity:.4;cursor:default}
 #resBadge{position:absolute;left:3px;right:3px;bottom:3px;height:4px;border-radius:2px;background:rgba(255,255,255,.15);overflow:hidden;font-style:normal}
 #resBadge b{display:block;height:100%;background:var(--gold)}
 #rbar{margin-bottom:8px;padding-bottom:8px;border-bottom:1px solid rgba(255,255,255,.1)}
-#rbRows{display:grid;gap:5px}
+#rbRows{display:grid;gap:5px;max-height:34vh;overflow-y:auto;overscroll-behavior:contain}
+#rbRows p.more{margin:2px 0 0;font-size:12px;color:var(--muted)}
+#rbTabs{display:flex;gap:6px;margin-bottom:8px}
+#rbTabs button{flex:1;padding:6px 4px;border-radius:10px;background:rgba(255,255,255,.08);font-weight:800;font-size:13px;color:var(--muted)}
+#rbTabs button.on{background:rgba(233,185,73,.3);color:#fffaf0}
 #rbRows .row{display:flex;align-items:center;gap:8px;font-size:14px;font-weight:800}
 #rbRows .row svg{width:22px;height:22px;flex:none}
 #rbRows .row .nm{flex:1;min-width:0}
 #rbRows .row .nm small{display:block;font-size:11px;font-weight:600;color:var(--muted)}
-#rbRows .row button{flex:none;min-width:104px;padding:6px 8px;border-radius:10px;background:rgba(255,255,255,.12);font-weight:800;font-size:13px}
+#rbRows .row button{flex:none;min-width:104px;max-width:150px;white-space:normal;line-height:1.15;padding:6px 8px;border-radius:10px;background:rgba(255,255,255,.12);font-weight:800;font-size:13px}
 #rbRows .row button b{color:var(--gold)}
 #rbRows .row button.cant{opacity:.4}
 #rbRows .row button.go{background:rgba(233,185,73,.3)}
@@ -119,7 +123,11 @@ details ul{padding-left:18px;margin:8px 0 0}
 #gold{font-family:var(--display);font-weight:400;font-size:24px}
 #army{font-size:15px;font-weight:800;font-variant-numeric:tabular-nums}
 #army small{color:var(--muted);font-weight:600}
-#hire{display:flex;gap:4px;margin-top:8px}
+#hire{display:flex;gap:4px;margin-top:8px;overflow-x:auto;scrollbar-width:none}
+#hire::-webkit-scrollbar{display:none}
+#hire button{flex:1 0 60px!important;white-space:nowrap}
+#hire #btnAll{flex:.8 0 52px!important}
+#btnMore b{font-size:20px;line-height:24px;height:24px}
 #hire button{flex:1;padding:7px 2px 6px;border-radius:12px;background:rgba(255,255,255,.1);color:#fffaf0;display:flex;flex-direction:column;align-items:center;gap:2px;font-size:11px;min-width:0;font-weight:800;line-height:1.1;position:relative}
 #hire button small{font-size:12px;font-weight:700;color:var(--gold)}
 #hire button.cant{opacity:.4}
@@ -163,7 +171,7 @@ details ul{padding-left:18px;margin:8px 0 0}
       <div id="army">0 <small>/ 6 tropper</small></div>
       <div id="land"><b>0%</b> land</div>
     </div>
-    <div id="rbar" class="hidden"><div class="rbHead"><span>Forskning <small id="rbSub"></small></span><button id="rbClose" aria-label="Luk">✕</button></div><div id="rbRows"></div></div>
+    <div id="rbar" class="hidden"><div class="rbHead"><span>Forskning <small id="rbSub"></small></span><button id="rbClose" aria-label="Luk">✕</button></div><div id="rbTabs"></div><div id="rbRows"></div></div>
     <div id="bbar" class="hidden"><div id="bbHead"><span id="bbTitle"></span><button id="bbClose" aria-label="Luk">✕</button></div><div id="bbBtns"></div></div>
     <div id="selbar" class="hidden"></div>
     <div id="hire">
@@ -172,6 +180,11 @@ details ul{padding-left:18px;margin:8px 0 0}
       <button data-t="arty"><svg viewBox="-12 -12 24 24"><path d="M-2 0L-11-4.5M-2 0L-11 4.5" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" opacity=".6"/><rect x="-4.5" y="-6" width="6" height="12" rx="1.6" fill="currentColor"/><rect x="-2" y="-1.2" width="14" height="2.4" rx=".8" fill="currentColor"/></svg>Artilleri<small>100</small><i class="hidden"></i></button>
       <button data-t="aa"><svg viewBox="-12 -12 24 24"><rect x="-9.5" y="-7.5" width="19" height="15" rx="2.2" fill="currentColor" opacity=".55"/><rect x="-4.5" y="-4.5" width="9" height="9" rx="1.6" fill="currentColor"/><rect x="2" y="-3.6" width="10" height="1.6" rx=".5" fill="currentColor"/><rect x="2" y="2" width="10" height="1.6" rx=".5" fill="currentColor"/></svg>Luftværn<small>90</small><i class="hidden"></i></button>
       <button data-t="plane"><svg viewBox="-12 -12 24 24"><g transform="rotate(-90) scale(10)"><path d="M1.1 0Q1-.2.6-.2L.25-.2-.15-1.05-.42-1.05-.25-.2-.75-.17-1-.5-1.15-.5-1.05 0-1.15.5-1 .5-.75.17-.25.2-.42 1.05-.15 1.05.25.2.6.2Q1 .2 1.1 0Z" fill="currentColor"/></g></svg>Fly<small>160</small><i class="hidden"></i></button>
+      <button data-t="cmd"><svg viewBox="-12 -12 24 24"><circle r="10.5" fill="none" stroke="currentColor" stroke-width="2.2"/><path d="M0-6.5l1.9 4 4.3.5-3.2 3 .9 4.3L0 3.1l-3.9 2.2.9-4.3-3.2-3 4.3-.5z" fill="currentColor"/></svg>Special<small>80</small><i class="hidden"></i></button>
+      <button data-t="htank"><svg viewBox="-13 -12 27 24"><rect x="-11.5" y="-9.6" width="23" height="4.6" rx="1.4" fill="currentColor" opacity=".55"/><rect x="-11.5" y="5" width="23" height="4.6" rx="1.4" fill="currentColor" opacity=".55"/><rect x="-10.5" y="-6.2" width="21" height="12.4" rx="2.2" fill="currentColor"/><rect x="1.5" y="-2.6" width="12" height="1.8" rx=".5" fill="#1a1f1b"/><rect x="1.5" y=".8" width="12" height="1.8" rx=".5" fill="#1a1f1b"/><rect x="-5" y="-5" width="10" height="10" rx="2.2" fill="#1a1f1b"/><rect x="-3.6" y="-3.6" width="7.2" height="7.2" rx="1.6" fill="currentColor"/></svg>Tung kv.<small>240</small><i class="hidden"></i></button>
+      <button data-t="rocket"><svg viewBox="-12 -12 24 24"><rect x="-11" y="-6" width="22" height="12" rx="2" fill="currentColor" opacity=".55"/><rect x="-7" y="-5" width="13" height="10" rx="1.4" fill="currentColor"/><circle cx="4" cy="-2.6" r="1.1" fill="#1a1f1b"/><circle cx="4" cy="0" r="1.1" fill="#1a1f1b"/><circle cx="4" cy="2.6" r="1.1" fill="#1a1f1b"/><circle cx="0" cy="-2.6" r="1.1" fill="#1a1f1b"/><circle cx="0" cy="0" r="1.1" fill="#1a1f1b"/><circle cx="0" cy="2.6" r="1.1" fill="#1a1f1b"/></svg>Raket<small>190</small><i class="hidden"></i></button>
+      <button data-t="bomber"><svg viewBox="-12 -12 24 24"><g transform="rotate(-90) scale(10 12.5)"><path d="M1.1 0Q1-.2.6-.2L.25-.2-.15-1.05-.42-1.05-.25-.2-.75-.17-1-.5-1.15-.5-1.05 0-1.15.5-1 .5-.75.17-.25.2-.42 1.05-.15 1.05.25.2.6.2Q1 .2 1.1 0Z" fill="currentColor"/></g><circle cx="-5" cy="0" r="1" fill="#1a1f1b"/><circle cx="5" cy="0" r="1" fill="#1a1f1b"/><circle cx="-2.6" cy="0" r="1" fill="#1a1f1b"/><circle cx="2.6" cy="0" r="1" fill="#1a1f1b"/></svg>Bomber<small>280</small><i class="hidden"></i></button>
+      <button id="btnMore"><b>＋</b>Flere<small>forsk</small></button>
       <button id="btnAll">Vælg<br>alle</button>
     </div>
     <div id="hint"></div>
@@ -251,57 +264,95 @@ const TICK_MS = 100, DT = TICK_MS / 1000;
 const W = 80, H = 80, NC = W * H, HALF = 40;
 // speed and ranges are in cells (per second); build is seconds in the factory
 const UNITS = {
-  inf:   { name: 'Soldat',   cost: 40,  hp: 100, dps: 12, range: 2.4, speed: 1.5, build: 3, sight: 7 },
-  tank:  { name: 'Kampvogn', cost: 120, hp: 340, dps: 26, range: 3.0, speed: 1.1, build: 6, sight: 7 },
-  arty:  { name: 'Artilleri', cost: 100, hp: 80, dps: 18, range: 6.0, speed: 0.9, build: 5, sight: 7.5, splash: 1.5 },
-  aa:    { name: 'Luftværn', cost: 90,  hp: 180, dps: 28, range: 4.2, speed: 1.2, build: 4, sight: 8 },
-  plane: { name: 'Fly',      cost: 160, hp: 90,  dps: 22, range: 3.4, speed: 3.2, build: 6, sight: 10, air: true },
+  inf:    { name: 'Soldat',        cost: 40,  hp: 100, dps: 12, range: 2.4,  speed: 1.5, build: 3, sight: 7 },
+  tank:   { name: 'Kampvogn',      cost: 120, hp: 340, dps: 26, range: 3.0,  speed: 1.1, build: 6, sight: 7 },
+  cmd:    { name: 'Specialstyrke', cost: 80,  hp: 130, dps: 22, range: 2.8,  speed: 2.0, build: 4, sight: 9 },
+  htank:  { name: 'Tung kampvogn', cost: 240, hp: 720, dps: 40, range: 3.3,  speed: 0.8, build: 9, sight: 7 },
+  arty:   { name: 'Artilleri',     cost: 100, hp: 80,  dps: 16, range: 10,   speed: 0.9, build: 5, sight: 11, splash: 1.5 },
+  rocket: { name: 'Raketkaster',   cost: 190, hp: 90,  dps: 26, range: 14,   speed: 0.9, build: 7, sight: 15, splash: 2.6 },
+  aa:     { name: 'Luftværn',      cost: 90,  hp: 180, dps: 28, range: 4.6,  speed: 1.2, build: 4, sight: 8 },
+  plane:  { name: 'Fly',           cost: 160, hp: 90,  dps: 22, range: 3.4,  speed: 3.2, build: 6, sight: 10, air: true },
+  bomber: { name: 'Bombefly',      cost: 280, hp: 160, dps: 34, range: 2.6,  speed: 2.5, build: 8, sight: 9, air: true },
 };
-const UKEYS = ['inf', 'tank', 'arty', 'aa', 'plane'];
-// damage multiplier, attacker -> target: tanks beat soldiers, planes beat tanks and artillery,
-// artillery shells soldiers from afar and smashes HQs, anti-air shreds planes but little else
+const UKEYS = ['inf', 'tank', 'cmd', 'htank', 'arty', 'rocket', 'aa', 'plane', 'bomber'];
+// damage multiplier, attacker -> target. Tanks beat soldiers, planes beat tanks and guns, artillery and rockets
+// shell from far away, special forces hunt soldiers and gun crews, anti-air shreds anything that flies,
+// bombers flatten tanks and HQs but can't touch planes.
 const VS = {
-  inf:   { inf: 1,    tank: 0.5,  arty: 1.2, aa: 0.8,  plane: 0.6 },
-  tank:  { inf: 1.6,  tank: 1,    arty: 1.6, aa: 1.3,  plane: 0 },
-  arty:  { inf: 1.3,  tank: 0.9,  arty: 1,   aa: 1,    plane: 0 },
-  aa:    { inf: 0.35, tank: 0.25, arty: 0.5, aa: 0.3,  plane: 2.4 },
-  plane: { inf: 0.8,  tank: 1.8,  arty: 1.8, aa: 0.35, plane: 1 },
+  inf:    { inf: 1,    tank: 0.5,  cmd: 0.8, htank: 0.3, arty: 1.2, rocket: 1.2, aa: 0.8,  plane: 0.6,  bomber: 0.5 },
+  tank:   { inf: 1.6,  tank: 1,    cmd: 1.4, htank: 0.7, arty: 1.6, rocket: 1.6, aa: 1.3,  plane: 0,    bomber: 0 },
+  cmd:    { inf: 1.5,  tank: 0.45, cmd: 1,   htank: 0.3, arty: 1.7, rocket: 1.7, aa: 1.2,  plane: 0.4,  bomber: 0.3 },
+  htank:  { inf: 1.6,  tank: 1.4,  cmd: 1.4, htank: 1,   arty: 1.6, rocket: 1.6, aa: 1.4,  plane: 0,    bomber: 0 },
+  arty:   { inf: 1.3,  tank: 0.9,  cmd: 1.2, htank: 0.7, arty: 1,   rocket: 1,   aa: 1,    plane: 0,    bomber: 0 },
+  rocket: { inf: 1.3,  tank: 0.8,  cmd: 1.1, htank: 0.6, arty: 1.1, rocket: 1,   aa: 1,    plane: 0,    bomber: 0 },
+  aa:     { inf: 0.35, tank: 0.25, cmd: 0.3, htank: 0.2, arty: 0.5, rocket: 0.5, aa: 0.3,  plane: 2.4,  bomber: 2.4 },
+  plane:  { inf: 0.8,  tank: 1.8,  cmd: 0.8, htank: 1.5, arty: 1.8, rocket: 1.8, aa: 0.35, plane: 1,    bomber: 1.2 },
+  bomber: { inf: 0.8,  tank: 1.5,  cmd: 0.8, htank: 1.6, arty: 1.5, rocket: 1.5, aa: 0.4,  plane: 0,    bomber: 0 },
 };
-const VS_BASE = { inf: 1, tank: 1.5, arty: 1.6, aa: 0.4, plane: 1.2 };
-// Research: soldiers and tanks from the start, the rest is unlocked; every type can be upgraded 3 times.
-// One project at a time, and it takes a while.
-const UNLOCK = { arty: 150, aa: 120, plane: 250 }, UNLOCK_TIME = 20;
-const UPG_COST = [120, 250, 420], UPG_TIME = [20, 30, 40], UPG = 0.15, MAX_TECH = 3;
+const VS_BASE = { inf: 1, tank: 1.5, cmd: 1.2, htank: 2, arty: 0.8, rocket: 0.9, aa: 0.4, plane: 1.2, bomber: 3 };
+// Research tree: soldiers and tanks from the start, everything else is researched. Some research needs
+// other research first. One project at a time, and each takes a while.
+const UPG = 0.15, MAX_TECH = 3;
+const TECH = [];
+function tech(id, tab, name, cost, time, req, desc, unit) { TECH.push({ id, tab, name, cost, time, req: req || [], desc, unit }); }
+tech('aa',     'units', 'Luftværn',      120, 20, [],         'Skyder fly ned', 'aa');
+tech('arty',   'units', 'Artilleri',     150, 20, [],         'Skyder ind i nabo-provinsen', 'arty');
+tech('plane',  'units', 'Fly',           250, 25, [],         'Hurtigt, slår kampvogne', 'plane');
+tech('cmd',    'units', 'Specialstyrke', 200, 25, ['inf1'],   'Hurtig, jager soldater og kanoner', 'cmd');
+tech('htank',  'units', 'Tung kampvogn', 320, 30, ['tank2'],  'Enormt panser, knuser HQ', 'htank');
+tech('rocket', 'units', 'Raketkaster',   300, 30, ['arty'],   'Skyder endnu længere, rammer bredt', 'rocket');
+tech('bomber', 'units', 'Bombefly',      360, 35, ['plane'],  'Smadrer kampvogne og HQ', 'bomber');
+for (const t of UKEYS) for (let lv = 1; lv <= MAX_TECH; lv++)
+  tech(t + lv, 'upg', UNITS[t].name + ' ' + 'I'.repeat(lv).replace('III', 'III'), [120, 250, 420][lv - 1] + (UNITS[t].cost > 150 ? 60 : 0), [20, 30, 40][lv - 1],
+    [lv > 1 ? t + (lv - 1) : (t === 'inf' || t === 'tank' ? null : t)].filter(Boolean), '+15% liv og skade');
+tech('eco1',  'realm', 'Skatter I',    150, 20, [],         '+15% guld');
+tech('eco2',  'realm', 'Skatter II',   300, 30, ['eco1'],   '+15% guld mere');
+tech('eco3',  'realm', 'Skatter III',  500, 40, ['eco2'],   '+15% guld mere');
+tech('med',   'realm', 'Feltlazaret',  180, 25, [],         'Tropper heler dobbelt så hurtigt');
+tech('radar', 'realm', 'Radar',        160, 20, [],         'Du ser 30% længere');
+tech('log',   'realm', 'Logistik',     220, 25, ['eco1'],   'Landtropper går 15% hurtigere');
+tech('fort',  'realm', 'Befæstning',   240, 30, [],         'Forter og HQ skyder 50% hårdere, HQ +50% liv');
+tech('occ',   'realm', 'Besættelse',   260, 30, ['log'],    'Du erobrer provinser 30% hurtigere');
+const TECH_BY = Object.fromEntries(TECH.map(t => [t.id, t]));
+const has = (p, id) => p.techs.has(id);
+const unlocked = (p, type) => type === 'inf' || type === 'tank' || has(p, type);
+const canResearch = (p, t) => !has(p, t.id) && t.req.every(r => has(p, r));
+const goldMult = p => 1 + 0.15 * (has(p, 'eco1') + has(p, 'eco2') + has(p, 'eco3'));
+const baseMax = p => BASE_HP * (has(p, 'fort') ? 1.5 : 1);
 function kOf(p, type) {
   const c = p.kc[type]; if (c) return c;
   const b = UNITS[type], lv = p.tech[type], m = 1 + UPG * lv;
-  return (p.kc[type] = Object.assign({}, b, { hp: Math.round(b.hp * m), dps: b.dps * m, lv }));
+  return (p.kc[type] = Object.assign({}, b, { hp: Math.round(b.hp * m), dps: b.dps * m, lv,
+    speed: b.speed * (!b.air && has(p, 'log') ? 1.15 : 1), sight: b.sight * (has(p, 'radar') ? 1.3 : 1) }));
 }
-const unlocked = (p, type) => !UNLOCK[type] || p.unl.has(type);
-function resCost(p, type) { return unlocked(p, type) ? (p.tech[type] < MAX_TECH ? UPG_COST[p.tech[type]] : 0) : UNLOCK[type]; }
-function research(p, type) {
+function refreshUnits(p) {
+  for (const t of UKEYS) p.kc[t] = null;
+  for (const u of units) if (u.p === p.id) { const k = kOf(p, u.type); u.hp = u.hp / u.k.hp * k.hp; u.k = k; }
+}
+function research(p, id) {
+  const t = TECH_BY[id];
   if (p.res) return 'busy';
-  const cost = resCost(p, type);
-  if (!cost) return 'max';
-  if (p.gold < cost) return 'gold';
-  p.gold -= cost;
-  const up = unlocked(p, type);
-  p.res = { type, up, t: 0, need: up ? UPG_TIME[p.tech[type]] : UNLOCK_TIME };
+  if (!t || has(p, id)) return 'max';
+  if (!canResearch(p, t)) return 'req';
+  if (p.gold < t.cost) return 'gold';
+  p.gold -= t.cost;
+  p.res = { id, t: 0, need: t.time };
   return 'ok';
 }
 function stepResearch(p) {
   const r = p.res; if (!r) return;
   r.t += DT; if (r.t < r.need) return;
   p.res = null; p.done++;
-  if (!r.up) p.unl.add(r.type);
-  else {
-    p.tech[r.type]++; p.kc[r.type] = null;
-    const k = kOf(p, r.type);
-    for (const u of units) if (u.p === p.id && u.type === r.type) { u.hp = u.hp / u.k.hp * k.hp; u.k = k; }
-  }
-  if (p.human && state === 'play') { toast(r.up ? `${UNITS[r.type].name} er nu niveau ${p.tech[r.type] + 1}` : `${UNITS[r.type].name} er låst op!`); sfx('research'); }
+  const t = TECH_BY[r.id];
+  p.techs.add(r.id);
+  const m = /^([a-z]+)(\d)$/.exec(r.id);
+  if (m && UNITS[m[1]]) p.tech[m[1]] = +m[2];
+  if (r.id === 'fort') p.base.hp *= 1.5;
+  refreshUnits(p);
+  if (p.human && state === 'play') { toast(t.unit ? `${t.name} er låst op!` : `${t.name} er færdig`); sfx('research'); }
 }
-const COOL = { inf: 4, tank: 8, arty: 12, aa: 2, plane: 4 };
+const HEAVY = new Set(['tank', 'htank', 'arty', 'rocket', 'bomber']);
+const COOL = { inf: 4, tank: 8, cmd: 3, htank: 9, arty: 12, rocket: 16, aa: 2, plane: 4, bomber: 10 };
 const MAX_UNITS = 10, QUEUE = 3;
 // Buildings, one per province: forts shoot and slow capture, factories build troops, markets pay gold.
 const BLD = {
@@ -445,7 +496,7 @@ function makePlayers(demo) {
     const base = { x: cx + 0.5, y: cy + 0.5, owner: k, hp: BASE_HP, q: [], prog: 0, base: true };
     players.push({ id: k, name: k === 1 && !demo ? (settings.name.trim() || 'Dig') : names[k], col: COLORS[k], human: k === 1 && !demo, alive: true,
       gold: START_GOLD, count: 0, peak: 0, kills: 0, lvl: 0, base, think: k * 3, mode: 0, place: 0,
-      tech: { inf: 0, tank: 0, arty: 0, aa: 0, plane: 0 }, kc: {}, unl: new Set(), res: null, done: 0,
+      tech: Object.fromEntries(UKEYS.map(t => [t, 0])), kc: {}, techs: new Set(), res: null, done: 0,
       hired: 0, lost: 0, taken: 0, earned: 0, hist: [] });
   }
   human = demo ? null : players[1];
@@ -633,7 +684,7 @@ function gateOk(u, X, Y) {
 function moveUnit(u) {
   let sp = u.k.speed * DT;
   const ci = cellOf(u.x, u.y);
-  if (!u.k.air && ci >= 0 && terr[ci] === 3) sp *= u.type === 'tank' ? 0.55 : 0.7;
+  if (!u.k.air && ci >= 0 && terr[ci] === 3) sp *= u.type === 'tank' || u.type === 'htank' ? 0.55 : 0.7;
   // engaged troops can't just run past: inside an enemy's fire they crawl, and they can't push in closer
   // than their own range, so they stand and fight or back off
   let pin = null;
@@ -699,7 +750,7 @@ function combat() {
     if (e) {
       damage(e, u.k.dps * VS[u.type][e.type] * DT, u.p);
       if (u.k.splash) for (const v of units) if (v !== e && v.p !== u.p && !v.k.air && (v.x - e.x) ** 2 + (v.y - e.y) ** 2 < u.k.splash ** 2) damage(v, u.k.dps * VS[u.type][v.type] * DT * 0.5, u.p);
-      if (u.cool-- <= 0) { u.cool = COOL[u.type]; shot(u.x, u.y, e.x, e.y, u.p, u.type === 'tank' || u.type === 'arty'); if (u.type === 'arty') booms.push({ x: e.x, y: e.y, t: 0, big: false }); }
+      if (u.cool-- <= 0) { u.cool = COOL[u.type]; shot(u.x, u.y, e.x, e.y, u.p, HEAVY.has(u.type)); if (u.k.splash) booms.push({ x: e.x, y: e.y, t: 0, big: false }); }
       continue;
     }
     for (let k = 1; k <= 4; k++) {
@@ -707,7 +758,7 @@ function combat() {
       if (k === u.p || b.hp <= 0 || Math.hypot(b.x - u.x, b.y - u.y) > u.k.range + 1.2) continue;
       b.hp -= u.k.dps * VS_BASE[u.type] * DT; b.hit = 4; b.lastHit = T; u.tgt = b;
       if (k === 1) alarm('hq', b.x, b.y, 'Dit HQ bliver angrebet!'); u.aim = Math.atan2(b.y - u.y, b.x - u.x);
-      if (u.cool-- <= 0) { u.cool = COOL[u.type]; shot(u.x, u.y, b.x, b.y, u.p, u.type === 'tank' || u.type === 'arty'); }
+      if (u.cool-- <= 0) { u.cool = COOL[u.type]; shot(u.x, u.y, b.x, b.y, u.p, HEAVY.has(u.type)); }
       if (b.hp <= 0) eliminate(players[k], u.p);
       break;
     }
@@ -719,7 +770,7 @@ function combat() {
     let best = null, bd = r * r;
     for (const v of units) { if (v.p === s.owner) continue; const d = (v.x - s.x) ** 2 + (v.y - s.y) ** 2; if (d < bd) { bd = d; best = v; } }
     if (!best) continue;
-    damage(best, (s.base ? BASE_DPS : s.bld ? FORT_DPS : TOWN_DPS) * DT, s.owner);
+    damage(best, (s.base ? BASE_DPS : s.bld ? FORT_DPS : TOWN_DPS) * (has(players[s.owner], 'fort') && !s.town ? 1.5 : 1) * DT, s.owner);
     s.cool = (s.cool || 0) - 1;
     if (s.cool <= 0) { s.cool = 6; shot(s.x, s.y, best.x, best.y, s.owner, s.base); }
   }
@@ -754,7 +805,7 @@ function stepProvinces() {
       const who = 31 - Math.clz32(others);
       if (pr.capBy !== who) { pr.capBy = who; pr.cap = 0; }
       if (pr.owner === 1 && pr.town && pr.cap === 0) alarm('p' + pr.id, pr.cx, pr.cy, players[who].name + ' prøver at tage din by!');
-      if (++pr.cap >= capNeed(pr)) {
+      if ((pr.cap += has(players[who], 'occ') ? 1.3 : 1) >= capNeed(pr)) {
         const old = pr.owner;
         setProvOwner(pr, who); players[who].taken++;
         if (state === 'play') { if (who === 1) sfx(pr.town ? 'town' : 'capture'); else if (old === 1) sfx('lose'); }
@@ -786,10 +837,10 @@ function step() {
     const p = players[k];
     if (!p.alive) continue;
     if (T % 10 === 0) {
-      const g = income(p) * (p.human ? 1 : DIFFS[settings.diff].inc);
+      const g = income(p) * goldMult(p) * (p.human ? 1 : DIFFS[settings.diff].inc);
       p.gold += g; p.earned += g;
       const b = p.base;
-      if (T - (b.lastHit || -99) > 50) b.hp = Math.min(BASE_HP, b.hp + BASE_REGEN);
+      if (T - (b.lastHit || -99) > 50) b.hp = Math.min(baseMax(p), b.hp + BASE_REGEN);
     }
     p.peak = Math.max(p.peak, p.count / nOwnable);
     stepResearch(p);
@@ -799,7 +850,7 @@ function step() {
     const ci = cellOf(u.x, u.y);
     let h = ci >= 0 && own[ci] === u.p ? HEAL : 0;
     for (const s of sites) if (s.owner === u.p && (s.x - u.x) ** 2 + (s.y - u.y) ** 2 < 6.25) h = HEAL_SITE;
-    if (h && !u.tgt) u.hp = Math.min(u.k.hp, u.hp + h * DT);
+    if (h && !u.tgt) u.hp = Math.min(u.k.hp, u.hp + h * (has(players[u.p], 'med') ? 2 : 1) * DT);
     if (u.hit) u.hit--;
   }
   for (const s of shots) s.t += DT;
@@ -833,18 +884,18 @@ function botThink(p) {
   const mySites = sites.filter(s => s.owner === p.id && (!s.base || s.hp > 0));
   const makers = mySites.filter(makes);
   // spend spare gold: a bigger HQ first, then forts on the border, a factory near the front, markets at home
-  // research when there is gold to spare: answer planes with anti-air, else unlock, else upgrade what we use most
+  // research when there is gold to spare: answer planes with anti-air, else pick something open in the tree,
+  // leaning on new troops early and on upgrades and the realm later
   if (!p.res && p.gold >= 200 && rng() < 0.35) {
-    const foePlanes = units.some(v => v.p !== p.id && v.type === 'plane');
-    const lockedT = Object.keys(UNLOCK).filter(t => !p.unl.has(t));
-    let t = null;
-    if (foePlanes && !p.unl.has('aa')) t = 'aa';
-    else if (lockedT.length && rng() < 0.55) t = lockedT[(rng() * lockedT.length) | 0];
-    else {
+    const open = TECH.filter(t => canResearch(p, t) && p.gold >= t.cost + 60);
+    const foeAir = units.some(v => v.p !== p.id && v.k.air);
+    let t = foeAir && open.find(t => t.id === 'aa');
+    if (!t && open.length) {
       const cnt = {}; for (const u of mine) cnt[u.type] = (cnt[u.type] || 0) + 1;
-      t = UKEYS.filter(x => unlocked(p, x) && p.tech[x] < MAX_TECH).sort((a, b) => (cnt[b] || 0) - (cnt[a] || 0))[0];
+      const score = t => (t.tab === 'units' ? 3 : t.tab === 'realm' ? 2 : 1 + (cnt[t.id.slice(0, -1)] || 0) * 0.4) - t.cost / 300 + rng() * 2;
+      t = open.sort((a, b) => score(b) - score(a))[0];
     }
-    if (t && p.gold >= resCost(p, t) + 60) research(p, t);
+    if (t) research(p, t.id);
   }
   if (unitCount(p) >= maxUnits(p) - 1) {
     if (p.lvl < HQ_COST.length && p.gold >= HQ_COST[p.lvl] + 40) upgradeHQ(p);
@@ -858,14 +909,17 @@ function botThink(p) {
     }
   }
   if (unitCount(p) < maxUnits(p)) {
-    const has = t => mine.filter(u => u.type === t).length, r = rng();
-    const foePlanes = units.filter(v => v.p !== p.id && v.type === 'plane' && Math.hypot(v.x - p.base.x, v.y - p.base.y) < 45).length;
+    const n = t => mine.filter(u => u.type === t).length, r = rng(), ok = t => unlocked(p, t) && p.gold >= UNITS[t].cost;
+    const foeAir = units.filter(v => v.p !== p.id && v.k.air && Math.hypot(v.x - p.base.x, v.y - p.base.y) < 45).length;
     let type = 'inf';
-    if (foePlanes > has('aa') && p.gold >= 90 && r < 0.6) type = 'aa';
-    else if (p.gold >= 160 && has('plane') < 1 && r < 0.25) type = 'plane';
-    else if (p.gold >= 100 && has('arty') < 2 && r < 0.45) type = 'arty';
-    else if (p.gold >= 120 && r < 0.7) type = 'tank';
-    if (!unlocked(p, type)) type = p.gold >= 120 && r < 0.6 ? 'tank' : 'inf';
+    if (foeAir > n('aa') && ok('aa') && r < 0.6) type = 'aa';
+    else if (ok('bomber') && n('bomber') < 1 && r < 0.2) type = 'bomber';
+    else if (ok('plane') && n('plane') < 1 && r < 0.25) type = 'plane';
+    else if (ok('rocket') && n('rocket') < 1 && r < 0.35) type = 'rocket';
+    else if (ok('arty') && n('arty') < 2 && r < 0.45) type = 'arty';
+    else if (ok('htank') && r < 0.5) type = 'htank';
+    else if (ok('cmd') && r < 0.6) type = 'cmd';
+    else if (ok('tank') && r < 0.75) type = 'tank';
     if (p.gold >= UNITS[type].cost) {
       const site = makers.find(s => !s.q.length) || makers[0];
       if (site) hire(p, type, site);
@@ -1131,7 +1185,7 @@ function drawSites(t) {
       if (s.hit) s.hit--;
       ctx.fillStyle = '#fff'; ctx.font = `800 ${11 * z}px ${UI_FONT}`; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
       ctx.fillText(dead ? '✕' : 'HQ', X, Y + 1);
-      if (!dead) hpBar(X, Y - r - 6, 30 * z, s.hp / BASE_HP);
+      if (!dead) hpBar(X, Y - r - 6, 30 * z, s.hp / baseMax(players[s.owner]));
       if (!dead && players[s.owner].lvl) { ctx.fillStyle = '#f2cf63'; ctx.font = `800 ${10 * z}px ${UI_FONT}`; ctx.fillText('★'.repeat(players[s.owner].lvl), X, Y - r - 13 * z); }
       if (state === 'demo' || !dead) { ctx.font = `700 ${12 * z}px ${UI_FONT}`; ctx.fillStyle = 'rgba(255,255,255,.9)'; ctx.strokeStyle = 'rgba(0,0,0,.6)'; ctx.lineWidth = 3; ctx.strokeText(players[s.owner].name, X, Y + r + 9); ctx.fillText(players[s.owner].name, X, Y + r + 9); }
     } else {
@@ -1228,6 +1282,31 @@ function aaShape(col, turn) {
   ctx.beginPath(); ctx.roundRect(-0.36, -0.36, 0.72, 0.72, 0.12); ctx.fill(); ctx.stroke();
   ctx.fillStyle = 'rgba(20,16,10,.85)'; ctx.beginPath(); ctx.arc(0, 0, 0.13, 0, 7); ctx.fill();
 }
+function htankShape(col, turn) {
+  ctx.fillStyle = 'rgba(28,24,18,.95)';
+  ctx.beginPath(); ctx.roundRect(-1.15, -0.95, 2.3, 0.46, 0.14); ctx.roundRect(-1.15, 0.49, 2.3, 0.46, 0.14); ctx.fill();
+  ctx.fillStyle = rgb(col); ctx.strokeStyle = 'rgba(20,16,10,.9)'; ctx.lineWidth = 0.1;
+  ctx.beginPath(); ctx.roundRect(-1.05, -0.62, 2.1, 1.24, 0.2); ctx.fill(); ctx.stroke();
+  ctx.fillStyle = 'rgba(20,16,10,.35)'; ctx.fillRect(-0.95, -0.08, 0.5, 0.16);
+  ctx.rotate(turn);
+  ctx.fillStyle = rgb(lighten(col, 0.55));
+  ctx.beginPath(); ctx.roundRect(0.15, -0.24, 1.35, 0.17, 0.05); ctx.roundRect(0.15, 0.07, 1.35, 0.17, 0.05); ctx.fill(); ctx.stroke();
+  ctx.beginPath(); ctx.roundRect(-0.5, -0.5, 1.0, 1.0, 0.22); ctx.fill(); ctx.stroke();
+}
+function rocketShape(col, turn) {
+  ctx.fillStyle = 'rgba(28,24,18,.95)';
+  for (const x of [-0.75, -0.15, 0.55]) { ctx.beginPath(); ctx.arc(x, -0.6, 0.2, 0, 7); ctx.arc(x, 0.6, 0.2, 0, 7); ctx.fill(); }
+  ctx.fillStyle = rgb(col); ctx.strokeStyle = 'rgba(20,16,10,.9)'; ctx.lineWidth = 0.1;
+  ctx.beginPath(); ctx.roundRect(-1.05, -0.5, 2.1, 1.0, 0.16); ctx.fill(); ctx.stroke();
+  ctx.fillStyle = rgb(lighten(col, 0.3)); ctx.beginPath(); ctx.roundRect(0.55, -0.42, 0.45, 0.84, 0.12); ctx.fill(); ctx.stroke();
+  ctx.translate(-0.25, 0); ctx.rotate(turn);
+  ctx.fillStyle = rgb(lighten(col, 0.6));
+  ctx.beginPath(); ctx.roundRect(-0.55, -0.42, 1.25, 0.84, 0.1); ctx.fill(); ctx.stroke();
+  ctx.fillStyle = 'rgba(20,16,10,.85)';
+  for (const y of [-0.24, 0, 0.24]) for (const x of [0.62]) { ctx.beginPath(); ctx.arc(x, y, 0.08, 0, 7); ctx.fill(); }
+  ctx.strokeStyle = 'rgba(20,16,10,.6)'; ctx.lineWidth = 0.05;
+  for (const y of [-0.12, 0.12]) { ctx.beginPath(); ctx.moveTo(-0.5, y); ctx.lineTo(0.66, y); ctx.stroke(); }
+}
 function planePath() {
   ctx.beginPath();
   ctx.moveTo(1.1, 0); ctx.quadraticCurveTo(1.0, -0.2, 0.6, -0.2);
@@ -1244,7 +1323,7 @@ function drawUnits(t) {
     if (u.p !== 1 && !seen(u.x, u.y)) continue;
     let X = sx(u.x), Y = sy(u.y);
     if (X < -40 || Y < -40 || X > CW + 40 || Y > CH + 40) continue;
-    const col = players[u.p].col, R = u.type === 'plane' ? r * 1.25 : u.type === 'inf' ? r * 0.95 : r * 1.05;
+    const col = players[u.p].col, R = u.type === 'plane' ? r * 1.25 : u.type === 'bomber' ? r * 1.5 : u.type === 'inf' || u.type === 'cmd' ? r * 0.95 : u.type === 'htank' ? r * 1.2 : r * 1.05;
     if (u.k.air) {
       ctx.save(); ctx.translate(X + R * 0.25, Y + R * 0.35); ctx.rotate(u.dir); ctx.scale(R * 0.85, R * 0.85);
       planePath(); ctx.fillStyle = 'rgba(0,0,0,.22)'; ctx.fill(); ctx.restore();
@@ -1255,10 +1334,19 @@ function drawUnits(t) {
       ctx.beginPath(); ctx.arc(X, Y, R * 1.3 + 4, 0, 7); ctx.stroke();
     }
     ctx.save(); ctx.translate(X, Y);
-    if (u.type === 'inf') {
-      ctx.beginPath(); ctx.arc(0, 0, R, 0, 7); ctx.fillStyle = rgb(col); ctx.fill();
-      ctx.lineWidth = u.hit ? 2.5 : 1.6; ctx.strokeStyle = u.hit ? '#ffe39a' : 'rgba(15,12,8,.9)'; ctx.stroke();
+    if (u.type === 'inf' || u.type === 'cmd') {
+      const cmd = u.type === 'cmd';
+      ctx.beginPath(); ctx.arc(0, 0, R, 0, 7); ctx.fillStyle = rgb(cmd ? col.map(v => v * 0.55) : col); ctx.fill();
+      ctx.lineWidth = u.hit ? 2.5 : cmd ? 2.4 : 1.6; ctx.strokeStyle = u.hit ? '#ffe39a' : cmd ? '#f2cf63' : 'rgba(15,12,8,.9)'; ctx.stroke();
       ctx.scale(R, R); soldierShape(Math.cos(u.dir) < -0.1);
+      if (cmd) { ctx.fillStyle = '#f2cf63'; ctx.beginPath(); for (let k = 0; k < 10; k++) { const a = -Math.PI / 2 + k * Math.PI / 5, q = k % 2 ? 0.13 : 0.3; ctx.lineTo(0.7 + Math.cos(a) * q, -0.7 + Math.sin(a) * q); } ctx.fill(); }
+    } else if (u.type === 'htank' || u.type === 'rocket') {
+      ctx.rotate(u.dir); ctx.scale(R, R); (u.type === 'htank' ? htankShape : rocketShape)(u.hit ? lighten(col, 0.4) : col, (u.aim ?? u.dir) - u.dir);
+    } else if (u.type === 'bomber') {
+      ctx.rotate(u.dir); ctx.scale(R, R * 1.25);
+      planePath(); ctx.fillStyle = rgb(u.hit ? lighten(col, 0.4) : col.map(v => v * 0.75)); ctx.fill();
+      ctx.lineWidth = 0.1; ctx.strokeStyle = '#fff'; ctx.stroke();
+      ctx.fillStyle = 'rgba(20,16,10,.85)'; for (const y of [-0.62, -0.38, 0.38, 0.62]) { ctx.beginPath(); ctx.arc(0.0, y, 0.09, 0, 7); ctx.fill(); }
     } else if (u.type === 'tank') {
       ctx.rotate(u.dir); ctx.scale(R, R); tankShape(u.hit ? lighten(col, 0.4) : col, (u.aim ?? u.dir) - u.dir);
     } else if (u.type === 'arty' || u.type === 'aa') {
@@ -1434,12 +1522,12 @@ function updateHud() {
   if (spawnSite && spawnSite.owner !== 1) spawnSite = human.base;
   for (const b of document.querySelectorAll('#hire button[data-t]')) {
     const k = UNITS[b.dataset.t], open = unlocked(human, b.dataset.t);
-    b.classList.toggle('lock', !open);
-    b.querySelector('small').textContent = open ? k.cost : '🔒';
+    b.classList.toggle('hidden', !open);
     b.classList.toggle('cant', open && (!human.alive || human.gold < k.cost || n >= maxUnits(human)));
     const q = spawnSite ? spawnSite.q.filter(x => x === b.dataset.t).length : 0;
     const i = b.querySelector('i'); i.textContent = q; i.classList.toggle('hidden', !q);
   }
+  show('btnMore', UKEYS.some(t => !unlocked(human, t)));
   const mine = units.filter(u => u.p === 1);
   const all = mine.length && mine.every(u => selected.has(u));
   $('btnAll').innerHTML = all ? 'Fravælg' : 'Vælg<br>alle';
@@ -1500,34 +1588,55 @@ function fillBuild() {
   if ($('bbBtns').dataset.html !== html) { $('bbBtns').innerHTML = html; $('bbBtns').dataset.html = html; }
 }
 $('bbClose').onclick = closeBuild;
-// Research panel: unlock artillery, anti-air and planes, and upgrade every troop type
-let resOpen = false;
+// Research panel, three tabs: new troops, upgrades of the troops you have, and the realm (gold, speed, healing...)
+let resOpen = false, resTab = 'units';
+const TABS = { units: 'Tropper', upg: 'Opgradering', realm: 'Riget' };
 function openRes() { closeBuild(); resOpen = true; show('rbar', true); fillRes(); $('btnRes').classList.add('on'); }
 function closeRes() { resOpen = false; show('rbar', false); $('btnRes').classList.remove('on'); }
+const unitIcon = t => document.querySelector(`#hire button[data-t=${t}] svg`).outerHTML;
+const FLASK_SM = () => $('btnRes').querySelector('svg').outerHTML;
+function resRow(t, icon, title, info) {
+  const r = human.res;
+  let btn;
+  if (!t) btn = `<button disabled class="cant">Maks</button>`;
+  else if (r && r.id === t.id) btn = `<button class="go" disabled>${Math.floor(r.t / r.need * 100)}%</button>`;
+  else if (has(human, t.id)) btn = `<button disabled class="cant">✓</button>`;
+  else if (!canResearch(human, t)) btn = `<button disabled class="cant">Kræver ${t.req.filter(q => !has(human, q)).map(q => TECH_BY[q].name).join(', ')}</button>`;
+  else btn = `<button data-r="${t.id}" class="${r || human.gold < t.cost ? 'cant' : ''}">${t.unit ? 'Lås op' : 'Forsk'} <b>${t.cost}</b></button>`;
+  return `<div class="row">${icon}<span class="nm">${title}<small>${info}</small></span>${btn}</div>`;
+}
 function fillRes() {
   if (!human) return;
   const r = human.res;
-  $('rbSub').textContent = r ? '' : 'én ting ad gangen';
-  $('rbRows').innerHTML = UKEYS.map(t => {
-    const k = UNITS[t], lv = human.tech[t], icon = document.querySelector(`#hire button[data-t=${t}] svg`).outerHTML;
-    const open = unlocked(human, t), dots = open ? '★'.repeat(lv) + '☆'.repeat(MAX_TECH - lv) : 'låst';
-    let btn;
-    if (r && r.type === t) btn = `<button class="go" disabled>${Math.floor(r.t / r.need * 100)}%</button>`;
-    else if (!open) btn = `<button data-r="${t}" class="${r || human.gold < UNLOCK[t] ? 'cant' : ''}">Lås op <b>${UNLOCK[t]}</b></button>`;
-    else if (lv < MAX_TECH) btn = `<button data-r="${t}" class="${r || human.gold < UPG_COST[lv] ? 'cant' : ''}">Opgrader <b>${UPG_COST[lv]}</b></button>`;
-    else btn = `<button disabled class="cant">Maks</button>`;
-    const info = open ? `${dots} · ${Math.round(kOf(human, t).hp)} liv` : `${UNLOCK_TIME} sek at forske`;
-    return `<div class="row">${icon}<span class="nm">${k.name}<small>${info}</small></span>${btn}</div>`;
-  }).join('');
+  $('rbSub').textContent = r ? TECH_BY[r.id].name + ' ' + Math.floor(r.t / r.need * 100) + '%' : 'én ting ad gangen';
+  let rows = '';
+  if (resTab === 'units') {
+    rows = UKEYS.map(u => {
+      const t = TECH_BY[u];
+      if (!t) return resRow(null, unitIcon(u), UNITS[u].name, 'Har du fra start').replace('Maks', '✓');
+      return resRow(t, unitIcon(u), UNITS[u].name, `${t.desc} · ${t.time} sek`);
+    }).join('');
+  } else if (resTab === 'upg') {
+    rows = UKEYS.filter(u => unlocked(human, u)).map(u => {
+      const lv = human.tech[u], t = lv < MAX_TECH ? TECH_BY[u + (lv + 1)] : null;
+      return resRow(t, unitIcon(u), UNITS[u].name + ' ' + '★'.repeat(lv) + '☆'.repeat(MAX_TECH - lv), `${Math.round(kOf(human, u).hp)} liv${t ? ' · næste +15%' : ''}`);
+    }).join('') + (UKEYS.some(u => !unlocked(human, u)) ? '<p class="more">Lås flere tropper op under Tropper for at opgradere dem.</p>' : '');
+  } else {
+    rows = TECH.filter(t => t.tab === 'realm').map(t => resRow(t, FLASK_SM(), t.name, `${t.desc} · ${t.time} sek`)).join('');
+  }
+  $('rbTabs').innerHTML = Object.entries(TABS).map(([k, v]) => `<button data-tab="${k}" class="${k === resTab ? 'on' : ''}">${v}</button>`).join('');
+  $('rbRows').innerHTML = rows;
 }
 $('btnRes').onclick = () => { if (state !== 'play') return; if (resOpen) closeRes(); else openRes(); sfx('click'); };
+$('btnMore').onclick = () => { if (state !== 'play') return; resTab = 'units'; openRes(); sfx('click'); };
 $('rbClose').onclick = closeRes;
+$('rbTabs').onclick = e => { const b = e.target.closest('button[data-tab]'); if (!b) return; resTab = b.dataset.tab; $('rbRows').scrollTop = 0; fillRes(); sfx('click'); };
 $('rbRows').onclick = e => {
   const b = e.target.closest('button[data-r]'); if (!b || !human) return;
-  const t = b.dataset.r, r = research(human, t);
+  const id = b.dataset.r, t = TECH_BY[id], r = research(human, id);
   if (r === 'busy') toast('Du forsker allerede i noget. Vent til det er færdigt');
-  else if (r === 'gold') toast(`Det koster ${resCost(human, t)} guld`);
-  else if (r === 'ok') { toast(human.res.up ? `Opgraderer ${UNITS[t].name.toLowerCase()} (${human.res.need} sek)` : `Låser ${UNITS[t].name.toLowerCase()} op (${human.res.need} sek)`); sfx('click'); buzz(8); }
+  else if (r === 'gold') toast(`Det koster ${t.cost} guld`);
+  else if (r === 'ok') { toast(`Forsker i ${t.name.toLowerCase()} (${t.time} sek)`); sfx('click'); buzz(8); }
   fillRes(); updateHud();
 };
 $('bbBtns').onclick = e => {

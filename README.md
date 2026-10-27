@@ -8,9 +8,9 @@ A real-time war game for four on your phone: hire troops one at a time, steer th
 
 Four armies, one map, a bit like Supremacy but much simpler. You and three bots each start with a headquarters (HQ) in a corner, 100 gold and no troops.
 
-- **Hire** soldiers, tanks, artillery, anti-air and planes with the buttons at the bottom. They are built in your HQ, or in a town you own if you tapped it. You can have at most 10 troops at once.
-- Counters: tanks beat soldiers, planes beat tanks and artillery, artillery shells from long range and wrecks HQs, anti-air shoots planes down.
-- **Research** (flask button, top bar): you start with soldiers and tanks; unlock artillery (150), anti-air (120) and planes (250), and upgrade each troop type three times (+15% health and damage per level, existing troops too). One project at a time; each takes 20-40 seconds. Bots research too.
+- **Hire** troops: soldiers and tanks from the start; artillery, rocket launchers, anti-air, special forces, heavy tanks, planes and bombers once researched with the buttons at the bottom. They are built in your HQ, or in a town you own if you tapped it. You can have at most 10 troops at once.
+- Counters: tanks beat soldiers, planes beat tanks and artillery, artillery shells into the neighbouring province, rocket launchers reach even further, bombers flatten tanks and HQs, anti-air shoots planes down.
+- **Research tree** (flask button, top bar), three tabs: *Troops* (unlock artillery, anti-air, planes, then special forces, heavy tanks, rocket launchers and bombers, some needing other research first), *Upgrades* (each troop type three levels, +15% health and damage, existing troops too) and *Realm* (taxes, field hospital, radar, logistics, fortification, occupation). One project at a time; each takes 20-40 seconds. Bots research too.
 - Sound effects (synthesized, can be turned off in the pause menu), explosions with sparks and smoke, and an end screen with stats and a graph of everyone's land over time.
 - **Tap a troop** to select it, then **tap a province**: the troop finds its own way to the middle of it. **Vælg alle** sends the whole army.
 - The map is cut into **provinces**, like Supremacy. Every troop has health. Park a soldier or tank in a province with no enemies in it, and it turns yours after a few seconds. Planes can't take land.
