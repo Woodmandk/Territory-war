@@ -2398,14 +2398,26 @@ function hostData(conn, d) {
   const g = net.guests.get(conn);
   if (g) g.last = performance.now();
   if (d.t === 'hi' && !g) {
-    if (net.live) { conn.send({ t: 'no', why: 'Spillet er allerede i gang' }); return; }
+    const name = String(d.name || 'Spiller').replace(/\s+/g, ' ').trim().slice(0, 14) || 'Spiller';
+    if (net.live) { joinLive(conn, name); return; }
     const seat = [2, 3, 4].find(k => !net.seats[k]);
     if (!seat) { conn.send({ t: 'no', why: 'Rummet er fuldt' }); return; }
-    const name = String(d.name || 'Spiller').replace(/\s+/g, ' ').trim().slice(0, 14) || 'Spiller';
     net.seats[seat] = { name, kind: 'guest', conn };
     net.guests.set(conn, { seat, last: performance.now() });
     sfx('click'); drawSeats(); sendLobby();
   } else if (d.t === 'cmd' && g && net.live) runCmd(players[g.seat], d);
+}
+// joining a match in progress: take over the army of a computer that is still alive
+function joinLive(conn, name) {
+  const seat = [2, 3, 4].find(k => !net.seats[k] && players[k].alive && !players[k].human);
+  if (!seat) { conn.send({ t: 'no', why: 'Der er ingen ledig plads i spillet' }); return; }
+  const p = players[seat];
+  p.human = true; p.name = name;
+  net.seats[seat] = { name, kind: 'guest', conn };
+  net.guests.set(conn, { seat, last: performance.now() });
+  const names = players.map(q => q && q.name), humans = players.map(q => q && q.human);
+  conn.send({ t: 'start', seed: net.seed, names, humans, me: seat });
+  if (state === 'play') toast(name + ' hoppede ind og tager over for en computer');
 }
 function hostDrop(conn) {
   const g = net.guests.get(conn); if (!g) return;
@@ -2443,7 +2455,7 @@ function netStart() {
   for (let k = 1; k <= 4; k++) { names.push(net.seats[k] ? net.seats[k].name : null); humans.push(!!net.seats[k]); }
   const seedv = (Date.now() & 0xffffff) | 1;
   for (const [c, g] of net.guests) try { c.send({ t: 'start', seed: seedv, names, humans, me: g.seat }); } catch (e) {}
-  net.live = true; net.pend = { F: [], B: [] }; net.tick = 0;
+  net.live = true; net.seed = seedv; net.pend = { F: [], B: [] }; net.tick = 0;
   show('online', false); delete $('over').dataset.shown;
   newGame({ seed: seedv, names, humans, me: 1 });
 }
