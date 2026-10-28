@@ -1,5 +1,5 @@
 // Network first, so a new version shows up right away; the cache keeps the game playable offline.
-const CACHE = 'tw-v10';
+const CACHE = 'tw-v11';
 self.addEventListener('install', e => { self.skipWaiting(); e.waitUntil(caches.open(CACHE).then(c => c.addAll(['./', 'index.html', 'manifest.webmanifest', 'icon-192.png', 'icon-512.png']))); });
 self.addEventListener('activate', e => e.waitUntil(self.clients.claim()));
 self.addEventListener('fetch', e => {
