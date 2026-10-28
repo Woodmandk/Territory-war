@@ -233,7 +233,7 @@ details ul{padding-left:18px;margin:8px 0 0}
       <li>Tropper kan ikke gå igennem fjendens land: de skal <b>erobre en fjendeprovins</b>, før de kan gå videre ind i den næste. Byer og provinser med bygninger tager meget længere tid at tage.</li>
       <li>Tryk på din egen provins for at <b>bygge</b>: fort (skyder og gør provinsen svær at tage), fabrik (bygger tropper) eller marked (mere guld). Tryk på dit <b>HQ</b> for at udvide det, så du kan have flere tropper.</li>
       <li>Dit land heler dine tropper. Ødelæg de andres <b>HQ</b>, eller ej 70 % af landet, for at vinde.</li>
-      <li>På <b>verdenskortet</b> er I otte stormagter, og du vælger selv dit land. Landene er delt i provinser, vejene binder dem sammen, og stiplede <b>søruter</b> fører over havet, hvor tropperne sejler. Her vinder du med 50 % af landet, eller ved at være størst, når de 30 minutter er gået.</li>
+      <li>På <b>verdenskortet</b> er I otte stormagter, og du vælger selv dit land. Landene er delt i provinser, vejene binder dem sammen, og stiplede <b>søruter</b> fører over havet, hvor tropperne sejler i transportskibe. På havet tager de dobbelt skade og kan ikke skyde, så send dem samlet og helst der hvor fjenden ikke venter. Her vinder du med 50 % af landet, eller ved at være størst, når de 30 minutter er gået.</li>
       <li><b>Gigantkortet</b> er som Supremacys verdenskort: 31 stormagter og omkring 400 provinser. Et spil tager op til en time. De første 8 minutter er der fred, og HQ’erne tåler mere. Du vinder med halvdelen af landet, eller ved at være størst efter 60 minutter.</li>
     </ul></details>
   </div>
@@ -1035,9 +1035,13 @@ function separate() {
     if (ib >= 0 && (B.k.air || gpass(ib))) { B.x += nx; B.y += ny; }
   }
 }
+// troops at sea ride in transports: they take double damage and cannot shoot back, like in Supremacy
+const SEA_HURT = 2;
+const atSea = u => { if (u.k.air) return false; const ci = cellOf(u.x, u.y); return ci >= 0 && terr[ci] === 0; };
 function damage(v, dmg, by) {
   const ci = cellOf(v.x, v.y);
   if (!v.k.air && ci >= 0 && terr[ci] === 3) dmg *= FOREST_COVER;
+  if (!v.k.air && ci >= 0 && terr[ci] === 0) dmg *= SEA_HURT;
   v.hp -= dmg; v.hit = 4;
   if (v.hp <= 0 && !v.dead) {
     v.dead = true; booms.push({ x: v.x, y: v.y, t: 0, big: v.type !== 'inf', parts: sparks(v.type !== 'inf' ? 14 : 7) });
@@ -1049,6 +1053,7 @@ function damage(v, dmg, by) {
 function shot(x0, y0, x1, y1, p, heavy) { shots.push({ x0, y0, x1, y1, p, heavy, t: 0 }); sfxAt(heavy ? 'heavy' : 'shot', x0, y0); }
 function combat() {
   for (const u of units) {
+    if (atSea(u)) { u.tgt = null; continue; }
     const e = enemyNear(u, u.k.range);
     u.tgt = e;
     if (e) u.aim = Math.atan2(e.y - u.y, e.x - u.x);
